@@ -1,0 +1,18 @@
+[project]
+name = "re-internal-agent-policies"
+version = "1.0.0"
+requires-python = ">=3.9"
+
+dependencies = [
+    "devleaps-agent-policies==1.0.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.2",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest==8.4.2",
+]

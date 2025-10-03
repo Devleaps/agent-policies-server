@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run the AI Agent Policy Server from any directory
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Go to the project root (one directory up from bin/)
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Change to project root and run the server
+cd "$PROJECT_ROOT" && uv run python -m src.main "$@"
