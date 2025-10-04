@@ -20,15 +20,18 @@ ALWAYS_ALLOWED_COMMANDS = [
 ]
 
 ALLOWED_SUBCOMMANDS = [
-    (r'^terraform\s+fmt(?:\s+[\w\-\.\/]+)?(?:\s|$)', "terraform fmt"),
-    (r'^terraform\s+plan(?:\s|$)', "terraform plan"),
-    (r'^terragrunt\s+plan(?:\s|$)', "terragrunt plan"),
-    (r'^source\s+venv/bin/activate$', "source venv/bin/activate"),
+    ["git", "status"],
+    ["git", "diff"],
+    ["git", "log"],
+    ["git", "show"],
+    ["terraform", "fmt"],
+    ["terraform", "plan"],
+    ["terragrunt", "plan"],
+    ["source", "venv/bin/activate"],
 ]
 
 
 def whitelist_always_rule(input_data: ToolUseEvent):
-    """Allows whitelisted commands with any parameters."""
     if not input_data.tool_is_bash:
         return
 
@@ -41,7 +44,12 @@ def whitelist_always_rule(input_data: ToolUseEvent):
             return
 
     # Check if command matches any allowed subcommands
-    for pattern, _ in ALLOWED_SUBCOMMANDS:
+    for subcommand_parts in ALLOWED_SUBCOMMANDS:
+        # Build regex pattern from subcommand parts
+        # Escape each part and join with \s+
+        escaped_parts = [re.escape(part) for part in subcommand_parts]
+        pattern = r'^' + r'\s+'.join(escaped_parts) + r'(?:\s|$)'
+
         if re.match(pattern, command):
             yield PolicyHelper.allow()
             return
