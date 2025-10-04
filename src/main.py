@@ -30,7 +30,6 @@ from src import websearch
 from src import terraform
 from src import terragrunt
 from src import yarn
-from src import mkdir
 from src import mv
 from src import rm
 from src import rmdir
@@ -69,7 +68,6 @@ def setup_all_policies():
     registry.register_all_handlers(ToolUseEvent, terraform.all_rules)
     registry.register_all_handlers(ToolUseEvent, terragrunt.all_rules)
     registry.register_all_handlers(ToolUseEvent, yarn.all_rules)
-    registry.register_all_handlers(ToolUseEvent, mkdir.all_rules)
     registry.register_all_handlers(ToolUseEvent, mv.all_rules)
     registry.register_all_handlers(ToolUseEvent, rm.all_rules)
     registry.register_all_handlers(ToolUseEvent, rmdir.all_rules)

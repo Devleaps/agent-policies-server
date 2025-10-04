@@ -1,15 +1,16 @@
 """
 Policy for commands that require workspace-relative safe paths.
 
-These commands are only allowed with workspace-relative paths (no absolute paths,
-no upward directory traversal with ..):
+These commands are allowed with any options/flags as long as paths are safe
+(no absolute paths, no upward directory traversal with ..):
 - ls: List directory contents
 - cat: Display file contents
 - head: Display beginning of files
 - tail: Display end of files
 - wc: Word/line/byte count
 - diff: Compare files
-- cp: Copy files
+- cp: Copy files (allows -r, -R, etc.)
+- mkdir: Create directories (allows -p, etc.)
 """
 
 import re
@@ -18,7 +19,7 @@ from src.utils import PolicyHelper
 from src.utils.heuristics import path_appears_safe
 
 
-# List of commands that require safe paths
+# List of commands that require safe paths (options/flags are allowed)
 SAFE_PATH_COMMANDS = [
     "ls",
     "cat",
@@ -27,11 +28,12 @@ SAFE_PATH_COMMANDS = [
     "wc",
     "diff",
     "cp",
+    "mkdir",
 ]
 
 
 def whitelist_safe_paths_rule(input_data: ToolUseEvent):
-    """Allows whitelisted commands with workspace-relative paths only."""
+    """Allows whitelisted commands with any options/flags, but workspace-relative paths only."""
     if not input_data.tool_is_bash:
         return
 
@@ -46,7 +48,7 @@ def whitelist_safe_paths_rule(input_data: ToolUseEvent):
                 yield PolicyHelper.deny(f"{cmd}: {reason}")
                 return
 
-            # All checks passed
+            # All checks passed - command can use any options/flags as long as paths are safe
             yield PolicyHelper.allow()
             return
 
