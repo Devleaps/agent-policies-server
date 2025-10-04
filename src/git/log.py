@@ -1,8 +1,4 @@
-"""
-Git log policy rule.
-
-This rule allows all git log command variants.
-"""
+"""Allows all git log command variants."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def git_log_rule(input_data: ToolUseEvent):
-    """Allows all git log commands and variants."""
     if not input_data.tool_is_bash:
         return
 

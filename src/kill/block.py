@@ -1,8 +1,4 @@
-"""
-Kill policy rule that blocks kill commands.
-
-This rule blocks kill commands and recommends using pkill instead for safer process termination.
-"""
+"""Blocks kill commands, recommends pkill instead."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,7 +6,6 @@ from src.utils import PolicyHelper
 
 
 def kill_block_rule(input_data: ToolUseEvent):
-    """Blocks kill commands and recommends pkill."""
     if not input_data.tool_is_bash:
         return
 

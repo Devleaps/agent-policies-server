@@ -1,9 +1,4 @@
-"""
-Pip freeze and requirements.txt management policy rules.
-
-This rule allows capturing current dependencies to requirements.txt via pip freeze,
-and prevents manual editing of requirements.txt files.
-"""
+"""Allows pip freeze to requirements.txt and blocks manual requirements.txt editing."""
 
 import re
 from typing import Optional
@@ -12,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def pip_freeze_rule(input_data: ToolUseEvent):
-    """Allows pip freeze > requirements.txt."""
     if not input_data.tool_is_bash:
         return
 
@@ -23,7 +17,6 @@ def pip_freeze_rule(input_data: ToolUseEvent):
 
 
 def requirements_rule(input_data: ToolUseEvent):
-    """Denies manual requirements.txt editing."""
     if input_data.tool_name == "Write" or input_data.tool_name == "Edit":
         parameters = input_data.parameters
         if isinstance(parameters, dict):

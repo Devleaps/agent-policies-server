@@ -1,8 +1,4 @@
-"""
-Pip install packages whitelist policy rule.
-
-This rule enforces a whitelist of allowed packages that can be installed via pip.
-"""
+"""Enforces whitelist of allowed packages for pip install."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def pip_install_packages_rule(input_data: ToolUseEvent):
-    """Enforces pip install package whitelist for specific packages."""
     if not input_data.tool_is_bash:
         return
 

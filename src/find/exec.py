@@ -1,8 +1,4 @@
-"""
-Security rule to deny find commands with -exec flag.
-
-This rule prevents potentially dangerous find commands that can execute arbitrary code.
-"""
+"""Blocks find commands with -exec flag for security."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def find_exec_rule(input_data: ToolUseEvent):
-    """Denies find commands with -exec."""
     if not input_data.tool_is_bash:
         return
 

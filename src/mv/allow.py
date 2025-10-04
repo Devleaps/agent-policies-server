@@ -1,18 +1,12 @@
-"""
-Mv (move/rename) policy rule for safe file operations.
-
-This rule blocks absolute paths and upward directory traversals in mv commands.
-"""
+"""Allows mv with safe paths only (blocks absolute paths and upward traversal)."""
 
 import re
 from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils.heuristics import path_appears_safe
-from src.utils import PolicyHelper
+from src.utils import PolicyHelper, path_appears_safe
 
 
 def mv_safe_operations_rule(input_data: ToolUseEvent):
-    """Blocks mv operations with options, absolute paths or upward directory traversals."""
     if not input_data.tool_is_bash:
         return
 

@@ -1,16 +1,5 @@
 """
 Policy for commands that are always whitelisted with any parameters.
-
-These commands pose no security risk and can be executed freely:
-- pwd: Print working directory
-- ps: Process status
-- lsof: List open files
-- which: Locate command binaries
-- grep: Search patterns in text
-- nslookup: DNS queries
-- pkill: Kill processes by name
-- pytest: Run tests
-- tflint: Terraform linter
 """
 
 import re
@@ -18,7 +7,6 @@ from devleaps.policies.server.common.models import ToolUseEvent
 from src.utils import PolicyHelper
 
 
-# List of commands that are always allowed
 ALWAYS_ALLOWED_COMMANDS = [
     "pwd",
     "ps",
@@ -29,6 +17,13 @@ ALWAYS_ALLOWED_COMMANDS = [
     "pkill",
     "pytest",
     "tflint",
+]
+
+ALLOWED_SUBCOMMANDS = [
+    (r'^terraform\s+fmt(?:\s+[\w\-\.\/]+)?(?:\s|$)', "terraform fmt"),
+    (r'^terraform\s+plan(?:\s|$)', "terraform plan"),
+    (r'^terragrunt\s+plan(?:\s|$)', "terragrunt plan"),
+    (r'^source\s+venv/bin/activate$', "source venv/bin/activate"),
 ]
 
 
@@ -42,6 +37,12 @@ def whitelist_always_rule(input_data: ToolUseEvent):
     # Check if command starts with any of the whitelisted commands
     for cmd in ALWAYS_ALLOWED_COMMANDS:
         if re.match(rf'^{re.escape(cmd)}(?:\s|$)', command):
+            yield PolicyHelper.allow()
+            return
+
+    # Check if command matches any allowed subcommands
+    for pattern, _ in ALLOWED_SUBCOMMANDS:
+        if re.match(pattern, command):
             yield PolicyHelper.allow()
             return
 

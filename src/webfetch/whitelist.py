@@ -1,8 +1,4 @@
-"""
-WebFetch whitelist policy rule.
-
-This rule controls access to websites via the WebFetch tool, allowing only trusted domains.
-"""
+"""Controls WebFetch access to whitelisted domains only."""
 
 from typing import Optional, Set
 from urllib.parse import urlparse
@@ -10,7 +6,6 @@ from devleaps.policies.server.common.models import ToolUseEvent
 from src.utils import PolicyHelper
 
 
-# Whitelist of allowed domains for web access
 ALLOWED_DOMAINS: Set[str] = {
     # Python ecosystem
     "pypi.org",
@@ -99,7 +94,6 @@ def _is_domain_allowed(domain: str) -> bool:
 
 
 def webfetch_whitelist_rule(input_data: ToolUseEvent):
-    """Controls WebFetch tool access to only whitelisted domains."""
     if input_data.tool_name != "WebFetch":
         return
 

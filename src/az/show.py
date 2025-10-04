@@ -1,8 +1,4 @@
-"""
-Azure CLI policy rule for allowing safe show commands.
-
-This rule whitelists Azure CLI show commands that are read-only operations.
-"""
+"""Allows Azure CLI show commands (read-only operations)."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def azure_cli_show_rule(input_data: ToolUseEvent):
-    """Allows Azure CLI show commands (az [word] show, az [word] [word] show)."""
     if not input_data.tool_is_bash:
         return
 

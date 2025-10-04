@@ -1,9 +1,4 @@
-"""
-Azure CLI default block policy rule.
-
-This rule blocks all Azure CLI commands by default unless they contain 'list' or 'show'.
-This ensures only read-only operations are allowed by default.
-"""
+"""Blocks all Azure CLI commands except those with 'list' or 'show'."""
 
 import re
 from typing import Optional
@@ -12,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def azure_cli_default_block_rule(input_data: ToolUseEvent):
-    """Block Azure CLI commands unless they contain 'list' or 'show'."""
     if not input_data.tool_is_bash:
         return
 

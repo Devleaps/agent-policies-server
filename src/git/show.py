@@ -1,8 +1,4 @@
-"""
-Git show policy rule.
-
-This rule allows all git show command variants.
-"""
+"""Allows all git show command variants."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def git_show_rule(input_data: ToolUseEvent):
-    """Allows all git show commands and variants."""
     if not input_data.tool_is_bash:
         return
 

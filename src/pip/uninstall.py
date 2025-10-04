@@ -1,8 +1,4 @@
-"""
-Pip uninstall policy rule.
-
-This rule allows uninstalling any Python package.
-"""
+"""Allows uninstalling any Python package."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def pip_uninstall_rule(input_data: ToolUseEvent):
-    """Allows pip uninstall for any package."""
     if not input_data.tool_is_bash:
         return
 

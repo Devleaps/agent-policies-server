@@ -1,8 +1,4 @@
-"""
-Python test file execution policy rule.
-
-This rule prevents running test files directly with python based on filename patterns.
-"""
+"""Blocks running test files directly with python (test_*.py pattern)."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,7 +6,6 @@ from src.utils import PolicyHelper
 
 
 def python_test_file_rule(input_data: ToolUseEvent):
-    """Denies running python directly on test files based on filename patterns."""
     if not input_data.tool_is_bash:
         return
 

@@ -1,8 +1,4 @@
-"""
-Python3 venv policy rule for creating virtual environments.
-
-This rule allows only the exact commands for creating standard virtual environments.
-"""
+"""Allows only exact venv creation commands (venv or .venv)."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def python3_venv_rule(input_data: ToolUseEvent):
-    """Allows only exact python3 -m venv commands for 'venv' or '.venv' directories."""
     if not input_data.tool_is_bash:
         return
 

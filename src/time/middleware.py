@@ -1,8 +1,4 @@
-"""
-Time command middleware for preprocessing inputs.
-
-This middleware strips 'time ' prefix from commands to allow them to match other policy rules.
-"""
+"""Strips 'time' prefix to allow underlying command evaluation."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,12 +6,6 @@ from dataclasses import replace
 
 
 def strip_time_prefix_middleware(input_data: ToolUseEvent):
-    """
-    Strip 'time ' prefix from commands.
-
-    Transforms commands like 'time terraform plan' to 'terraform plan'
-    by creating a new event with the stripped command.
-    """
     # Only process bash tool events
     if not input_data.tool_is_bash:
         yield input_data

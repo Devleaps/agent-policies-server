@@ -1,8 +1,4 @@
-"""
-CD (change directory) policy rule for upward navigation.
-
-This rule allows cd commands that only use upward navigation patterns.
-"""
+"""Allows cd upward navigation (.. patterns)."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,7 +6,6 @@ from src.utils import PolicyHelper
 
 
 def cd_upward_navigation_rule(input_data: ToolUseEvent):
-    """Allows cd operations that only navigate upward using / and . characters."""
     if not input_data.tool_is_bash:
         return
 

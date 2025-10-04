@@ -1,25 +1,12 @@
 """
 Policy for commands that require workspace-relative safe paths.
-
-These commands are allowed with any options/flags as long as paths are safe
-(no absolute paths, no upward directory traversal with ..):
-- ls: List directory contents
-- cat: Display file contents
-- head: Display beginning of files
-- tail: Display end of files
-- wc: Word/line/byte count
-- diff: Compare files
-- cp: Copy files (allows -r, -R, etc.)
-- mkdir: Create directories (allows -p, etc.)
 """
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils import PolicyHelper
-from src.utils.heuristics import path_appears_safe
+from src.utils import PolicyHelper, path_appears_safe
 
 
-# List of commands that require safe paths (options/flags are allowed)
 SAFE_PATH_COMMANDS = [
     "ls",
     "cat",
@@ -29,6 +16,7 @@ SAFE_PATH_COMMANDS = [
     "diff",
     "cp",
     "mkdir",
+    "trash",
 ]
 
 

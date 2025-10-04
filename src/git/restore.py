@@ -1,14 +1,9 @@
-"""
-Git restore policy rule.
-
-This rule allows git restore commands on safe paths only.
-"""
+"""Allows git restore commands on safe paths only."""
 
 import re
 from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils import PolicyHelper
-from src.utils.heuristics import path_appears_safe
+from src.utils import PolicyHelper, path_appears_safe
 
 
 def git_restore_rule(input_data: ToolUseEvent):

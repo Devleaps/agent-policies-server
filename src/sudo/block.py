@@ -1,8 +1,4 @@
-"""
-Sudo policy rule that blocks all sudo commands.
-
-This rule blocks sudo commands for security reasons since they involve privilege escalation.
-"""
+"""Blocks all sudo commands for security (privilege escalation)."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def sudo_block_rule(input_data: ToolUseEvent):
-    """Blocks all sudo commands for security reasons."""
     if not input_data.tool_is_bash:
         return
 

@@ -1,8 +1,4 @@
-"""
-Git status policy rule.
-
-This rule allows git status commands.
-"""
+"""Allows git status commands."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def git_status_rule(input_data: ToolUseEvent):
-    """Allows git status commands."""
     if not input_data.tool_is_bash:
         return
 

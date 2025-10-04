@@ -1,8 +1,4 @@
-"""
-Kubectl policy rule for read-only operations.
-
-This rule allows only read-only kubectl commands.
-"""
+"""Allows only read-only kubectl commands."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,7 +6,6 @@ from src.utils import PolicyHelper
 
 
 def kubectl_read_only_rule(input_data: ToolUseEvent):
-    """Allows only read-only kubectl operations."""
     # Only process bash tool events
     if not input_data.tool_is_bash:
         return

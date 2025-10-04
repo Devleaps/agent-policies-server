@@ -1,14 +1,9 @@
-"""
-Git diff policy rule.
-
-This rule allows git diff commands with safe paths.
-"""
+"""Allows git diff commands with safe paths."""
 
 import re
 from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils import PolicyHelper
-from src.utils.heuristics import path_appears_safe
+from src.utils import PolicyHelper, path_appears_safe
 
 
 def git_diff_rule(input_data: ToolUseEvent):

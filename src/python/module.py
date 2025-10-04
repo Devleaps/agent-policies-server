@@ -1,8 +1,4 @@
-"""
-Python module execution policy rule.
-
-This rule enforces direct pytest usage over python -m pytest.
-"""
+"""Blocks python -m pytest, requires direct pytest usage."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def python_module_rule(input_data: ToolUseEvent):
-    """Denies python -m pytest."""
     if not input_data.tool_is_bash:
         return
 

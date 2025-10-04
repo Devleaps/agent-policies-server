@@ -1,17 +1,11 @@
-"""
-CD (change directory) policy rule for safe operations.
-
-This rule allows cd commands with safe paths only.
-"""
+"""Allows cd commands with safe paths only."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils import PolicyHelper
-from src.utils.heuristics import path_appears_safe
+from src.utils import PolicyHelper, path_appears_safe
 
 
 def cd_safe_operations_rule(input_data: ToolUseEvent):
-    """Allows cd operations with safe paths only."""
     if not input_data.tool_is_bash:
         return
 

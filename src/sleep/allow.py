@@ -1,8 +1,4 @@
-"""
-Sleep policy rule for safe operations.
-
-This rule allows sleep commands with durations at or below 60 seconds.
-"""
+"""Allows sleep commands with duration <= 60 seconds."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,7 +6,6 @@ from src.utils import PolicyHelper
 
 
 def sleep_duration_rule(input_data: ToolUseEvent):
-    """Allows sleep commands with duration <= 60 seconds."""
     if not input_data.tool_is_bash:
         return
 

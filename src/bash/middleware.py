@@ -1,8 +1,4 @@
-"""
-Command splitting middleware for preprocessing inputs.
-
-This middleware splits commands on '&&' and '|' to allow each command to be evaluated independently.
-"""
+"""Splits chained commands (&&, |) for independent evaluation."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,12 +6,6 @@ from dataclasses import replace
 
 
 def split_commands_middleware(input_data: ToolUseEvent):
-    """
-    Split commands on '&&' and '|' and yield each command separately.
-
-    Transforms commands like 'git diff | grep pattern' or 'cmd1 && cmd2'
-    into separate inputs for independent evaluation.
-    """
     # Only process bash tool events
     if not input_data.tool_is_bash:
         yield input_data

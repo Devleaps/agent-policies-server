@@ -23,12 +23,9 @@ from src import uv
 from src import find
 from src import az
 from src import python
-from src import virtualenv
 from src import pip
 from src import webfetch
 from src import websearch
-from src import terraform
-from src import terragrunt
 from src import yarn
 from src import mv
 from src import rm
@@ -61,12 +58,9 @@ def setup_all_policies():
     registry.register_all_handlers(ToolUseEvent, find.all_rules)
     registry.register_all_handlers(ToolUseEvent, az.all_rules)
     registry.register_all_handlers(ToolUseEvent, python.all_rules)
-    registry.register_all_handlers(ToolUseEvent, virtualenv.all_rules)
     registry.register_all_handlers(ToolUseEvent, pip.all_rules)
     registry.register_all_handlers(ToolUseEvent, webfetch.all_rules)
     registry.register_all_handlers(ToolUseEvent, websearch.all_rules)
-    registry.register_all_handlers(ToolUseEvent, terraform.all_rules)
-    registry.register_all_handlers(ToolUseEvent, terragrunt.all_rules)
     registry.register_all_handlers(ToolUseEvent, yarn.all_rules)
     registry.register_all_handlers(ToolUseEvent, mv.all_rules)
     registry.register_all_handlers(ToolUseEvent, rm.all_rules)

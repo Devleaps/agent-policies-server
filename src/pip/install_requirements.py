@@ -1,8 +1,4 @@
-"""
-Pip install requirements.txt policy rule.
-
-This rule allows installation of packages from requirements.txt.
-"""
+"""Allows installation from requirements.txt."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def pip_install_requirements_rule(input_data: ToolUseEvent):
-    """Allows pip install -r requirements.txt."""
     if not input_data.tool_is_bash:
         return
 

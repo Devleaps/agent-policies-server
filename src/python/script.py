@@ -1,8 +1,4 @@
-"""
-Python script execution policy rule.
-
-This rule prevents large inline Python scripts and encourages proper file-based execution.
-"""
+"""Prevents large inline Python scripts (python -c with >50 chars)."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def python_script_rule(input_data: ToolUseEvent):
-    """Denies large python -c commands."""
     if not input_data.tool_is_bash:
         return
 

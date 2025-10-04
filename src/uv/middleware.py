@@ -1,8 +1,4 @@
-"""
-UV run command middleware for preprocessing inputs.
-
-This middleware strips 'uv run' prefix from commands to allow them to match other policy rules.
-"""
+"""Strips 'uv run' prefix to allow underlying command evaluation."""
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
@@ -10,12 +6,6 @@ from dataclasses import replace
 
 
 def strip_uv_run_prefix_middleware(input_data: ToolUseEvent):
-    """
-    Strip 'uv run' prefix from commands.
-
-    Transforms commands like 'uv run pytest' to 'pytest'
-    by creating a new event with the stripped command.
-    """
     # Only process bash tool events
     if not input_data.tool_is_bash:
         yield input_data

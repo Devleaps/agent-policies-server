@@ -1,8 +1,4 @@
-"""
-Yarn package manager policy rules for safe operations.
-
-This rule allows safe yarn commands like test, start, remove, why, and build.
-"""
+"""Allows safe yarn commands: test, start, remove, why, build."""
 
 import re
 from typing import Optional
@@ -11,7 +7,6 @@ from src.utils import PolicyHelper
 
 
 def yarn_safe_commands_rule(input_data: ToolUseEvent):
-    """Allows safe yarn commands."""
     if not input_data.tool_is_bash:
         return
 
