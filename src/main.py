@@ -30,6 +30,7 @@ from src import yarn
 from src import mv
 from src import rm
 from src import rmdir
+from src import git
 from src import curl
 from src import sudo
 from src import cd
@@ -64,6 +65,7 @@ def setup_all_policies():
     registry.register_all_handlers(ToolUseEvent, mv.all_rules)
     registry.register_all_handlers(ToolUseEvent, rm.all_rules)
     registry.register_all_handlers(ToolUseEvent, rmdir.all_rules)
+    registry.register_all_handlers(ToolUseEvent, git.all_rules)
     registry.register_all_handlers(ToolUseEvent, curl.all_rules)
     registry.register_all_handlers(ToolUseEvent, sudo.all_rules)
     registry.register_all_handlers(ToolUseEvent, cd.all_rules)
