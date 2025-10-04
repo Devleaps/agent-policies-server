@@ -7,7 +7,7 @@ This rule blocks absolute paths and upward directory traversals in wc commands.
 import re
 from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.heuristics import path_appears_safe
+from src.utils.heuristics import path_appears_safe
 from src.utils import PolicyHelper
 
 

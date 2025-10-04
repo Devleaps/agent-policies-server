@@ -6,7 +6,7 @@ This rule allows head commands with any options on safe paths.
 
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.heuristics import path_appears_safe
+from src.utils.heuristics import path_appears_safe
 from src.utils import PolicyHelper
 
 

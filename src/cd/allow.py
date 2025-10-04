@@ -7,7 +7,7 @@ This rule allows cd commands with safe paths only.
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
 from src.utils import PolicyHelper
-from src.heuristics import path_appears_safe
+from src.utils.heuristics import path_appears_safe
 
 
 def cd_safe_operations_rule(input_data: ToolUseEvent):

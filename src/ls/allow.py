@@ -7,7 +7,7 @@ This rule allows ls commands with any options on safe paths.
 import re
 from devleaps.policies.server.common.models import ToolUseEvent
 from src.utils import PolicyHelper
-from src.heuristics import path_appears_safe
+from src.utils.heuristics import path_appears_safe
 
 
 def ls_allow_rule(input_data: ToolUseEvent):
