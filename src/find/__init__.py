@@ -1,4 +1,3 @@
-from src.find.exec import find_exec_rule
-from src.find.allow import find_safe_operations_rule
+from src.find.policy import all_rules
 
-all_rules = [find_exec_rule, find_safe_operations_rule]
+__all__ = ["all_rules"]

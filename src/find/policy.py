@@ -1,9 +1,19 @@
-"""Allows find commands with safe paths only."""
+"""Blocks find -exec for security; allows find with safe paths only."""
 
 import re
 from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
 from src.utils import PolicyHelper, path_appears_safe
+
+
+def find_exec_rule(input_data: ToolUseEvent):
+    if not input_data.tool_is_bash:
+        return
+
+    if re.search(r'\bfind\b.*-exec', input_data.command):
+        yield PolicyHelper.deny(
+            "find commands with -exec are not allowed for security reasons"
+        )
 
 
 def find_safe_operations_rule(input_data: ToolUseEvent):
@@ -12,15 +22,12 @@ def find_safe_operations_rule(input_data: ToolUseEvent):
 
     command = input_data.command.strip()
 
-    # Match find commands
     if not re.match(r'^find\s+', command):
         return
 
-    # Block if already handled by exec rule (has -exec)
     if re.search(r'-exec', command):
         return
 
-    # Check path safety using common heuristic
     is_safe, reason = path_appears_safe(command)
     if not is_safe:
         yield PolicyHelper.deny(
@@ -29,5 +36,7 @@ def find_safe_operations_rule(input_data: ToolUseEvent):
             "If you need to search upward, first `cd` to the target directory."
         )
 
-    # Allow all other find operations
     yield PolicyHelper.allow()
+
+
+all_rules = [find_exec_rule, find_safe_operations_rule]
