@@ -14,7 +14,7 @@ from devleaps.policies.server.common.enums import SourceClient
 
 def test_timeout_middleware():
     """Test that timeout middleware strips timeout prefix."""
-    from src.timeout.middleware import strip_timeout_prefix_middleware
+    from src.universal.timeout_middleware import strip_timeout_prefix_middleware
 
     # Test basic timeout command
     event = ToolUseEvent(
@@ -76,7 +76,7 @@ def test_timeout_middleware():
 
 def test_uv_run_middleware():
     """Test that uv run middleware strips uv run prefix."""
-    from src.uv.middleware import strip_uv_run_prefix_middleware
+    from src.py.uv_middleware import strip_uv_run_prefix_middleware
 
     # Test basic uv run command
     event = ToolUseEvent(
@@ -123,7 +123,7 @@ def test_uv_run_middleware():
 
 def test_time_middleware():
     """Test that time middleware strips time prefix."""
-    from src.time.middleware import strip_time_prefix_middleware
+    from src.universal.time_middleware import strip_time_prefix_middleware
 
     # Test basic time command
     event = ToolUseEvent(
@@ -172,27 +172,21 @@ def test_all_middleware_registered():
     """Test that all middleware can be imported and are registered in main."""
     import src.main
 
-    # Import all middleware modules
-    from src import bash, time, timeout, uv
+    # Import package modules with middleware
+    from src import universal, py
 
-    # Check they all have all_middleware
-    assert hasattr(bash, 'all_middleware')
-    assert hasattr(time, 'all_middleware')
-    assert hasattr(timeout, 'all_middleware')
-    assert hasattr(uv, 'all_middleware')
+    # Check they have all_middleware
+    assert hasattr(universal, 'all_middleware'), "universal should have all_middleware"
+    assert hasattr(py, 'all_middleware'), "py should have all_middleware"
 
     print("✓ All middleware modules have all_middleware attribute")
 
     # Check counts
-    assert len(bash.all_middleware) >= 1
-    assert len(time.all_middleware) >= 1
-    assert len(timeout.all_middleware) >= 1
-    assert len(uv.all_middleware) >= 1
+    assert len(universal.all_middleware) >= 3, "universal should have at least 3 middleware (bash, time, timeout)"
+    assert len(py.all_middleware) >= 1, "py should have at least 1 middleware (uv)"
 
-    print(f"✓ bash: {len(bash.all_middleware)} middleware")
-    print(f"✓ time: {len(time.all_middleware)} middleware")
-    print(f"✓ timeout: {len(timeout.all_middleware)} middleware")
-    print(f"✓ uv: {len(uv.all_middleware)} middleware")
+    print(f"✓ universal: {len(universal.all_middleware)} middleware (bash, time, timeout)")
+    print(f"✓ py: {len(py.all_middleware)} middleware (uv)")
 
 
 if __name__ == "__main__":

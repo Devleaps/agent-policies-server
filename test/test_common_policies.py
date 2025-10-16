@@ -9,19 +9,17 @@ This verifies that:
 
 def test_common_policies_import():
     """Test that common policies can be imported."""
-    from src.common import whitelist_always, whitelist_safe_paths
+    from src.universal import whitelist_always_rule, whitelist_safe_paths_rule
 
     print("✓ Common policies imported successfully")
 
-    # Check whitelist_always rules
-    assert hasattr(whitelist_always, 'all_rules'), "whitelist_always should have all_rules"
-    assert len(whitelist_always.all_rules) > 0, "whitelist_always should have rules"
-    print(f"✓ whitelist_always has {len(whitelist_always.all_rules)} rule(s)")
+    # Check whitelist_always rule
+    assert callable(whitelist_always_rule), "whitelist_always_rule should be callable"
+    print(f"✓ whitelist_always_rule is properly formed")
 
-    # Check whitelist_safe_paths rules
-    assert hasattr(whitelist_safe_paths, 'all_rules'), "whitelist_safe_paths should have all_rules"
-    assert len(whitelist_safe_paths.all_rules) > 0, "whitelist_safe_paths should have rules"
-    print(f"✓ whitelist_safe_paths has {len(whitelist_safe_paths.all_rules)} rule(s)")
+    # Check whitelist_safe_paths rule
+    assert callable(whitelist_safe_paths_rule), "whitelist_safe_paths_rule should be callable"
+    print(f"✓ whitelist_safe_paths_rule is properly formed")
 
 
 def test_main_module_import():
@@ -36,26 +34,22 @@ def test_main_module_import():
 
 def test_policy_rule_creation():
     """Test that policy rules are created with correct attributes."""
-    from src.common import whitelist_always, whitelist_safe_paths
+    from src.universal import whitelist_always_rule, whitelist_safe_paths_rule
 
-    # Check whitelist_always rules have correct names
-    for rule in whitelist_always.all_rules:
-        assert callable(rule), f"Rule {rule} should be callable"
-        assert hasattr(rule, '__name__'), f"Rule should have __name__"
+    # Check whitelist_always rule has correct name
+    assert callable(whitelist_always_rule), f"whitelist_always_rule should be callable"
+    assert hasattr(whitelist_always_rule, '__name__'), f"whitelist_always_rule should have __name__"
+    print(f"✓ whitelist_always_rule is properly formed")
 
-    print(f"✓ All {len(whitelist_always.all_rules)} whitelist_always rule(s) are properly formed")
-
-    # Check whitelist_safe_paths rules have correct names
-    for rule in whitelist_safe_paths.all_rules:
-        assert callable(rule), f"Rule {rule} should be callable"
-        assert hasattr(rule, '__name__'), f"Rule should have __name__"
-
-    print(f"✓ All {len(whitelist_safe_paths.all_rules)} whitelist_safe_paths rule(s) are properly formed")
+    # Check whitelist_safe_paths rule has correct name
+    assert callable(whitelist_safe_paths_rule), f"whitelist_safe_paths_rule should be callable"
+    assert hasattr(whitelist_safe_paths_rule, '__name__'), f"whitelist_safe_paths_rule should have __name__"
+    print(f"✓ whitelist_safe_paths_rule is properly formed")
 
 
 def test_rule_functionality():
     """Test that rules can be called with mock data."""
-    from src.common import whitelist_always
+    from src.universal import whitelist_always_rule
     from devleaps.policies.server.common.models import ToolUseEvent
     from devleaps.policies.server.common.enums import SourceClient
 
@@ -69,11 +63,8 @@ def test_rule_functionality():
         parameters={"command": "pwd"}
     )
 
-    # Get the whitelist_always rule
-    rule = whitelist_always.all_rules[0]
-
     # Call the rule (it's a generator)
-    result = list(rule(mock_event))
+    result = list(whitelist_always_rule(mock_event))
     assert len(result) == 1, "Should return 1 decision for whitelisted command"
     print(f"✓ whitelist_always rule executed successfully for pwd command")
 

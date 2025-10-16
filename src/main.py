@@ -10,69 +10,34 @@ import uvicorn
 from devleaps.policies.server.server import app, get_registry
 from devleaps.policies.server.common.models import ToolUseEvent
 
-# Common policies (consolidated)
-from src.common import whitelist_always, whitelist_safe_paths
+# Session state management
+from devleaps.policies.server.session import initialize_session_state
 
-# Middleware modules
-from src import bash
-from src import time
-from src import timeout
-from src import uv
-
-# Command-specific policies
-from src import find
-from src import az
-from src import python
-from src import pip
-from src import webfetch
-from src import websearch
-from src import yarn
-from src import mv
-from src import rm
-from src import rmdir
+# Category-based policy packages
+from src import cloud
 from src import git
-from src import curl
-from src import sudo
-from src import cd
-from src import sleep
-from src import kill
-from src import kubectl
-from src import python3
+from src import js
+from src import network
+from src import py
+from src import universal
 
 
 def setup_all_policies():
     """Register all policy handlers and middleware with the global registry."""
     registry = get_registry()
 
-    # Register all middleware
-    registry.register_all_middleware(ToolUseEvent, bash.all_middleware)
-    registry.register_all_middleware(ToolUseEvent, time.all_middleware)
-    registry.register_all_middleware(ToolUseEvent, timeout.all_middleware)
-    registry.register_all_middleware(ToolUseEvent, uv.all_middleware)
+    # Register middleware
+    registry.register_all_middleware(ToolUseEvent, universal.all_middleware)
+    registry.register_all_middleware(ToolUseEvent, git.all_middleware)
+    registry.register_all_middleware(ToolUseEvent, py.all_middleware)
 
-    # Common policies (consolidated rules for multiple commands)
-    registry.register_all_handlers(ToolUseEvent, whitelist_always.all_rules)
-    registry.register_all_handlers(ToolUseEvent, whitelist_safe_paths.all_rules)
-
-    # Command-specific policies
-    registry.register_all_handlers(ToolUseEvent, find.all_rules)
-    registry.register_all_handlers(ToolUseEvent, az.all_rules)
-    registry.register_all_handlers(ToolUseEvent, python.all_rules)
-    registry.register_all_handlers(ToolUseEvent, pip.all_rules)
-    registry.register_all_handlers(ToolUseEvent, webfetch.all_rules)
-    registry.register_all_handlers(ToolUseEvent, websearch.all_rules)
-    registry.register_all_handlers(ToolUseEvent, yarn.all_rules)
-    registry.register_all_handlers(ToolUseEvent, mv.all_rules)
-    registry.register_all_handlers(ToolUseEvent, rm.all_rules)
-    registry.register_all_handlers(ToolUseEvent, rmdir.all_rules)
+    # Register all policies
+    registry.register_all_handlers(ToolUseEvent, universal.all_rules)
+    registry.register_all_handlers(ToolUseEvent, cloud.all_rules)
     registry.register_all_handlers(ToolUseEvent, git.all_rules)
-    registry.register_all_handlers(ToolUseEvent, curl.all_rules)
-    registry.register_all_handlers(ToolUseEvent, sudo.all_rules)
-    registry.register_all_handlers(ToolUseEvent, cd.all_rules)
-    registry.register_all_handlers(ToolUseEvent, sleep.all_rules)
-    registry.register_all_handlers(ToolUseEvent, kill.all_rules)
-    registry.register_all_handlers(ToolUseEvent, kubectl.all_rules)
-    registry.register_all_handlers(ToolUseEvent, python3.all_rules)
+    registry.register_all_handlers(ToolUseEvent, js.all_rules)
+    registry.register_all_handlers(ToolUseEvent, network.all_rules)
+    registry.register_all_handlers(ToolUseEvent, py.all_rules)
 
     print("All policies and middleware registered successfully!")
 
@@ -80,6 +45,10 @@ def setup_all_policies():
 def main():
     """Start the server with all policies registered."""
     print("Starting AI Agent Policy Server...")
+
+    # Initialize session state storage
+    initialize_session_state()
+    print("Session state management initialized")
 
     setup_all_policies()
 

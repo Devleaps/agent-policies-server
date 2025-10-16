@@ -4,8 +4,11 @@ version = "1.0.0"
 requires-python = ">=3.9"
 
 dependencies = [
-    "devleaps-agent-policies==1.0.4",
+    "devleaps-agent-policies",
 ]
+
+[tool.uv.sources]
+devleaps-agent-policies = { path = "../agent-policies", editable = true }
 
 [project.optional-dependencies]
 dev = [

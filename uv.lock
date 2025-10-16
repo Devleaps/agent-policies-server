@@ -155,18 +155,28 @@ wheels = [
 
 [[package]]
 name = "devleaps-agent-policies"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
+version = "1.0.0"
+source = { editable = "../agent-policies" }
 dependencies = [
     { name = "fastapi" },
     { name = "pydantic" },
     { name = "requests" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/b2/ca147757c270f720a468fe365b3c29d9ff00ae109981bc54af119b9634b8/devleaps_agent_policies-1.0.4.tar.gz", hash = "sha256:f4d2d501d056a85b325c47d2a0514f706eb7c3fe550a5a8f247733361a7379fe", size = 43755 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/db/a5/8561d0c41311373ae643b4520a164aa0826b65459a13b5cc6928aaca8b71/devleaps_agent_policies-1.0.4-py3-none-any.whl", hash = "sha256:b8253da2d73590eda692f98b95226eaf4c396384c2439cc7b3910b27d1e755f9", size = 28463 },
+
+[package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = "==0.118.0" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = "==0.28.1" },
+    { name = "pydantic", specifier = "==2.11.9" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = "==8.4.2" },
+    { name = "requests", specifier = "==2.32.5" },
+    { name = "uvicorn", specifier = "==0.37.0" },
 ]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = "==8.4.2" }]
 
 [[package]]
 name = "exceptiongroup"
@@ -410,7 +420,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "devleaps-agent-policies", specifier = "==1.0.4" },
+    { name = "devleaps-agent-policies", editable = "../agent-policies" },
     { name = "pytest", marker = "extra == 'dev'", specifier = "==8.4.2" },
 ]
 provides-extras = ["dev"]

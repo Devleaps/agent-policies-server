@@ -52,37 +52,53 @@ class PolicyHelper:
         )
 
 
-def path_appears_safe(path_or_command: str) -> tuple[bool, str]:
+def path_appears_safe(path: str) -> tuple[bool, str]:
     """
-    Check if a path or command appears safe from common mistakes in working with paths.
+    Check if a path appears safe from common mistakes in working with paths.
+
+    Args:
+        path: A path string to validate
 
     Returns:
         tuple[bool, str]: (is_safe, reason_if_unsafe)
     """
-    # Split by spaces and check each part
-    parts = path_or_command.split()
-    for part in parts:
-        # Skip flags
-        if part.startswith('-'):
-            continue
+    # Check if path begins with /
+    if path.startswith('/'):
+        return False, "absolute paths are not allowed"
 
-        # Check if path begins with /
-        if part.startswith('/'):
-            return False, "absolute paths are not allowed"
+    # Check if path equals ..
+    if path == '..':
+        return False, "upward directory traversal (..) is not allowed"
 
-        # Check if path equals ..
-        if part == '..':
-            return False, "upward directory traversal (..) is not allowed"
+    # Check if path contains ../
+    if '../' in path:
+        return False, "upward directory traversal (../) is not allowed"
 
-        # Check if path contains ../
-        if '../' in part:
-            return False, "upward directory traversal (../) is not allowed"
-
-        # Check if path contains /..
-        if '/..' in part:
-            return False, "upward directory traversal (/..) is not allowed"
+    # Check if path contains /..
+    if '/..' in path:
+        return False, "upward directory traversal (/..) is not allowed"
 
     return True, ""
+
+
+def path_in_command_appears_safe(command: str, command_name: str) -> tuple[bool, str]:
+    """
+    Extract paths from a command and check if they appear safe.
+
+    Args:
+        command: Full command string (e.g., "rm file.txt" or "find . -name '*.py'")
+        command_name: The command name to strip (e.g., "rm", "find", "mv")
+
+    Returns:
+        tuple[bool, str]: (is_safe, reason_if_unsafe)
+    """
+    import re
+
+    # Extract paths from command (everything after the command name)
+    paths_part = re.sub(rf'^{re.escape(command_name)}\s+', '', command)
+
+    # Check path safety
+    return path_appears_safe(paths_part)
 
 
 def url_is_localhost(url: str) -> bool:
