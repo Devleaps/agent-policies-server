@@ -35,7 +35,7 @@ all_rules = [
     # Process control
     sleep_duration_rule,
     sudo_block_rule,
-    kill_block_rule
+    kill_block_rule,
 ]
 
 all_middleware = [

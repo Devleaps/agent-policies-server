@@ -8,7 +8,7 @@ Sets up policy enforcement handlers and starts the FastAPI server.
 import uvicorn
 
 from devleaps.policies.server.server import app, get_registry
-from devleaps.policies.server.common.models import ToolUseEvent
+from devleaps.policies.server.common.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
 
 # Session state management
 from devleaps.policies.server.session import initialize_session_state
@@ -38,6 +38,9 @@ def setup_all_policies():
     registry.register_all_handlers(ToolUseEvent, js.all_rules)
     registry.register_all_handlers(ToolUseEvent, network.all_rules)
     registry.register_all_handlers(ToolUseEvent, py.all_rules)
+
+    # Register PostFileEditEvent handlers
+    registry.register_all_handlers(PostFileEditEvent, py.all_post_file_edit_rules)
 
     print("All policies and middleware registered successfully!")
 

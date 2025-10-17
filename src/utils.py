@@ -44,12 +44,9 @@ class PolicyHelper:
         )
 
     @staticmethod
-    def guidance(content: str, user_facing: bool = False) -> PolicyGuidance:
+    def guidance(content: str) -> PolicyGuidance:
         """Create guidance without making a decision."""
-        return PolicyGuidance(
-            content=content,
-            user_facing=user_facing
-        )
+        return PolicyGuidance(content=content)
 
 
 def path_appears_safe(path: str) -> tuple[bool, str]:

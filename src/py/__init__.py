@@ -14,6 +14,8 @@ from src.py.black_policy import black_format_rule
 from src.py.ruff_policy import ruff_check_rule, ruff_format_rule
 from src.py.mypy_policy import mypy_check_rule
 from src.py.pytest_cov_policy import pytest_cov_rule
+from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
 
 # Middleware
 from src.py.uv_middleware import all_middleware as uv_middleware
@@ -35,6 +37,12 @@ all_rules = [
     ruff_format_rule,
     mypy_check_rule,
     pytest_cov_rule
+]
+
+# PostFileEditEvent handlers for Python-specific guidance
+all_post_file_edit_rules = [
+    comment_ratio_guidance_rule,
+    comment_overlap_guidance_rule
 ]
 
 all_middleware = [
