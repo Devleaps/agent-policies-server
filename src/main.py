@@ -18,8 +18,12 @@ from src import cloud
 from src import git
 from src import js
 from src import network
-from src import py
+from src import python
 from src import universal
+
+# Bundle packages
+from src import python_pip
+from src import python_uv
 
 
 def setup_all_policies():
@@ -29,18 +33,20 @@ def setup_all_policies():
     # Register middleware
     registry.register_all_middleware(ToolUseEvent, universal.all_middleware)
     registry.register_all_middleware(ToolUseEvent, git.all_middleware)
-    registry.register_all_middleware(ToolUseEvent, py.all_middleware)
+    registry.register_all_middleware(ToolUseEvent, python.all_middleware)
 
-    # Register all policies
     registry.register_all_handlers(ToolUseEvent, universal.all_rules)
     registry.register_all_handlers(ToolUseEvent, cloud.all_rules)
     registry.register_all_handlers(ToolUseEvent, git.all_rules)
     registry.register_all_handlers(ToolUseEvent, js.all_rules)
     registry.register_all_handlers(ToolUseEvent, network.all_rules)
-    registry.register_all_handlers(ToolUseEvent, py.all_rules)
+    registry.register_all_handlers(ToolUseEvent, python.all_rules)
 
-    # Register PostFileEditEvent handlers
-    registry.register_all_handlers(PostFileEditEvent, py.all_post_file_edit_rules)
+    registry.register_all_handlers(ToolUseEvent, python_pip.all_rules, bundle="python-pip")
+    registry.register_all_handlers(ToolUseEvent, python_uv.all_rules, bundle="python-uv")
+
+    registry.register_all_handlers(PostFileEditEvent, python.all_post_file_edit_rules)
+    registry.register_all_handlers(PostFileEditEvent, python_uv.all_post_file_edit_rules, bundle="python-uv")
 
     print("All policies and middleware registered successfully!")
 
