@@ -16,6 +16,15 @@ ALLOWED_PACKAGES = {
     "pydantic",
     "pytest",
     "httpx",
+    "fire",
+    "jinja2",
+    "streamlit",
+    "pandas",
+    "numpy",
+    "sqlalchemy",
+    "python-dotenv",
+    "pyyaml",
+    "toml",
 }
 
 all_rules = []
