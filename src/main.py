@@ -45,6 +45,7 @@ def setup_all_policies():
     registry.register_all_handlers(ToolUseEvent, python_pip.all_rules, bundle="python-pip")
     registry.register_all_handlers(ToolUseEvent, python_uv.all_rules, bundle="python-uv")
 
+    registry.register_all_handlers(PostFileEditEvent, universal.all_post_file_edit_rules)
     registry.register_all_handlers(PostFileEditEvent, python.all_post_file_edit_rules)
     registry.register_all_handlers(PostFileEditEvent, python_uv.all_post_file_edit_rules, bundle="python-uv")
 

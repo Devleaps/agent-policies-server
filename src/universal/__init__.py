@@ -11,6 +11,7 @@ from src.universal.find_policy import find_exec_rule, find_safe_operations_rule
 from src.universal.sleep_allow import sleep_duration_rule
 from src.universal.sudo_block import sudo_block_rule
 from src.universal.kill_block import kill_block_rule
+from src.universal.legacy_code_guidance import legacy_code_guidance_rule
 
 # Middleware
 from src.universal.bash_middleware import all_middleware as bash_middleware
@@ -36,6 +37,10 @@ all_rules = [
     sleep_duration_rule,
     sudo_block_rule,
     kill_block_rule,
+]
+
+all_post_file_edit_rules = [
+    legacy_code_guidance_rule,
 ]
 
 all_middleware = [
