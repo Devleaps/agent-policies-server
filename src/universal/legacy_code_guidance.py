@@ -26,7 +26,7 @@ def legacy_code_guidance_rule(input_data: PostFileEditEvent):
             for pattern in legacy_patterns:
                 if re.search(pattern, line):
                     yield PolicyHelper.guidance(
-                        "Backwards compatibility concern detected in code. "
-                        "Are you sure about this change? Confirm with user if not explicitly requested."
+                        "Detected a note on backwards compatibility or legacy in code."
+                        "Are you sure about backwards compatability as a requirement? If not explicitly requested, check with the user first."
                     )
                     return
