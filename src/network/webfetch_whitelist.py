@@ -58,6 +58,10 @@ ALLOWED_DOMAINS: Set[str] = {
     "devleaps.nl",
     "dataleaps.nl",
     "release-engineers.com",
+
+    # Notion
+    "notion.com",
+    "notion.so"
 }
 
 
