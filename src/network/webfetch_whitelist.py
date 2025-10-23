@@ -61,7 +61,10 @@ ALLOWED_DOMAINS: Set[str] = {
 
     # Notion
     "notion.com",
-    "notion.so"
+    "notion.so",
+
+    # Homebrew
+    "brew.sh"
 }
 
 
