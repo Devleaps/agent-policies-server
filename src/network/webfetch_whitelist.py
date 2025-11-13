@@ -20,6 +20,7 @@ ALLOWED_DOMAINS: Set[str] = {
 
     # Development platforms
     "github.com",
+    "docs.github.com",
     "gitlab.com",
     "bitbucket.org",
 
