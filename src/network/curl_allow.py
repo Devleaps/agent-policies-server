@@ -16,12 +16,17 @@ def curl_localhost_rule(input_data: ToolUseEvent):
     if not re.match(r'^curl\s+', command):
         return
 
-    # Check if command contains a localhost URL
-    if url_is_localhost(command):
-        yield PolicyHelper.allow()
-    else:
-        # Deny all other curl commands
-        yield PolicyHelper.deny(
-            "By policy, curl is only allowed to localhost.\n"
-            "Use localhost, 127.0.0.1, or ::1 (e.g., `curl localhost:8000` or `curl 127.0.0.1:3000`)."
-        )
+    # Extract URL from curl command - find any word containing localhost, 127., or ::1
+    words = command.split()
+
+    # Check each word to see if it contains a localhost URL
+    for word in words:
+        if url_is_localhost(word):
+            yield PolicyHelper.allow()
+            return
+
+    # No localhost URL found
+    yield PolicyHelper.deny(
+        "By policy, curl is only allowed to localhost.\n"
+        "Use localhost, 127.0.0.1, or ::1 (e.g., `curl localhost:8000` or `curl 127.0.0.1:3000`)."
+    )
