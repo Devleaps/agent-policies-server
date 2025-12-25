@@ -20,6 +20,7 @@ SAFE_PATH_COMMANDS = [
     "du",
     "cut",
     "sort",
+    "sed",
 ]
 
 
