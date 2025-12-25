@@ -63,6 +63,14 @@ def path_appears_safe(path: str) -> tuple[bool, str]:
     if path.startswith('/'):
         return False, "absolute paths are not allowed"
 
+    # Check if path starts with ~ (tilde expansion)
+    if path.startswith('~'):
+        return False, "tilde-based paths (~) are not allowed"
+
+    # Check if path contains /tmp/
+    if path.startswith('/tmp/') or path == '/tmp':
+        return False, "/tmp paths are not allowed"
+
     # Check if path equals ..
     if path == '..':
         return False, "upward directory traversal (..) is not allowed"
@@ -79,22 +87,16 @@ def path_appears_safe(path: str) -> tuple[bool, str]:
 
 
 def path_in_command_appears_safe(command: str, command_name: str) -> tuple[bool, str]:
-    """
-    Extract paths from a command and check if they appear safe.
-
-    Args:
-        command: Full command string (e.g., "rm file.txt" or "find . -name '*.py'")
-        command_name: The command name to strip (e.g., "rm", "find", "mv")
-
-    Returns:
-        tuple[bool, str]: (is_safe, reason_if_unsafe)
-    """
+    """Extract paths from a command and check if they appear safe."""
     import re
 
-    # Extract paths from command (everything after the command name)
     paths_part = re.sub(rf'^{re.escape(command_name)}\s+', '', command)
+    
+    if paths_part == command:
+        if command.strip() == command_name:
+            return True, ""
+        paths_part = command[len(command_name):].strip()
 
-    # Check path safety
     return path_appears_safe(paths_part)
 
 

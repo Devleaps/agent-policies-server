@@ -31,11 +31,11 @@ def uv_tools_run_allow_rule(input_data: ToolUseEvent):
 
 
 def uv_pytest_allow_rule(input_data: ToolUseEvent):
-    """Allow pytest and uv run pytest."""
+    """Allow pytest and uv run pytest (with optional uv run flags)."""
     if not input_data.tool_is_bash:
         return
 
     command = input_data.command.strip()
 
-    if re.match(r'^(pytest|uv\s+run\s+pytest)\s+', command) or command in ('pytest', 'uv run pytest'):
+    if re.match(r'^(pytest|uv\s+run\s+.*pytest)\s+', command) or command in ('pytest', 'uv run pytest'):
         yield PolicyHelper.allow()
