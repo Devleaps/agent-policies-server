@@ -32,7 +32,7 @@ def create_post_file_edit_event():
 
 def test_non_python_file_skipped(create_post_file_edit_event):
     """Policy should skip non-Python files."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.txt", [
         ("added", "# Comment"),
@@ -45,7 +45,7 @@ def test_non_python_file_skipped(create_post_file_edit_event):
 
 def test_no_patches_skipped(create_post_file_edit_event):
     """Policy should skip if no patches."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = PostFileEditEvent(
         session_id="test-session",
@@ -61,7 +61,7 @@ def test_no_patches_skipped(create_post_file_edit_event):
 
 def test_low_comment_ratio_no_guidance(create_post_file_edit_event):
     """Policy should not yield guidance for low comment ratio (<40%)."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment"),
@@ -76,7 +76,7 @@ def test_low_comment_ratio_no_guidance(create_post_file_edit_event):
 
 def test_high_comment_ratio_yields_guidance(create_post_file_edit_event):
     """Policy should yield guidance when comment ratio > 40%."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment 1"),
@@ -93,7 +93,7 @@ def test_high_comment_ratio_yields_guidance(create_post_file_edit_event):
 
 def test_shebang_not_counted_as_comment(create_post_file_edit_event):
     """Shebang lines are counted as code, not as comments."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "#!/usr/bin/env python"),
@@ -108,7 +108,7 @@ def test_shebang_not_counted_as_comment(create_post_file_edit_event):
 
 def test_empty_lines_ignored(create_post_file_edit_event):
     """Empty lines should be ignored in ratio calculation."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment"),
@@ -125,7 +125,7 @@ def test_empty_lines_ignored(create_post_file_edit_event):
 
 def test_whitespace_only_lines_ignored(create_post_file_edit_event):
     """Lines with only whitespace should be ignored."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment"),
@@ -140,7 +140,7 @@ def test_whitespace_only_lines_ignored(create_post_file_edit_event):
 
 def test_ratio_exactly_40_percent_no_guidance(create_post_file_edit_event):
     """Policy should not trigger at exactly 40% (threshold is >40%)."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment"),
@@ -156,7 +156,7 @@ def test_ratio_exactly_40_percent_no_guidance(create_post_file_edit_event):
 
 def test_ratio_41_percent_yields_guidance(create_post_file_edit_event):
     """Policy should trigger for ratio just above 40%."""
-    from src.py.comment_ratio_guidance import comment_ratio_guidance_rule
+    from src.python.comment_ratio_guidance import comment_ratio_guidance_rule
 
     # 7 comments / 10 code = 41.18%
     event = create_post_file_edit_event("test.py", [

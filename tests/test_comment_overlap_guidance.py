@@ -32,7 +32,7 @@ def create_post_file_edit_event():
 
 def test_non_python_file_skipped(create_post_file_edit_event):
     """Policy should skip non-Python files."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.txt", [
         ("added", "# Initialize database"),
@@ -45,7 +45,7 @@ def test_non_python_file_skipped(create_post_file_edit_event):
 
 def test_no_patches_skipped(create_post_file_edit_event):
     """Policy should skip if no patches."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = PostFileEditEvent(
         session_id="test-session",
@@ -61,7 +61,7 @@ def test_no_patches_skipped(create_post_file_edit_event):
 
 def test_no_comments_no_guidance(create_post_file_edit_event):
     """Policy should not yield guidance if there are no comments."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "db = initialize_database()"),
@@ -74,7 +74,7 @@ def test_no_comments_no_guidance(create_post_file_edit_event):
 
 def test_comment_without_next_line_skipped(create_post_file_edit_event):
     """Policy should skip comments without adjacent code."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# This is a comment"),
@@ -86,7 +86,7 @@ def test_comment_without_next_line_skipped(create_post_file_edit_event):
 
 def test_shebang_not_analyzed(create_post_file_edit_event):
     """Shebang lines should not be analyzed as comments."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "#!/usr/bin/env python"),
@@ -99,7 +99,7 @@ def test_shebang_not_analyzed(create_post_file_edit_event):
 
 def test_comment_next_to_another_comment_skipped(create_post_file_edit_event):
     """Policy should skip if next line is also a comment."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Comment 1"),
@@ -112,7 +112,7 @@ def test_comment_next_to_another_comment_skipped(create_post_file_edit_event):
 
 def test_high_overlap_yields_guidance(create_post_file_edit_event):
     """Policy should yield guidance when >= 40% of comment words appear in code."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     # Comment: "Initialize database" -> {"initialize", "database"} (2 words)
     # Code: "database = initialize_database()" -> {"database", "initialize"} (2 words)
@@ -129,7 +129,7 @@ def test_high_overlap_yields_guidance(create_post_file_edit_event):
 
 def test_low_overlap_no_guidance(create_post_file_edit_event):
     """Policy should not yield guidance when < 40% of comment words appear in code."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Setup the system"),
@@ -145,7 +145,7 @@ def test_low_overlap_no_guidance(create_post_file_edit_event):
 
 def test_significant_overlap_example(create_post_file_edit_event):
     """Test overlap detection when >= 40% of comment words are in code."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Open config file"),
@@ -161,7 +161,7 @@ def test_significant_overlap_example(create_post_file_edit_event):
 
 def test_cache_overlap_example(create_post_file_edit_event):
     """Test comment with word overlap >= 40%."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Configure cache settings"),
@@ -177,7 +177,7 @@ def test_cache_overlap_example(create_post_file_edit_event):
 
 def test_stops_after_first_overlap(create_post_file_edit_event):
     """Policy should return after finding first overlap."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Initialize database"),
@@ -193,7 +193,7 @@ def test_stops_after_first_overlap(create_post_file_edit_event):
 
 def test_empty_line_between_comment_and_code(create_post_file_edit_event):
     """Policy should skip if there's an empty line between comment and code."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Initialize database"),
@@ -208,7 +208,7 @@ def test_empty_line_between_comment_and_code(create_post_file_edit_event):
 
 def test_minimal_overlap_just_under_threshold(create_post_file_edit_event):
     """Test overlap ratio just under 40% threshold."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "# Create new file system"),
@@ -224,7 +224,7 @@ def test_minimal_overlap_just_under_threshold(create_post_file_edit_event):
 
 def test_docstring_not_analyzed(create_post_file_edit_event):
     """Policy should only look at # comments, not docstrings."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ('added', '"""Initialize database connection"""'),
@@ -238,7 +238,7 @@ def test_docstring_not_analyzed(create_post_file_edit_event):
 
 def test_inline_comment_high_overlap(create_post_file_edit_event):
     """Policy should detect high overlap in inline comments."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "path = open_file(name)  # Open file"),
@@ -253,7 +253,7 @@ def test_inline_comment_high_overlap(create_post_file_edit_event):
 
 def test_inline_comment_low_overlap(create_post_file_edit_event):
     """Policy should not flag inline comments with low overlap."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "path = connect_to_server()  # Use primary server"),
@@ -268,7 +268,7 @@ def test_inline_comment_low_overlap(create_post_file_edit_event):
 
 def test_inline_comment_just_under_threshold(create_post_file_edit_event):
     """Policy should not trigger inline comments at exactly 40%."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "db_config = initialize_database()  # Initialize the database"),
@@ -283,7 +283,7 @@ def test_inline_comment_just_under_threshold(create_post_file_edit_event):
 
 def test_inline_comment_empty_comment(create_post_file_edit_event):
     """Policy should skip inline comments that are empty after #."""
-    from src.py.comment_overlap_guidance import comment_overlap_guidance_rule
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
 
     event = create_post_file_edit_event("test.py", [
         ("added", "code = function()  #"),
