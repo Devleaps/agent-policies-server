@@ -13,6 +13,7 @@ from src.universal.sleep_allow import sleep_duration_rule
 from src.universal.sudo_block import sudo_block_rule
 from src.universal.kill_block import kill_block_rule
 from src.universal.awk_block import awk_block_rule
+from src.universal.sqlite3_allow import sqlite3_safe_operations_rule
 from src.universal.legacy_code_guidance import legacy_code_guidance_rule
 
 # Middleware
@@ -42,6 +43,8 @@ all_rules = [
     sudo_block_rule,
     kill_block_rule,
     awk_block_rule,
+    # Database operations
+    sqlite3_safe_operations_rule,
 ]
 
 all_post_file_edit_rules = [
