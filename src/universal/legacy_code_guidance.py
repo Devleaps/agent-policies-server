@@ -17,7 +17,8 @@ def legacy_code_guidance_rule(input_data: PostFileEditEvent):
     legacy_patterns = [
         r'\blegacy\b',
         r'\bbackwards\s+compatibility\b',
-        r'\bbackward\s+compatibility\b'
+        r'\bbackward\s+compatibility\b',
+        r'\bdeprecated\b'
     ]
 
     for patch in input_data.structured_patch:
@@ -26,7 +27,7 @@ def legacy_code_guidance_rule(input_data: PostFileEditEvent):
             for pattern in legacy_patterns:
                 if re.search(pattern, line):
                     yield PolicyHelper.guidance(
-                        "Detected a note on backwards compatibility or legacy in code."
-                        "Are you sure about backwards compatability as a requirement? If not explicitly requested, check with the user first."
+                        "Detected a note on backwards compatibility, legacy, or deprecated code. "
+                        "Are you sure about backwards compatibility as a requirement? If not explicitly requested, check with the user first."
                     )
                     return
