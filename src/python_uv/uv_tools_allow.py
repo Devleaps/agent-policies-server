@@ -17,25 +17,17 @@ def uv_sync_allow_rule(input_data: ToolUseEvent):
 
 
 def uv_tools_run_allow_rule(input_data: ToolUseEvent):
-    """Allow uv run black/ruff/mypy."""
+    """Allow uv run black/ruff/mypy/pytest."""
     if not input_data.tool_is_bash:
         return
 
     command = input_data.command.strip()
 
-    tools = ['black', 'ruff', 'mypy']
+    tools = ['black', 'ruff', 'mypy', 'pytest']
 
     for tool in tools:
         if re.match(rf'^uv\s+run\s+{tool}\s+', command):
             yield PolicyHelper.allow()
-
-
-def uv_pytest_allow_rule(input_data: ToolUseEvent):
-    """Allow pytest and uv run pytest (with optional uv run flags)."""
-    if not input_data.tool_is_bash:
-        return
-
-    command = input_data.command.strip()
-
-    if re.match(r'^(pytest|uv\s+run\s+.*pytest)\s+', command) or command in ('pytest', 'uv run pytest'):
-        yield PolicyHelper.allow()
+        # Also match command without arguments (e.g., "uv run pytest")
+        if command == f'uv run {tool}':
+            yield PolicyHelper.allow()

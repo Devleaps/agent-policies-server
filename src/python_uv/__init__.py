@@ -16,7 +16,6 @@ from src.python_uv.uv_tools_deny import uv_tools_direct_deny_rule
 from src.python_uv.uv_tools_allow import (
     uv_sync_allow_rule,
     uv_tools_run_allow_rule,
-    uv_pytest_allow_rule,
 )
 from src.python_uv.uv_pyproject_guidance import uv_pyproject_guidance_rule
 
@@ -31,7 +30,6 @@ all_rules = [
     uv_requirements_txt_deny_rule,
     uv_tools_direct_deny_rule,
     uv_sync_allow_rule,
-    uv_pytest_allow_rule,
     uv_tools_run_allow_rule,
 ]
 

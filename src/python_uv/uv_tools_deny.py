@@ -6,7 +6,7 @@ from src.utils import PolicyHelper
 
 
 def uv_tools_direct_deny_rule(input_data: ToolUseEvent):
-    """Deny direct black/ruff/mypy - must use uv run."""
+    """Deny direct black/ruff/mypy/pytest - must use uv run."""
     if not input_data.tool_is_bash:
         return
 
@@ -15,11 +15,18 @@ def uv_tools_direct_deny_rule(input_data: ToolUseEvent):
     tools = {
         'black': 'uv run black .',
         'ruff': 'uv run ruff check . OR uv run ruff format .',
-        'mypy': 'uv run mypy .'
+        'mypy': 'uv run mypy .',
+        'pytest': 'uv run pytest'
     }
 
     for tool, usage in tools.items():
         if re.match(rf'^{tool}\s+', command):
+            yield PolicyHelper.deny(
+                f"{tool.capitalize()} must be run via uv.\n"
+                f"Use: {usage}"
+            )
+        # Also match command without arguments (e.g., just "pytest")
+        if command == tool:
             yield PolicyHelper.deny(
                 f"{tool.capitalize()} must be run via uv.\n"
                 f"Use: {usage}"
