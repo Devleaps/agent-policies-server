@@ -15,8 +15,13 @@ def rm_safe_operations_rule(input_data: ToolUseEvent):
     if not re.match(r'^rm\s+', command):
         return
 
-    # Block all rm commands
     yield PolicyHelper.deny(
         "The `rm` command is not allowed.\n"
         "Always use `trash` instead. The macOS `trash` command safely moves files to Trash."
     )
+
+    # Check if command contains absolute paths
+    if re.search(r'\s+(/[^\s]*|~/[^\s]*)', command):
+        yield PolicyHelper.deny(
+            "Absolute paths are not allowed."
+        )
