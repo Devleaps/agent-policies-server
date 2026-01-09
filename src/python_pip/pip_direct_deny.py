@@ -15,6 +15,6 @@ def pip_direct_deny_rule(input_data: ToolUseEvent):
     # Match direct pip usage (but not uv run pip)
     if re.match(r'^pip(\d+(\.\d+)?)?\s+', command):
         yield PolicyHelper.deny(
-            "Direct pip usage is not allowed.\n"
-            "Use 'uv run pip' or 'uv sync' to manage dependencies."
+            "Direct `pip` usage is not allowed.\n"
+            "Use `uv run pip` or `uv sync` to manage dependencies."
         )

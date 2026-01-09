@@ -41,7 +41,7 @@ def git_commit_rule(input_data: ToolUseEvent):
 
     # Deny anything else
     yield PolicyHelper.deny(
-        "By policy, git commit requires the -m flag with a quoted message or --amend.\n"
+        "By policy, `git commit` requires the `-m` flag with a quoted message or `--amend`.\n"
         'Use `git commit -m "your message"` or `git commit --amend`.'
     )
 

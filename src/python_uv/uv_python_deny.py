@@ -53,6 +53,6 @@ def uv_python_run_escape_deny_rule(input_data: ToolUseEvent):
 
     if re.match(r'^uv\s+run\s+python(\d+(\.\d+)?)?\s+', command):
         yield PolicyHelper.deny(
-            "Direct python execution not allowed, even via uv run.\n"
+            "Direct `python` execution not allowed, even via `uv run`.\n"
             "Use `pytest` for tests, or place scripts in `scripts/` folder for user review."
         )
