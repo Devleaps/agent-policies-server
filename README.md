@@ -36,6 +36,13 @@ uv run python -m src.main
 
 The server will start on `http://localhost:8338` with all policies active.
 
+### Running with Docker
+
+```bash
+docker build -t agent-policy-server .
+docker run -p 8338:8338 agent-policy-server
+```
+
 ## Testing
 
 ```bash

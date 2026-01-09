@@ -1,0 +1,95 @@
+---
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    name: Push Docker image to multiple registries
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      contents: write
+      attestations: write
+      id-token: write
+    outputs:
+      version: ${{ steps.semver.outputs.next }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Get Next Version
+        id: semver
+        uses: ietf-tools/semver-action@v1.9.0
+        with:
+          token: ${{ github.token }}
+          branch: main
+          fallbackTag: v0.0.0
+
+      - name: Git Tag
+        env:
+          GIT_TAG: ${{ steps.semver.outputs.next }}
+        run: |
+          if [ -z "$(git tag --list $GIT_TAG)" ]; then
+            git tag $GIT_TAG
+            git push origin tag $GIT_TAG
+          fi
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.9.0
+
+      - name: Set tag for Docker image
+        id: tag-variable
+        env:
+          REPOSITORY: ${{ github.repository }}
+          TAG: ${{ steps.semver.outputs.next }}
+        run: |
+            repository_lower=$(echo $REPOSITORY | tr '[:upper:]' '[:lower:]')
+            echo DOCKER_TAG="ghcr.io/$repository_lower:$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker images
+        id: push
+        uses: docker/build-push-action@v6.14.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.tag-variable.outputs.DOCKER_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate changelog
+        id: changelog
+        uses: requarks/changelog-action@v1.10.2
+        with:
+          token: ${{ github.token }}
+          tag: ${{ steps.semver.outputs.next }}
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.16.0
+        with:
+          name: ${{ steps.semver.outputs.next }}
+          makeLatest: true
+          body: ${{ steps.changelog.outputs.changes }}
+          tag: ${{ steps.semver.outputs.next }}
+
+  deploy:
+    name: Deploy to ArgoCD
+    needs:
+      - build-and-push
+    uses: Devleaps/workflows/.github/workflows/argocd-deploy.yaml@main
+    secrets: inherit
+    with:
+      application: agent-internal-policies
+      version: ${{ needs.build-and-push.outputs.version }}
