@@ -455,10 +455,6 @@ The server uses environment variables and the `devleaps-agent-policies` framewor
 - **pydantic** - Data validation
 - **pytest** - Testing framework
 
-## License
-
-This is a personal project by Philipp Gayret. Refer to the repository license for usage terms.
-
 ## Development
 
 ### Running Locally

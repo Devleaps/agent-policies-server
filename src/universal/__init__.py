@@ -17,6 +17,7 @@ from src.universal.sqlite3_allow import sqlite3_safe_operations_rule
 from src.universal.absolute_path_executables import absolute_path_executable_rule
 from src.universal.legacy_code_guidance import legacy_code_guidance_rule
 from src.universal.readme_license_guidance import readme_license_guidance_rule
+from src.universal.tmp_cat_block import tmp_cat_block_rule
 
 # Middleware
 from src.universal.bash_middleware import all_middleware as bash_middleware
@@ -24,30 +25,22 @@ from src.universal.time_middleware import all_middleware as time_middleware
 from src.universal.timeout_middleware import all_middleware as timeout_middleware
 
 all_rules = [
-    # Block absolute path and .venv/bin executables
     absolute_path_executable_rule,
-    # Common whitelisted commands (pwd, ps, lsof, which, grep, nslookup, pkill, pytest, tflint, git/terraform subcommands)
     whitelist_always_rule,
-    # Safe path commands (ls, cat, head, tail, wc, diff, cp, mkdir, trash)
     whitelist_safe_paths_rule,
-    # Custom whitelisted commands (presentations)
     custom_always_rule,
-    # Directory navigation
     cd_upward_navigation_rule,
     cd_safe_operations_rule,
-    # File operations
     rm_safe_operations_rule,
     rmdir_safe_operations_rule,
     mv_safe_operations_rule,
-    # Find operations
+    tmp_cat_block_rule,
     find_exec_rule,
     find_safe_operations_rule,
-    # Process control
     sleep_duration_rule,
     sudo_block_rule,
     kill_block_rule,
     awk_block_rule,
-    # Database operations
     sqlite3_safe_operations_rule,
 ]
 
