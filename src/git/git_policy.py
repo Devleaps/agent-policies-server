@@ -18,9 +18,10 @@ def git_add_rule(input_data: ToolUseEvent):
         yield PolicyHelper.allow()
         return
 
-    yield PolicyHelper.deny(
-        "By policy, git add requires the -A flag.\n"
-        "Use `git add -A` to stage all changes."
+    yield PolicyHelper.allow()
+    yield PolicyHelper.guidance(
+        "When using `git add` with specific files, ensure you're not missing any files "
+        "that would have been caught by `git add -A .`"
     )
 
 
