@@ -1,9 +1,8 @@
-"""Allows rm with safe paths only (blocks absolute paths and upward traversal)."""
+"""Blocks all rm commands and suggests trash instead."""
 
 import re
-from typing import Optional
 from devleaps.policies.server.common.models import ToolUseEvent
-from src.utils import PolicyHelper, path_in_command_appears_safe
+from src.utils import PolicyHelper
 
 
 def rm_safe_operations_rule(input_data: ToolUseEvent):
@@ -16,22 +15,8 @@ def rm_safe_operations_rule(input_data: ToolUseEvent):
     if not re.match(r'^rm\s+', command):
         return
 
-    # Block rm with options/flags
-    if re.search(r'^rm\s+(-|--)', command):
-        yield PolicyHelper.deny(
-            "By policy, rm with options/flags is not allowed.\n"
-            "Use plain `rm` without any flags (e.g., `rm file.txt` or `rm subdir/file.txt`).\n"
-            "On macOS, consider using `trash` command for safer file deletion."
-        )
-
-    # Check path safety using common heuristic
-    is_safe, reason = path_in_command_appears_safe(command, "rm")
-    if not is_safe:
-        yield PolicyHelper.deny(
-            f"By policy, rm with {reason}.\n"
-            "Use relative paths only (e.g., `rm file.txt` or `rm subdir/file.txt`).\n"
-            "If you need to remove files upward, first `cd` to the target directory."
-        )
-
-    # Allow all other rm operations
-    yield PolicyHelper.allow()
+    # Block all rm commands
+    yield PolicyHelper.deny(
+        "The `rm` command is not allowed.\n"
+        "Always use `trash` instead. The macOS `trash` command safely moves files to Trash."
+    )
