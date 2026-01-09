@@ -9,6 +9,7 @@ COPY src ./src
 COPY bin ./bin
 
 RUN uv pip install --system devleaps-agent-policies
+RUN uv pip install --system httpx
 RUN uv pip install --system --no-deps .
 
 EXPOSE 8338

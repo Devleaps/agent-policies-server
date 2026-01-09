@@ -14,6 +14,7 @@ from src.cloud.terragrunt_policy import (
     terragrunt_default_block_rule
 )
 from src.cloud.gh_api import gh_api_rule
+from src.cloud.docker_build import docker_build_rule
 
 all_rules = [
     azure_cli_list_rule,
@@ -26,4 +27,5 @@ all_rules = [
     terragrunt_plan_rule,
     terragrunt_default_block_rule,
     gh_api_rule,
+    docker_build_rule,
 ]
