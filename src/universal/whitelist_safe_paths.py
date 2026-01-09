@@ -21,6 +21,7 @@ SAFE_PATH_COMMANDS = [
     "cut",
     "sort",
     "sed",
+    "touch",
 ]
 
 

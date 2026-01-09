@@ -29,6 +29,7 @@ hook_server.pid
 hook_client.pid
 .hook_server_port
 internal/
+FEATURES.md
 
 # OS
 .DS_Store
