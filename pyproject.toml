@@ -8,7 +8,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-devleaps-agent-policies = { path = "../../DevLeaps/agent-policies", editable = true }
+devleaps-agent-policies = { path = "../agent-policies", editable = true }
 
 [project.optional-dependencies]
 dev = [
