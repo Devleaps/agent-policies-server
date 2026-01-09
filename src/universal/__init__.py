@@ -14,6 +14,7 @@ from src.universal.sudo_block import sudo_block_rule
 from src.universal.kill_block import kill_block_rule
 from src.universal.awk_block import awk_block_rule
 from src.universal.sqlite3_allow import sqlite3_safe_operations_rule
+from src.universal.absolute_path_executables import absolute_path_executable_rule
 from src.universal.legacy_code_guidance import legacy_code_guidance_rule
 
 # Middleware
@@ -22,6 +23,8 @@ from src.universal.time_middleware import all_middleware as time_middleware
 from src.universal.timeout_middleware import all_middleware as timeout_middleware
 
 all_rules = [
+    # Block absolute path and .venv/bin executables
+    absolute_path_executable_rule,
     # Common whitelisted commands (pwd, ps, lsof, which, grep, nslookup, pkill, pytest, tflint, git/terraform subcommands)
     whitelist_always_rule,
     # Safe path commands (ls, cat, head, tail, wc, diff, cp, mkdir, trash)
