@@ -71,4 +71,22 @@ def git_mv_rule(input_data: ToolUseEvent):
     yield PolicyHelper.allow()
 
 
-all_rules = [git_add_rule, git_commit_rule, git_mv_rule]
+def git_push_force_rule(input_data: ToolUseEvent):
+    """Block git push with --force or -f flag."""
+    if not input_data.tool_is_bash:
+        return
+
+    command = input_data.command.strip()
+
+    if not re.match(r'^git\s+push\s+', command):
+        return
+
+    # Check for --force or -f flag
+    if re.search(r'--force\b', command) or re.search(r'\s-f\b', command):
+        yield PolicyHelper.deny(
+            "Force push is not allowed.\n"
+            "Force pushing can overwrite history and cause data loss for other collaborators."
+        )
+
+
+all_rules = [git_add_rule, git_commit_rule, git_mv_rule, git_push_force_rule]
