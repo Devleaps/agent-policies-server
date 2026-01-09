@@ -1,9 +1,9 @@
-"""Tests for uv pip install guidance."""
+"""Tests for uv pip install blocking."""
 
 import pytest
 from devleaps.policies.server.common.models import ToolUseEvent
 from devleaps.policies.server.common.enums import SourceClient
-from src.python_uv.uv_pip_install_guidance import uv_pip_install_guidance_rule
+from src.python_uv.uv_pip_install_guidance import uv_pip_install_deny_rule
 
 
 @pytest.fixture
@@ -21,32 +21,27 @@ def create_tool_use_event():
     return _create
 
 
-def test_uv_pip_install_triggers_guidance(create_tool_use_event):
-    """uv pip install should trigger guidance to use uv add."""
+def test_uv_pip_install_denied(create_tool_use_event):
+    """uv pip install should be denied with suggestion to use uv add."""
     event = create_tool_use_event("uv pip install requests")
-    results = list(uv_pip_install_guidance_rule(event))
+    results = list(uv_pip_install_deny_rule(event))
 
-    # Should yield allow + guidance
-    decisions = [r for r in results if hasattr(r, 'action')]
-    guidance = [r for r in results if hasattr(r, 'content')]
-
-    assert len(decisions) == 1
-    assert decisions[0].action == "allow"
-    assert len(guidance) == 1
-    assert "uv add" in guidance[0].content
+    assert len(results) == 1
+    assert results[0].action == "deny"
+    assert "uv add" in results[0].reason
 
 
-def test_uv_pip_install_package_with_version(create_tool_use_event):
-    """uv pip install with version should trigger guidance."""
+def test_uv_pip_install_package_with_version_denied(create_tool_use_event):
+    """uv pip install with version should be denied."""
     event = create_tool_use_event("uv pip install requests==2.28.0")
-    results = list(uv_pip_install_guidance_rule(event))
+    results = list(uv_pip_install_deny_rule(event))
 
-    guidance = [r for r in results if hasattr(r, 'content')]
-    assert len(guidance) == 1
+    assert len(results) == 1
+    assert results[0].action == "deny"
 
 
-def test_uv_pip_other_commands_no_guidance(create_tool_use_event):
-    """uv pip commands other than install should not trigger guidance."""
+def test_uv_pip_other_commands_match_no_policies(create_tool_use_event):
+    """uv pip commands other than install should match no policies."""
     event = create_tool_use_event("uv pip list")
-    results = list(uv_pip_install_guidance_rule(event))
+    results = list(uv_pip_install_deny_rule(event))
     assert len(results) == 0
