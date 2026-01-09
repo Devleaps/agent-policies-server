@@ -92,4 +92,20 @@ def git_push_force_rule(input_data: ToolUseEvent):
         )
 
 
-all_rules = [git_add_rule, git_commit_rule, git_mv_rule, git_push_force_rule]
+def git_rm_rule(input_data: ToolUseEvent):
+    """Block git rm and suggest using trash instead."""
+    if not input_data.tool_is_bash:
+        return
+
+    command = input_data.command.strip()
+
+    if not re.match(r'^git\s+rm\s+', command):
+        return
+
+    yield PolicyHelper.deny(
+        "`git rm` is not allowed. Use `trash` instead.\n"
+        "The macOS `trash` command safely moves files to Trash."
+    )
+
+
+all_rules = [git_add_rule, git_commit_rule, git_mv_rule, git_push_force_rule, git_rm_rule]
