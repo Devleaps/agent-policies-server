@@ -16,6 +16,7 @@ from src.universal.awk_block import awk_block_rule
 from src.universal.sqlite3_allow import sqlite3_safe_operations_rule
 from src.universal.absolute_path_executables import absolute_path_executable_rule
 from src.universal.legacy_code_guidance import legacy_code_guidance_rule
+from src.universal.readme_license_guidance import readme_license_guidance_rule
 
 # Middleware
 from src.universal.bash_middleware import all_middleware as bash_middleware
@@ -52,6 +53,7 @@ all_rules = [
 
 all_post_file_edit_rules = [
     legacy_code_guidance_rule,
+    readme_license_guidance_rule,
 ]
 
 all_middleware = [
