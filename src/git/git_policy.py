@@ -30,10 +30,11 @@ def git_commit_rule(input_data: ToolUseEvent):
 
     command = input_data.command.strip()
 
-    if not re.match(r'^git\s+commit\s+', command):
+    if not re.match(r'^git\s+commit(?:\s|$)', command):
         return
 
-    if re.match(r'^git\s+commit\s+-m\s+["\']', command):
+    # Check for -m flag anywhere in the command with a quoted message
+    if re.search(r'\s-m\s+["\']', command):
         yield PolicyHelper.allow()
         return
 
