@@ -33,14 +33,15 @@ def git_commit_rule(input_data: ToolUseEvent):
     if not re.match(r'^git\s+commit(?:\s|$)', command):
         return
 
-    # Check for -m flag anywhere in the command with a quoted message
-    if re.search(r'\s-m\s+["\']', command):
+    # Allow if -m flag with quoted message OR --amend flag
+    if re.search(r'\s-m\s+["\']', command) or re.search(r'--amend\b', command):
         yield PolicyHelper.allow()
         return
 
+    # Deny anything else
     yield PolicyHelper.deny(
-        "By policy, git commit requires the -m flag with a quoted message.\n"
-        'Use `git commit -m "your message"` format.'
+        "By policy, git commit requires the -m flag with a quoted message or --amend.\n"
+        'Use `git commit -m "your message"` or `git commit --amend`.'
     )
 
 
