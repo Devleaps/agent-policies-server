@@ -19,8 +19,15 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
     Analyzes what percentage of comment words appear in the adjacent code line.
     Checks both standalone comments and inline comments (code # comment).
     Provides guidance when >= 40% of comment words appear in the code.
+
+    Skips __init__.py files as they typically contain organizational comments
+    that group related imports/exports.
     """
     if not input_data.file_path.endswith('.py') or not input_data.structured_patch:
+        return
+
+    # Skip __init__.py files - these typically contain organizational comments
+    if input_data.file_path.endswith('__init__.py'):
         return
 
     for patch in input_data.structured_patch:
@@ -47,7 +54,8 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
                     if overlap_ratio >= 0.4:
                         yield PolicyHelper.guidance(
                             "Ensure comments add value beyond describing what's obvious from the code. "
-                            "This comment may be redundant with the code it describes."
+                            "This comment may be redundant with the code it describes. "
+                            "Comments are fine when they add value beyond the code or separate segments of code."
                         )
                         return
 
@@ -71,6 +79,7 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
                         if overlap_ratio >= 0.4:
                             yield PolicyHelper.guidance(
                                 "Ensure comments add value beyond describing what's obvious from the code. "
-                                "This comment may be redundant with the code it describes."
+                                "This comment may be redundant with the code it describes. "
+                                "Comments are fine when they add value beyond the code or separate segments of code."
                             )
                             return

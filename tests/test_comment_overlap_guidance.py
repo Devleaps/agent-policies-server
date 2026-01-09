@@ -292,3 +292,17 @@ def test_inline_comment_empty_comment(create_post_file_edit_event):
     results = list(comment_overlap_guidance_rule(event))
     # Empty comment after #, should skip
     assert len(results) == 0
+
+
+def test_init_py_files_skipped(create_post_file_edit_event):
+    """Policy should skip __init__.py files as they contain organizational comments."""
+    from src.python.comment_overlap_guidance import comment_overlap_guidance_rule
+
+    event = create_post_file_edit_event("src/universal/__init__.py", [
+        ("added", "# Block absolute path and .venv/bin executables"),
+        ("added", "absolute_path_executable_rule,"),
+    ])
+
+    results = list(comment_overlap_guidance_rule(event))
+    # __init__.py files should be skipped entirely
+    assert len(results) == 0
