@@ -69,23 +69,40 @@ pytest -k "test_name"
 src/
 ├── main.py                    # Server entry point and policy registration
 ├── utils.py                   # PolicyHelper and security utilities
-├── universal/                 # Universal file/system policies
-│   ├── whitelist_always.py   # Always-allowed commands
-│   ├── whitelist_safe_paths.py  # Safe-path commands
-│   ├── bash_middleware.py    # Command splitting (&&, |)
-│   ├── *_middleware.py       # Other middleware
-│   └── *.py                  # Individual command policies
-├── git/                      # Git command policies
-├── cloud/                    # Cloud CLI tools (kubectl, terraform, az)
-├── network/                  # Network command policies
-├── python/                   # Python shared policies
-│   └── *_guidance.py         # PostFileEditEvent guidance rules
-├── js/                       # JavaScript/Node.js policies
-├── python_pip/               # Python-pip bundle (opt-in)
-└── python_uv/                # Python-uv bundle (opt-in)
+├── core/                      # Core command parsing and evaluation
+│   ├── bash_evaluator.py     # Rule evaluation logic
+│   ├── command_parser.py     # Bash command parser
+│   ├── matchers.py           # Command matchers
+│   ├── predicates.py         # Validation predicates
+│   └── rule_builder.py       # Fluent API for rules
+├── bundles/                   # Policy bundles
+│   ├── universal/            # Universal policies (always enforced)
+│   │   ├── universal.py      # Core file/system policies
+│   │   ├── cloud.py          # Cloud CLI tools (kubectl, terraform, az)
+│   │   ├── git.py            # Git command policies
+│   │   ├── js.py             # JavaScript/Node.js policies
+│   │   ├── network.py        # Network command policies
+│   │   └── guidance/         # PostFileEditEvent guidance rules
+│   ├── python_pip/           # Python-pip bundle (includes universal + pip policies)
+│   └── python_uv/            # Python-uv bundle (includes universal + uv policies)
+└── middleware/                # Middleware (currently empty)
 
 tests/
-└── test_*.py                 # Test files
+├── core/                      # Core functionality tests
+│   ├── test_bash_evaluator.py
+│   ├── test_command_parser.py
+│   ├── test_fluent_api.py
+│   └── test_heredoc_parsing.py
+├── bundles/                   # Bundle tests
+│   ├── universal/            # Universal bundle tests
+│   │   ├── guidance/         # Guidance rule tests
+│   │   └── test_*.py
+│   ├── python_pip/           # Python-pip bundle tests
+│   ├── python_uv/            # Python-uv bundle tests
+│   ├── test_combined_bundles.py
+│   └── test_complex_scenarios.py
+├── conftest.py               # Shared test fixtures
+└── helpers.py                # Test helper functions
 ```
 
 ### Core Components
@@ -114,23 +131,21 @@ def rule_name(input_data: ToolUseEvent):
 - `halt()` - Stop entire process
 - `guidance(content)` - Provide non-blocking advice
 
-#### 2. Middleware
+#### 2. Bundle Architecture
 
-Middleware preprocesses tool use events before policy evaluation:
+Policy bundles are self-contained sets of rules. The `python_pip` and `python_uv` bundles include all universal rules plus bundle-specific rules:
 
 ```python
-def middleware_function(input_data: ToolUseEvent):
-    """Transform or split commands before policy evaluation."""
-    # Can yield multiple events from one input
-    if '&&' in input_data.command:
-        # Split into separate events
-        for cmd in commands:
-            yield ToolUseEvent(...)
-    else:
-        yield input_data
+# python_uv bundle includes universal rules + uv-specific rules
+from src.bundles.universal import all_bash_rules as universal_bash_rules
+
+all_bash_rules = [
+    *universal_bash_rules,  # All universal rules
+    *policy.all_rules,      # UV-specific rules
+]
 ```
 
-Examples: command splitting (`cmd1 && cmd2`), stripping time/timeout prefixes.
+This ensures that clients selecting a bundle get comprehensive policy coverage without needing to enable multiple bundles.
 
 #### 3. Event Types
 
@@ -169,10 +184,10 @@ yield PolicyHelper.guidance("Consider using X instead of Y")
 
 ### Rule Evaluation Flow
 
-1. **Middleware runs first** and can transform/split events
-2. **Rules evaluated in registration order** (as defined in `src/main.py`)
-3. **First rule that yields a decision wins**
-4. **If no rules yield a decision**, default policy applies (typically deny)
+1. **Rules evaluated in registration order** (as defined in `src/main.py`)
+2. **All matching rules yield decisions** for the command
+3. **Decision precedence**: DENY > ASK > ALLOW
+4. **If no rules match**, the evaluator yields ASK for user approval
 
 ### Policy Organization Patterns
 
@@ -199,19 +214,18 @@ Individual files for commands requiring special logic:
 
 ### Universal vs. Bundle Policies
 
-**Universal Policies** (always enforced):
+**Default Bundle** (universal policies):
 ```python
-registry.register_all_handlers(ToolUseEvent, universal.all_rules)
-registry.register_all_handlers(ToolUseEvent, git.all_rules)
+registry.register_handler(ToolUseEvent, universal.bash_rules_bundle_universal, bundle="default")
 ```
 
-**Bundle Policies** (opt-in by client):
+**Specialized Bundles** (include universal + bundle-specific policies):
 ```python
-registry.register_all_handlers(ToolUseEvent, python_pip.all_rules, bundle="python-pip")
-registry.register_all_handlers(ToolUseEvent, python_uv.all_rules, bundle="python-uv")
+registry.register_handler(ToolUseEvent, python_pip.bash_rules_bundle_python_pip, bundle="python-pip")
+registry.register_handler(ToolUseEvent, python_uv.bash_rules_bundle_python_uv, bundle="python-uv")
 ```
 
-Clients enable bundles via `--bundle python-pip` or `--bundle python-uv` flags.
+The `python_pip` and `python_uv` bundles **include all universal rules** plus their specific policies, so clients only need to select one bundle. Clients specify bundles via configuration or command-line flags.
 
 ### Session State Management
 
@@ -298,46 +312,12 @@ all_rules = [
 3. **Register in main**: `src/main.py`
 
 ```python
-from src import {category}
+from src.bundles import {category}
 
 def setup_all_policies():
     registry = get_registry()
-    registry.register_all_handlers(ToolUseEvent, {category}.all_rules)
+    registry.register_handler(ToolUseEvent, {category}.bash_rules_bundle, bundle="{category}")
 ```
-
-### Option 3: Add Middleware
-
-For transforming commands before policy evaluation:
-
-1. **Create middleware file**: `src/{category}/your_middleware.py`
-
-```python
-"""Middleware for transforming commands."""
-
-from devleaps.policies.server.common.models import ToolUseEvent
-
-def your_middleware(input_data: ToolUseEvent):
-    """Transform commands before policy evaluation."""
-    if not input_data.tool_is_bash:
-        yield input_data
-        return
-
-    # Transform or split commands
-    if '&&' in input_data.command:
-        for cmd in input_data.command.split('&&'):
-            yield ToolUseEvent(
-                session_id=input_data.session_id,
-                source_client=input_data.source_client,
-                tool_name=input_data.tool_name,
-                tool_is_bash=True,
-                command=cmd.strip(),
-                parameters={"command": cmd.strip()}
-            )
-    else:
-        yield input_data
-```
-
-2. **Register middleware**: Update `src/{category}/__init__.py` and `src/main.py`
 
 ## Writing Tests
 
@@ -394,13 +374,13 @@ def test_your_command_denied(create_tool_use_event):
 
 ```python
 # Always allowed
-pwd, ps, lsof, which, grep
+pwd, ps, lsof, which, grep, echo
 
 # Workspace-relative paths only
-ls, cat, head, tail, mkdir, cp, touch
+ls, cat, head, tail, mkdir, cp, touch, mv
 
 # Blocked
-sudo, kill, awk, rm (use trash instead)
+sudo, kill, awk, xargs, timeout, time, rm (use trash instead)
 ```
 
 ### Git Commands
@@ -473,25 +453,40 @@ uv run python -m src.main
 # In another terminal, send test requests to http://localhost:8338
 ```
 
-### Adding New Policy Categories
+### Adding New Policy Bundles
 
-1. Create new directory: `src/new_category/`
-2. Add `__init__.py` with `all_rules = []` export
-3. Implement policy rules in separate files
+1. Create new directory: `src/bundles/new_bundle/`
+2. Add `__init__.py` with bundle function export
+3. Optionally include universal rules for self-contained bundle:
+
+```python
+from src.bundles.universal import all_bash_rules as universal_bash_rules
+from src.bundles.new_bundle import policy
+
+all_bash_rules = [
+    *universal_bash_rules,  # Include universal rules
+    *policy.all_rules,      # Bundle-specific rules
+]
+
+def bash_rules_bundle_new_bundle(event: ToolUseEvent):
+    """Evaluate event against new bundle rules."""
+    yield from evaluate_bash_rules(event, all_bash_rules)
+```
+
 4. Register in `src/main.py`:
 
 ```python
-from src import new_category
+from src.bundles import new_bundle
 
 def setup_all_policies():
     registry = get_registry()
-    registry.register_all_handlers(ToolUseEvent, new_category.all_rules)
+    registry.register_handler(ToolUseEvent, new_bundle.bash_rules_bundle_new_bundle, bundle="new-bundle")
 ```
 
 ### Code Organization Principles
 
-- **Keep whitelists centralized** - Add simple commands to existing whitelist files
-- **One file per complex policy** - Commands with special logic get their own file
-- **Middleware for transformations** - Use middleware to normalize/split commands
-- **Tests mirror implementation** - Test file names match policy file names
-- **Security first** - Default to deny, require explicit allow rules
+- **Bundles are self-contained** - Specialized bundles include universal rules plus bundle-specific policies
+- **Tests mirror src/ structure** - Test directory organization matches src/ directory structure
+- **Block wrapper commands** - Commands like `timeout`, `time`, and `xargs` that can bypass policy controls are blocked
+- **Safe paths by default** - File operations require workspace-relative paths (no `..`, `/`, `~`)
+- **Security first** - Default to ASK for unmatched commands, require explicit allow rules
