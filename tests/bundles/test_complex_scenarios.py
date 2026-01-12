@@ -188,3 +188,10 @@ def test_commands_with_dashes_in_arguments(bash_event):
     """Test that arguments starting with dashes are parsed correctly."""
     assert_allow(bash_rules_bundle_universal, bash_event("git add -- -filename-with-dashes.txt"))
     assert_allow(bash_rules_bundle_universal, bash_event('git commit -m "-- this is not a flag"'))
+
+
+def test_chained_cd_rmdir_with_stderr_redirect_and_fallback(bash_event):
+    """Test cd && rmdir with stderr redirect and || true fallback."""
+    assert_allow(bash_rules_bundle_universal, bash_event(
+        "cd project-dir && rmdir dir1 dir2 dir3 2>/dev/null || true"
+    ))

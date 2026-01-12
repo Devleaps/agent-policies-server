@@ -162,6 +162,9 @@ wc_rule = command("wc").with_arguments(safe_path).allow()
 which_rule = command("which").allow()
 
 
+true_rule = command("true").allow()
+
+
 sleep_duration_rule = (
     command("sleep")
     .with_argument(max_value(60))
@@ -236,19 +239,21 @@ def sqlite3_read_only_rule(event: ToolUseEvent, parsed):
     )
 
 
-def no_tmp_redirect(path: str):
-    """Predicate: disallow redirects to /tmp/."""
-    if path.startswith('/tmp/'):
-        return False, "redirects to /tmp/ are not allowed"
+def safe_redirect_path(path: str):
+    """Predicate: disallow redirects to /tmp/, /home/, and /etc/."""
+    forbidden_prefixes = ['/tmp/', '/home/', '/etc/']
+    for prefix in forbidden_prefixes:
+        if path.startswith(prefix):
+            return False, f"redirects to {prefix} are not allowed"
     return True, ""
 
 
-tmp_redirect_deny_rule = (
+unsafe_redirect_deny_rule = (
     command(matches_any)
-    .forbid_redirects(no_tmp_redirect)
+    .forbid_redirects(safe_redirect_path)
     .deny(
-        "Writing to `/tmp/` is not allowed.\n"
-        "Use workspace-relative paths for temporary files instead."
+        "Writing to `/tmp/`, `/home/`, or `/etc/` is not allowed.\n"
+        "Use workspace-relative paths instead."
     )
 )
 
@@ -394,9 +399,10 @@ all_rules = [
     tflint_rule,
     time_block_rule,
     timeout_block_rule,
-    tmp_redirect_deny_rule,
+    unsafe_redirect_deny_rule,
     touch_rule,
     trash_rule,
+    true_rule,
     venv_bin_deny_rule,
     wc_rule,
     which_rule,
