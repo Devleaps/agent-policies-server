@@ -19,9 +19,9 @@ def test_tmp_redirect_safe_paths(bash_event):
 
 
 def test_tmp_redirect_heredoc_unparseable(bash_event):
-    """Heredoc commands can't be parsed (incomplete) so default to ASK."""
-    assert_pass(bash_rules_bundle_universal, bash_event("cat > /tmp/test.py << 'EOF'"))
-    assert_pass(bash_rules_bundle_universal, bash_event("cat > /tmp/script.sh <<EOF"))
+    """Quoted heredoc delimiters are denied."""
+    assert_deny(bash_rules_bundle_universal, bash_event("cat > /tmp/test.py << 'EOF'"))
+    assert_deny(bash_rules_bundle_universal, bash_event("cat > /tmp/script.sh << \"EOF\""))
 
 
 def test_tmp_redirect_no_redirect(bash_event):

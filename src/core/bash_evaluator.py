@@ -1,5 +1,6 @@
 """Bash command evaluation utilities."""
 
+import re
 from typing import List, Callable
 from devleaps.policies.server.common.models import ToolUseEvent
 from src.core.command_parser import BashCommandParser, ParsedCommand, ParseError
@@ -40,6 +41,14 @@ def evaluate_bash_rules(event: ToolUseEvent, rules: List[Callable]):
         PolicyDecision or PolicyGuidance from rules, or ASK if no rules matched
     """
     if not event.tool_is_bash:
+        return
+
+    # Check for quoted heredoc delimiters before parsing (bashlex can't parse them)
+    if re.search(r'<<\s*["\'][^"\']+["\']', event.command):
+        yield PolicyHelper.deny(
+            "Quoted heredoc delimiters (<< 'EOF' or << \"EOF\") are not allowed.\n"
+            "Use unquoted delimiters instead (e.g., << EOF)."
+        )
         return
 
     try:
