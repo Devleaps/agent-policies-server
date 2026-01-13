@@ -59,6 +59,38 @@ git_rm_rule = (
 )
 
 
+git_branch_delete_force_rule = (
+    command("git")
+    .subcommand("branch")
+    .when(has_flag("-D"))
+    .deny(
+        "`git branch -D` is not allowed.\n"
+        "Force-deleting branches can result in data loss."
+    )
+)
+
+
+git_checkout_rule = (
+    command("git")
+    .subcommand("checkout")
+    .allow()
+)
+
+
+git_fetch_rule = (
+    command("git")
+    .subcommand("fetch")
+    .allow()
+)
+
+
+git_pull_rule = (
+    command("git")
+    .subcommand("pull")
+    .allow()
+)
+
+
 all_rules = [
     git_add_all_rule,
     git_add_paths_rule,
@@ -66,4 +98,8 @@ all_rules = [
     git_mv_rule,
     git_push_force_rule,
     git_rm_rule,
+    git_branch_delete_force_rule,
+    git_checkout_rule,
+    git_fetch_rule,
+    git_pull_rule,
 ]
