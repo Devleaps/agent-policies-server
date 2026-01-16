@@ -9,9 +9,6 @@ dependencies = [
     "httpx>=0.27.0",
 ]
 
-[tool.uv.sources]
-devleaps-agent-policies = { path = "../agent-policies", editable = true }
-
 [project.optional-dependencies]
 dev = [
     "pytest==8.4.2",

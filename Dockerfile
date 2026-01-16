@@ -8,8 +8,7 @@ COPY pyproject.toml uv.lock ./
 COPY src ./src
 COPY bin ./bin
 
-RUN uv pip install --system devleaps-agent-policies httpx bashlex
-RUN uv pip install --system --no-deps .
+RUN uv pip install --system .
 
 EXPOSE 8338
 
