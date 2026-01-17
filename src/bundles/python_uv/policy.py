@@ -1,3 +1,4 @@
+import re
 from typing import Tuple
 from devleaps.policies.server.common.models import ToolUseEvent, PolicyAction
 from src.core import command, has_keyword, matches_regex, has_option, has_argument
@@ -5,6 +6,13 @@ from src.core.command_parser import ParsedCommand
 from src.core.predicates import is_one_of
 from src.utils import PolicyHelper
 from src.bundles.python_pip.predicates import pypi_package_age_predicate, is_python
+
+
+def is_python_executable(value: str) -> Tuple[bool, str]:
+    """Check if a string is a python executable name (python, python3, python3.11, etc.)."""
+    if re.match(r'^python(\d+(\.\d+)?)?$', value):
+        return True, ""
+    return False, ""
 
 
 uv_pip_direct_deny_rule = (
@@ -38,6 +46,17 @@ uv_pip_install_deny_rule = (
     .deny(
         "`uv pip install` is not allowed. Use `uv add` instead for better dependency management.\n"
         "Example: `uv add package-name`"
+    )
+)
+
+
+uv_run_python_deny_rule = (
+    command("uv")
+    .subcommand("run")
+    .when(has_argument(is_python_executable, index=0))
+    .deny(
+        "`uv run python` is redundant. Use `uv run` directly with the script.\n"
+        "Example: `uv run python script.py` → `uv run script.py`"
     )
 )
 
@@ -162,6 +181,7 @@ all_rules = [
     uv_pip_direct_deny_rule,
     uv_pip_run_deny_rule,
     uv_pip_install_deny_rule,
+    uv_run_python_deny_rule,
     uv_venv_deny_rule,
     uv_sync_allow_rule,
     uv_run_black_allow_rule,

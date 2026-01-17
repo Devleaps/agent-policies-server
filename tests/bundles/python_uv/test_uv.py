@@ -38,3 +38,11 @@ def test_pytest_uv_requirement(bash_event):
     assert_deny(bash_rules_bundle_python_uv, bash_event("pytest -v tests/test_something.py"))
     assert_allow(bash_rules_bundle_python_uv, bash_event("uv run pytest tests/"))
     assert_allow(bash_rules_bundle_python_uv, bash_event("uv run pytest -v tests/"))
+
+
+def test_uv_run_python_deny(bash_event):
+    """Test that 'uv run python script.py' is denied in favor of 'uv run script.py'."""
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python script.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python3 script.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python3.11 script.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python -m module"))
