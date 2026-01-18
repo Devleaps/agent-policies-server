@@ -2,6 +2,7 @@ package universal
 
 # JavaScript/Node.js command policies
 # - yarn: Allow common development commands
+# - pnpm: Allow common development commands
 
 # yarn test - allow
 decisions[decision] if {
@@ -40,5 +41,13 @@ decisions[decision] if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "why"
+	decision := {"action": "allow"}
+}
+
+# pnpm build - allow
+decisions[decision] if {
+	input.parsed.executable == "pnpm"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "build"
 	decision := {"action": "allow"}
 }
