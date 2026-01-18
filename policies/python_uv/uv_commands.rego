@@ -44,12 +44,40 @@ is_python_executable(arg) if {
 	startswith(arg, "python3")
 }
 
-# Deny uv run python (redundant)
+# Deny uv run python -c (arbitrary code execution)
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
 	is_python_executable(input.parsed.arguments[0])
+	input.parsed.options["-c"]
+	decision := {
+		"action": "deny",
+		"reason": "Arbitrary code execution via `uv run python -c` is not allowed for security reasons.\\nPlace code in a script file or use the existing test framework instead.",
+	}
+}
+
+# Deny uv run python -m (use uv run directly with tool name)
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 0
+	is_python_executable(input.parsed.arguments[0])
+	input.parsed.options["-m"]
+	decision := {
+		"action": "deny",
+		"reason": "`uv run python -m` is redundant. Use `uv run` directly with the module.\\nExample: `uv run python -m pytest` → `uv run pytest`",
+	}
+}
+
+# Deny uv run python script.py (redundant)
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 1
+	is_python_executable(input.parsed.arguments[0])
+	not input.parsed.options["-c"]
+	not input.parsed.options["-m"]
 	decision := {
 		"action": "deny",
 		"reason": "`uv run python` is redundant. Use `uv run` directly with the script.\\nExample: `uv run python script.py` → `uv run script.py`",
