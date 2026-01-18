@@ -3,7 +3,7 @@ package universal
 import data.helpers
 
 # File operation commands with safe path validation
-# Commands: cat, cp, cut, diff, du, ls, mkdir, sed, sort, tail, head
+# Commands: cat, chmod, cp, cut, diff, du, ls, mkdir, sed, sort, tail, head
 
 # Helper to check if all arguments are safe paths
 all_args_safe(args) if {
@@ -84,6 +84,25 @@ decisions[decision] if {
 	decision := {
 		"action": "deny",
 		"reason": "cat: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}
+
+# Allow chmod with safe paths
+decisions[decision] if {
+	input.parsed.executable == "chmod"
+	all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "allow",
+	}
+}
+
+# Deny chmod with unsafe paths
+decisions[decision] if {
+	input.parsed.executable == "chmod"
+	not all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "deny",
+		"reason": "chmod: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp).\nModifying permissions on system files or sensitive directories is not allowed.",
 	}
 }
 
