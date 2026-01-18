@@ -66,3 +66,21 @@ def test_git_branch_local_operations(bash_event):
 
 def test_git_branch_force_delete(bash_event):
     assert_deny(bash_rules_bundle_universal, bash_event("git branch -D old-branch"))
+
+
+def test_git_ls_files(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("git ls-files"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git ls-files -m"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git ls-files --cached"))
+
+
+def test_git_reflog(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("git reflog"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git reflog show"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git reflog --all"))
+
+
+def test_git_init(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("git init"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git init my-repo"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git init --bare"))

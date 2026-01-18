@@ -3,8 +3,8 @@ package universal
 import data.helpers
 
 # Git command policies
-# - Allow common read operations (status, diff, log, show)
-# - Allow safe write operations (add, commit, push, fetch, pull, checkout, mv)
+# - Allow common read operations (status, diff, log, show, ls-files, reflog)
+# - Allow safe write operations (add, commit, push, fetch, pull, checkout, mv, init)
 # - Deny dangerous operations (push --force, rm, branch -D)
 
 # Helper to check if git has a specific flag
@@ -60,6 +60,27 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.subcommand == "show"
+	decision := {"action": "allow"}
+}
+
+# git ls-files - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "ls-files"
+	decision := {"action": "allow"}
+}
+
+# git reflog - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "reflog"
+	decision := {"action": "allow"}
+}
+
+# git init - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "init"
 	decision := {"action": "allow"}
 }
 
