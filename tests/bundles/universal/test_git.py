@@ -44,3 +44,25 @@ def test_git_with_c_option(bash_event):
     assert_allow(bash_rules_bundle_universal, bash_event("git -C /path/to/repo add file.txt"))
     assert_allow(bash_rules_bundle_universal, bash_event('git -C src commit -m "message"'))
     assert_deny(bash_rules_bundle_universal, bash_event("git -C /repo push --force"))
+
+
+def test_git_branch_read_only(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -a"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -r"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -v"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch --list"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch --all"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch --remotes"))
+
+
+def test_git_branch_local_operations(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch new-feature"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch bugfix/issue-123"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -m old-name new-name"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -m new-name"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git branch -d merged-branch"))
+
+
+def test_git_branch_force_delete(bash_event):
+    assert_deny(bash_rules_bundle_universal, bash_event("git branch -D old-branch"))

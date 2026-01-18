@@ -190,8 +190,57 @@ decisions[decision] if {
 	}
 }
 
+# Read-only git branch flags
+git_branch_read_flags := ["-a", "--all", "-r", "--remotes", "-v", "--verbose", "--list"]
+
+# git branch (list branches) - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "branch"
+	count(input.parsed.arguments) == 0
+	count(input.parsed.options) == 0
+	decision := {"action": "allow"}
+}
+
+# git branch with read-only flags - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "branch"
+	count(input.parsed.arguments) == 0
+	count(input.parsed.flags) > 0
+	every flag in input.parsed.flags {
+		flag in git_branch_read_flags
+	}
+	count(input.parsed.options) == 0
+	decision := {"action": "allow"}
+}
+
+# git branch new-branch (create branch locally) - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "branch"
+	count(input.parsed.arguments) > 0
+	count(input.parsed.options) == 0
+	decision := {"action": "allow"}
+}
+
+# git branch -m (rename branch locally) - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "branch"
+	input.parsed.options["-m"]
+	decision := {"action": "allow"}
+}
+
+# git branch -d (safe delete - only merged branches) - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "branch"
+	input.parsed.options["-d"]
+	decision := {"action": "allow"}
+}
+
 # git branch -D - deny (force delete)
-# Note: -D is parsed as an option with the branch name as value
 decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.subcommand == "branch"
