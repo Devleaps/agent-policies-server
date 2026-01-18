@@ -42,6 +42,32 @@ decisions[decision] if {
 	}
 }
 
+# gh read-only subcommands (resources that support list/view/status)
+gh_read_only_resources := ["issue", "pr", "repo", "run", "workflow", "release", "gist", "project", "label", "milestone"]
+
+# gh read-only actions
+gh_read_only_actions := ["list", "view", "status"]
+
+# gh resource list/view/status - allow
+decisions[decision] if {
+	input.parsed.executable == "gh"
+	some resource in gh_read_only_resources
+	input.parsed.subcommand == resource
+	count(input.parsed.arguments) > 0
+	some action in gh_read_only_actions
+	input.parsed.arguments[0] == action
+	decision := {"action": "allow"}
+}
+
+# gh auth status - allow
+decisions[decision] if {
+	input.parsed.executable == "gh"
+	input.parsed.subcommand == "auth"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "status"
+	decision := {"action": "allow"}
+}
+
 # gh api with GET - allow
 decisions[decision] if {
 	input.parsed.executable == "gh"
