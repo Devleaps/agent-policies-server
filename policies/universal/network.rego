@@ -9,6 +9,7 @@ import data.helpers
 allowed_curl_domains := [
 	"agent-policies.dev.devleaps.nl",
 	"agent-policies.devleaps.nl",
+	"readthedocs.io",
 ]
 
 # Helper to check if any argument contains localhost URL
