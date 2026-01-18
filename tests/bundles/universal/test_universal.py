@@ -45,3 +45,24 @@ def test_tmp_redirect_deny(bash_event):
     assert_deny(bash_rules_bundle_universal, bash_event("cat file.txt > /tmp/output.txt"))
     assert_allow(bash_rules_bundle_universal, bash_event("echo 'test' > file.txt"))
     assert_allow(bash_rules_bundle_universal, bash_event("cat > output.txt"))
+
+
+def test_test_command(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("test -f file.txt"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -d src/components"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -e README.md"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -r scripts/build.sh"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -w output.log"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -x run.sh"))
+    assert_allow(bash_rules_bundle_universal, bash_event("test -s data.json"))
+    assert_deny(bash_rules_bundle_universal, bash_event("test -f /etc/passwd"))
+    assert_deny(bash_rules_bundle_universal, bash_event("test -d /tmp"))
+    assert_deny(bash_rules_bundle_universal, bash_event("test -e ../config.json"))
+
+
+def test_bracket_command(bash_event):
+    assert_allow(bash_rules_bundle_universal, bash_event("[ -f file.txt ]"))
+    assert_allow(bash_rules_bundle_universal, bash_event("[ -d src ]"))
+    assert_allow(bash_rules_bundle_universal, bash_event("[ -e README.md ]"))
+    assert_deny(bash_rules_bundle_universal, bash_event("[ -f /etc/passwd ]"))
+    assert_deny(bash_rules_bundle_universal, bash_event("[ -d /tmp ]"))

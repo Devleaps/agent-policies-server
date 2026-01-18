@@ -41,6 +41,33 @@ all_args_and_options_safe if {
 	count(input.parsed.options) == 0
 }
 
+# Helper for [ command - filters out closing ] bracket from arguments
+bracket_args_and_options_safe if {
+	# Filter out ']' from arguments
+	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
+	# Check filtered arguments
+	count(filtered_args) > 0
+	every arg in filtered_args {
+		helpers.is_safe_path(arg)
+	}
+}
+
+bracket_args_and_options_safe if {
+	# Check option values (same as all_args_and_options_safe)
+	count(input.parsed.options) > 0
+	every key, value in input.parsed.options {
+		helpers.is_safe_path(value)
+	}
+}
+
+bracket_args_and_options_safe if {
+	# Filter out ']' from arguments
+	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
+	# Allow if both filtered args and options are empty
+	count(filtered_args) == 0
+	count(input.parsed.options) == 0
+}
+
 # Allow cat with safe paths
 decisions[decision] if {
 	input.parsed.executable == "cat"
@@ -405,6 +432,38 @@ decisions[decision] if {
 	decision := {
 		"action": "deny",
 		"reason": "wc: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}
+
+# test - shell built-in for file/string tests (safe paths required)
+decisions[decision] if {
+	input.parsed.executable == "test"
+	all_args_and_options_safe
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "test"
+	not all_args_and_options_safe
+	decision := {
+		"action": "deny",
+		"reason": "test: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}
+
+# [ - alias for test command (safe paths required)
+decisions[decision] if {
+	input.parsed.executable == "["
+	bracket_args_and_options_safe
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "["
+	not bracket_args_and_options_safe
+	decision := {
+		"action": "deny",
+		"reason": "[: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
 	}
 }
 
