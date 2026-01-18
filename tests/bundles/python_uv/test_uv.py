@@ -41,3 +41,14 @@ def test_uv_run_python_deny(bash_event):
     assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python3.11 script.py"))
     assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python -m module"))
     assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python -m pytest"))
+
+
+def test_uv_run_test_files_deny(bash_event):
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run test_something.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run test_auth.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run tests/test_api.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run unit_test.py"))
+    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run integration_test.py"))
+    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run script.py"))
+    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run migrate.py"))
+    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run some-command"))

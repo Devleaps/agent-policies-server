@@ -148,6 +148,33 @@ decisions[decision] if {
 	}
 }
 
+# Deny uv run with test file patterns (should use pytest)
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 0
+	some arg in input.parsed.arguments
+	contains(arg, "test_")
+	endswith(arg, ".py")
+	decision := {
+		"action": "deny",
+		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+	}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 0
+	some arg in input.parsed.arguments
+	contains(arg, "_test")
+	endswith(arg, ".py")
+	decision := {
+		"action": "deny",
+		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+	}
+}
+
 # Allow uv sync
 decisions[decision] if {
 	input.parsed.executable == "uv"
@@ -157,58 +184,16 @@ decisions[decision] if {
 	}
 }
 
-# Allow uv run with tool runners (black, ruff, mypy, pytest)
-decisions[decision] if {
-	input.parsed.executable == "uv"
-	input.parsed.subcommand == "run"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "black"
-	decision := {
-		"action": "allow",
-	}
-}
+# Whitelisted tools allowed
+uv_run_allowed_tools := ["black", "ruff", "mypy", "pytest"]
 
+# Allow whitelisted uv run tools
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "ruff"
-	decision := {
-		"action": "allow",
-	}
-}
-
-decisions[decision] if {
-	input.parsed.executable == "uv"
-	input.parsed.subcommand == "run"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "mypy"
-	decision := {
-		"action": "allow",
-	}
-}
-
-decisions[decision] if {
-	input.parsed.executable == "uv"
-	input.parsed.subcommand == "run"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "pytest"
-	decision := {
-		"action": "allow",
-	}
-}
-
-# Allow other uv run commands (scripts, etc.)
-decisions[decision] if {
-	input.parsed.executable == "uv"
-	input.parsed.subcommand == "run"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] != "pip"
-	not is_python_executable(input.parsed.arguments[0])
-	input.parsed.arguments[0] != "black"
-	input.parsed.arguments[0] != "ruff"
-	input.parsed.arguments[0] != "mypy"
-	input.parsed.arguments[0] != "pytest"
+	some tool in uv_run_allowed_tools
+	input.parsed.arguments[0] == tool
 	decision := {
 		"action": "allow",
 	}
