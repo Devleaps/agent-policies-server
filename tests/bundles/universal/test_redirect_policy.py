@@ -1,5 +1,5 @@
 """Quick test to check redirect policies."""
-from src.bundles.universal import bash_rules_bundle_universal
+from src.bundles_impl import bash_rules_bundle_universal
 from tests.helpers import assert_allow, assert_deny
 import pytest
 

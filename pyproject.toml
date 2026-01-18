@@ -1,12 +1,13 @@
 [project]
 name = "re-internal-agent-policies"
 version = "1.0.0"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 
 dependencies = [
     "bashlex>=0.18",
     "devleaps-agent-policies",
     "httpx>=0.27.0",
+    "regopy>=1.2.0",
 ]
 
 [project.optional-dependencies]

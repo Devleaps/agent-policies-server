@@ -1,6 +1,5 @@
 import pytest
-from src.bundles.python_uv import bash_rules_bundle_python_uv
-from src.bundles.python_pip.predicates import pypi_package_age_predicate
+from src.bundles_impl import bash_rules_bundle_python_uv
 from tests.helpers import assert_allow, assert_deny, assert_pass, assert_ask
 
 
@@ -8,16 +7,6 @@ def test_uv_add(bash_event):
     assert_allow(bash_rules_bundle_python_uv, bash_event("uv add requests"))
     assert_allow(bash_rules_bundle_python_uv, bash_event("uv add httpx"))
     assert_deny(bash_rules_bundle_python_uv, bash_event("uv add this-package-definitely-does-not-exist-12345"))
-
-
-def test_uv_add_direct():
-    allowed, reason = pypi_package_age_predicate("requests")
-    assert allowed is True
-    assert "year" in reason.lower()
-
-    allowed, reason = pypi_package_age_predicate("this-does-not-exist-12345")
-    assert allowed is False
-    assert "not found" in reason.lower() or "failed" in reason.lower()
 
 
 def test_uv_pip_install(bash_event):

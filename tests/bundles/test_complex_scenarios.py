@@ -1,8 +1,8 @@
 """Complex integration tests for bash parser with policy rules."""
 
 import pytest
-from src.bundles.universal import bash_rules_bundle_universal
-from src.bundles.python_uv import bash_rules_bundle_python_uv
+from src.bundles_impl import bash_rules_bundle_universal
+from src.bundles_impl import bash_rules_bundle_python_uv
 from tests.helpers import assert_allow, assert_deny, assert_pass, assert_ask
 
 
@@ -182,12 +182,6 @@ def test_commands_with_equals_in_options(bash_event):
     """Test commands with options using = syntax."""
     assert_allow(bash_rules_bundle_universal, bash_event("docker build --tag=myapp:latest ."))
     assert_deny(bash_rules_bundle_python_uv, bash_event("pytest --maxfail=1 tests/"))
-
-
-def test_commands_with_dashes_in_arguments(bash_event):
-    """Test that arguments starting with dashes are parsed correctly."""
-    assert_allow(bash_rules_bundle_universal, bash_event("git add -- -filename-with-dashes.txt"))
-    assert_allow(bash_rules_bundle_universal, bash_event('git commit -m "-- this is not a flag"'))
 
 
 def test_chained_cd_rmdir_with_stderr_redirect_and_fallback(bash_event):

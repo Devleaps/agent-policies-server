@@ -1,6 +1,6 @@
 """Test with multiple bundles combined."""
-from src.bundles.universal import bash_rules_bundle_universal
-from src.bundles.python_uv import bash_rules_bundle_python_uv
+from src.bundles_impl import bash_rules_bundle_universal
+from src.bundles_impl import bash_rules_bundle_python_uv
 
 
 def test_uv_pytest_with_both_bundles(bash_event):

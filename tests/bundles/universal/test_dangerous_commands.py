@@ -1,5 +1,5 @@
 """Test dangerous command combinations."""
-from src.bundles.universal import bash_rules_bundle_universal
+from src.bundles_impl import bash_rules_bundle_universal
 from tests.helpers import assert_deny
 
 

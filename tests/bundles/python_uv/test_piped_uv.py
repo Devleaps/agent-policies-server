@@ -1,5 +1,5 @@
 """Test piped commands with python-uv bundle."""
-from src.bundles.python_uv import bash_rules_bundle_python_uv
+from src.bundles_impl import bash_rules_bundle_python_uv
 
 
 def test_pytest_pipe_head_with_uv_bundle(bash_event):

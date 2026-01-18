@@ -1,8 +1,7 @@
 """Tests for python-pip bundle policies."""
 
 import pytest
-from src.bundles.python_pip import bash_rules_bundle_python_pip
-from src.bundles.python_pip.predicates import pypi_package_age_predicate
+from src.bundles_impl import bash_rules_bundle_python_pip
 from tests.helpers import assert_allow, assert_deny, assert_pass
 
 
@@ -28,14 +27,3 @@ def test_pip_install_non_bash_passes(bash_event):
     event = bash_event("pip install requests", tool_is_bash=False)
     assert_pass(bash_rules_bundle_python_pip, event)
     assert_pass(bash_rules_bundle_python_pip, event)
-
-
-def test_pypi_package_age_predicate_direct():
-    """Test pypi_package_age_predicate function directly."""
-    allowed, reason = pypi_package_age_predicate("requests")
-    assert allowed is True
-    assert "year" in reason.lower()
-
-    allowed, reason = pypi_package_age_predicate("this-does-not-exist-12345")
-    assert allowed is False
-    assert "not found" in reason.lower() or "failed" in reason.lower()
