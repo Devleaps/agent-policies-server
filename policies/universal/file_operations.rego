@@ -360,6 +360,16 @@ decisions[decision] if {
 	}
 }
 
+# opa test - allow policy testing
+decisions[decision] if {
+	input.parsed.executable == "opa"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "test"
+	decision := {
+		"action": "allow",
+	}
+}
+
 decisions[decision] if {
 	input.parsed.executable == "which"
 	decision := {
