@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 COPY src ./src
-COPY bin ./bin
+COPY policies ./policies
 
 RUN uv pip install --system .
 
