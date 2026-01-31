@@ -5,7 +5,7 @@ This module provides helper functions and classes for creating policy decisions
 and performing common security checks.
 """
 from urllib.parse import urlparse
-from devleaps.policies.server.common.models import PolicyDecision, PolicyGuidance, PolicyAction
+from src.server.common.models import PolicyDecision, PolicyGuidance, PolicyAction
 
 
 class PolicyHelper:
@@ -32,14 +32,6 @@ class PolicyHelper:
         """Create an ASK decision (prompt user) with an optional reason."""
         return PolicyDecision(
             action=PolicyAction.ASK,
-            reason=reason
-        )
-
-    @staticmethod
-    def halt(reason: str = None) -> PolicyDecision:
-        """Create a HALT decision (stop entire process) with an optional reason."""
-        return PolicyDecision(
-            action=PolicyAction.HALT,
             reason=reason
         )
 

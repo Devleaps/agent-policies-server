@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 from regopy import Interpreter, NodeKind
-from devleaps.policies.server.common.models import ToolUseEvent, PolicyDecision, PolicyAction
+from src.server.common.models import ToolUseEvent, PolicyDecision, PolicyAction
 
 from src.core.command_parser import ParsedCommand
 
@@ -76,31 +76,46 @@ class RegoEvaluator:
     ) -> List[PolicyDecision]:
         """Evaluate policies against an event.
 
+        Recursively evaluates the main command plus all chained (&&, ||, ;) and
+        piped (|) commands to ensure security policies are enforced on the entire
+        command chain.
+
         Args:
             event: The tool use event from the client
             parsed: Parsed command structure (from bashlex)
             bundles: List of policy bundles to evaluate (e.g., ["universal", "python_uv"])
 
         Returns:
-            List of PolicyDecision objects from all matching rules
+            List of PolicyDecision objects from all matching rules across all commands
         """
-        input_doc = self._build_input_document(event, parsed)
+        all_decisions = []
 
+        # Evaluate this command's policies
+        input_doc = self._build_input_document(event, parsed)
         self._enrich_input(input_doc, parsed)
 
-        decisions = []
         for bundle in bundles:
             try:
                 bundle_decisions = self._evaluate_bundle(bundle, input_doc)
-                decisions.extend(bundle_decisions)
+                all_decisions.extend(bundle_decisions)
             except Exception as e:
                 logger.error(f"Error evaluating bundle '{bundle}': {e}")
-                decisions.append(PolicyDecision(
+                all_decisions.append(PolicyDecision(
                     action=PolicyAction.ASK,
                     reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}"
                 ))
 
-        return decisions
+        # Recursively evaluate all chained commands (&&, ||, ;)
+        for chained_cmd in parsed.chained:
+            chained_decisions = self.evaluate(event, chained_cmd, bundles)
+            all_decisions.extend(chained_decisions)
+
+        # Recursively evaluate all piped commands (|)
+        for piped_cmd in parsed.pipes:
+            piped_decisions = self.evaluate(event, piped_cmd, bundles)
+            all_decisions.extend(piped_decisions)
+
+        return all_decisions
 
     def _build_input_document(self, event: ToolUseEvent, parsed: ParsedCommand) -> Dict[str, Any]:
         """Convert ToolUseEvent and ParsedCommand to Rego input.
@@ -325,7 +340,6 @@ class RegoEvaluator:
                             "allow": PolicyAction.ALLOW,
                             "deny": PolicyAction.DENY,
                             "ask": PolicyAction.ASK,
-                            "halt": PolicyAction.HALT,
                         }
 
                         action = action_map.get(action_str)

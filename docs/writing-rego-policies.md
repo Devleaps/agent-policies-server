@@ -14,11 +14,11 @@ package <bundle_name>
 import data.helpers
 
 # Comment describing the policy
-violations[decision] if {
+decisions[decision] if {
     # Conditions that must all be true
     input.parsed.executable == "command"
     input.parsed.subcommand == "subcommand"
-    
+
     # Policy decision
     decision := {"action": "allow", "reason": null}
 }
@@ -65,7 +65,7 @@ Policies receive this input:
 
 ```rego
 # Allow git status
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "git"
     input.parsed.subcommand == "status"
     decision := {"action": "allow", "reason": null}
@@ -76,7 +76,7 @@ violations[decision] if {
 
 ```rego
 # Deny sudo commands
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "sudo"
     decision := {
         "action": "deny",
@@ -91,7 +91,7 @@ violations[decision] if {
 import data.helpers
 
 # Allow cat with safe paths
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "cat"
     count(input.parsed.arguments) > 0
     every arg in input.parsed.arguments {
@@ -101,7 +101,7 @@ violations[decision] if {
 }
 
 # Deny cat with unsafe paths
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "cat"
     not all_args_safe
     decision := {
@@ -123,7 +123,7 @@ all_args_safe if {
 
 ```rego
 # Deny git push --force
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "git"
     input.parsed.subcommand == "push"
     has_force_flag
@@ -149,7 +149,7 @@ Options are key-value pairs like `-m "message"` or `-l file.txt`.
 
 ```rego
 # Require git commit to have message
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "git"
     input.parsed.subcommand == "commit"
     has_message
@@ -171,13 +171,13 @@ Use enriched external data (like PyPI metadata):
 
 ```rego
 # Check package age
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "uv"
     input.parsed.subcommand == "add"
     input.pypi_metadata.age_days < 365
     decision := {
         "action": "deny",
-        "reason": sprintf("Package %v is only %v days old", 
+        "reason": sprintf("Package %v is only %v days old",
             [input.pypi_metadata.name, input.pypi_metadata.age_days])
     }
 }
@@ -200,7 +200,7 @@ Validates that a path is workspace-relative and safe.
 ```rego
 import data.helpers
 
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "ls"
     count(input.parsed.arguments) > 0
     helpers.is_safe_path(input.parsed.arguments[0])
@@ -218,7 +218,7 @@ Validates that a URL is localhost.
 ```rego
 import data.helpers
 
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "curl"
     count(input.parsed.arguments) > 0
     helpers.is_localhost_url(input.parsed.arguments[0])
@@ -345,7 +345,7 @@ Create tests in `tests/policies/`:
 import pytest
 from src.core.rego_integration import RegoEvaluator
 from src.core.command_parser import BashCommandParser
-from devleaps.policies.server.common.models import ToolUseEvent, PolicyAction
+from src.server.common.models import ToolUseEvent, PolicyAction
 
 @pytest.fixture
 def rego_evaluator():
@@ -414,7 +414,7 @@ import data.helpers
 # - Deny if duration > 60 seconds
 
 # Deny sleep > 60 seconds
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "sleep"
     count(input.parsed.arguments) > 0
     duration := to_number(input.parsed.arguments[0])
@@ -426,7 +426,7 @@ violations[decision] if {
 }
 
 # Allow sleep <= 60 seconds
-violations[decision] if {
+decisions[decision] if {
     input.parsed.executable == "sleep"
     count(input.parsed.arguments) > 0
     duration := to_number(input.parsed.arguments[0])

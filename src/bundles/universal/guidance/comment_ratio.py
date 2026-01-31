@@ -1,6 +1,6 @@
 """Provides guidance when comment-to-code ratio becomes absurdly high."""
 
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 

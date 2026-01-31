@@ -1,7 +1,7 @@
 """Provides guidance when import statements appear mid-code (indented)."""
 
 import re
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 
