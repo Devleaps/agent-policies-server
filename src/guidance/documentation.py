@@ -1,22 +1,12 @@
-"""Provides guidance when License section is added to README.md."""
+"""Documentation-related guidance."""
 
 import re
 from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 
-def readme_license_guidance_rule(input_data: PostFileEditEvent):
-    """Provide guidance when AI adds License section to README.md."""
-    if not input_data.structured_patch:
-        return
-
-    file_path = input_data.file_path.lower()
-
-    # Only check README.md files
-    if not file_path.endswith("readme.md"):
-        return
-
-    # Check if any added lines contain "license"
+def license_guidance_rule(input_data: PostFileEditEvent):
+    """Provide guidance when AI adds License section to documentation."""
     for patch in input_data.structured_patch:
         for patch_line in patch.lines:
             if patch_line.operation == "added":

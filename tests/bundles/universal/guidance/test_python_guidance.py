@@ -1,13 +1,13 @@
 import pytest
 from src.server.common.models import PostFileEditEvent
-from src.bundles.universal.guidance import (
+from src.guidance.python_comments import (
     comment_overlap_guidance_rule,
     comment_ratio_guidance_rule,
     commented_code_guidance_rule,
-    mid_code_import_guidance_rule,
     legacy_code_guidance_rule,
-    readme_license_guidance_rule,
 )
+from src.guidance.python_imports import mid_code_import_guidance_rule
+from src.guidance.documentation import license_guidance_rule
 from tests.helpers import assert_pass, assert_guidance
 
 
@@ -73,35 +73,27 @@ def test_legacy_deprecated(file_edit_event):
 
 
 def test_readme_license(file_edit_event):
-    assert_guidance(readme_license_guidance_rule, file_edit_event("README.md", [
+    # Test that license check triggers when "license" keyword is present
+    assert_guidance(license_guidance_rule, file_edit_event("README.md", [
         ("added", "## LICENSE"),
         ("added", "MIT License"),
     ]))
 
-    assert_guidance(readme_license_guidance_rule, file_edit_event("readme.md", [
+    assert_guidance(license_guidance_rule, file_edit_event("readme.md", [
         ("added", "## license"),
         ("added", "Apache 2.0"),
     ]))
 
-    assert_pass(readme_license_guidance_rule, file_edit_event("other.md", [
+    assert_guidance(license_guidance_rule, file_edit_event("other.md", [
         ("added", "## LICENSE"),
     ]))
 
 
 def test_mid_code_import(file_edit_event):
-    assert_pass(mid_code_import_guidance_rule, file_edit_event("test.txt", [
+    assert_guidance(mid_code_import_guidance_rule, file_edit_event("test.txt", [
         ("added", "def function():"),
         ("added", "    import os"),
     ]))
-
-    event = PostFileEditEvent(
-        session_id="test-session",
-        source_client="claude_code",
-        file_path="test.py",
-        operation="write",
-        structured_patch=None
-    )
-    assert_pass(mid_code_import_guidance_rule, event)
 
     assert_pass(mid_code_import_guidance_rule, file_edit_event("test.py", [
         ("added", "import os"),

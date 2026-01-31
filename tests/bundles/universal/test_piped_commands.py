@@ -1,11 +1,11 @@
 """Test piped command combinations."""
-from src.bundles_impl import bash_rules_bundle_universal
+from src.bundles_impl import evaluate_bash_rules
 
 
 def test_pytest_pipe_head(bash_event):
     """Test that pytest | head works."""
     event = bash_event("pytest | head")
-    results = list(bash_rules_bundle_universal(event))
+    results = list(evaluate_bash_rules(event))
 
     print(f"\nResults for 'pytest | head':")
     for r in results:

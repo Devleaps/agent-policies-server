@@ -1,16 +1,13 @@
 """Test with multiple bundles combined."""
-from src.bundles_impl import bash_rules_bundle_universal
-from src.bundles_impl import bash_rules_bundle_python_uv
+from src.bundles_impl import evaluate_bash_rules
 
 
 def test_uv_pytest_with_both_bundles(bash_event):
-    """Test uv run pytest with both universal and python-uv bundles."""
-    event = bash_event("uv run pytest tests/test_piped_uv.py -xvs")
+    """Test uv run pytest with both universal and python_uv bundles."""
+    event = bash_event("uv run pytest tests/test_piped_uv.py -xvs", bundles=["universal", "python_uv"])
 
-    # Simulate server running both bundles
-    all_results = []
-    all_results.extend(list(bash_rules_bundle_universal(event)))
-    all_results.extend(list(bash_rules_bundle_python_uv(event)))
+    # Evaluate with both bundles enabled
+    all_results = list(evaluate_bash_rules(event))
 
     print(f"\nResults for 'uv run pytest ...' with BOTH bundles:")
     for r in all_results:

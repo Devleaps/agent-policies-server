@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Literal
 
@@ -14,6 +14,7 @@ class BaseEvent:
     source_client: SourceClient
     workspace_roots: Optional[List[str]] = None
     source_event: Any = None  # Original hook input data object
+    enabled_bundles: List[str] = field(default_factory=lambda: ['universal'])  # Rego policy bundles to evaluate
 
 
 class PolicyAction(str, Enum):
