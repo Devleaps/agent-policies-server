@@ -1,9 +1,9 @@
 import pytest
-from src.bundles_impl import bash_rules_bundle_universal
+from src.bundles_impl import evaluate_bash_rules
 from tests.helpers import assert_allow
 
 
 def test_rule_functionality(bash_event):
-    assert_allow(bash_rules_bundle_universal, bash_event("pwd"))
-    assert_allow(bash_rules_bundle_universal, bash_event("ps aux"))
-    assert_allow(bash_rules_bundle_universal, bash_event("which python"))
+    assert_allow(evaluate_bash_rules, bash_event("pwd"))
+    assert_allow(evaluate_bash_rules, bash_event("ps aux"))
+    assert_allow(evaluate_bash_rules, bash_event("which python"))

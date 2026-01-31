@@ -16,15 +16,19 @@ def bash_event():
     Usage:
         event = bash_event("touch some-file")
         event = bash_event("rm -rf /", tool_is_bash=False)
+        event = bash_event("pip install pkg", bundles=["universal", "python_pip"])
     """
-    def _create(command: str, tool_is_bash: bool = True) -> ToolUseEvent:
+    def _create(command: str, tool_is_bash: bool = True, bundles=None) -> ToolUseEvent:
+        if bundles is None:
+            bundles = ["universal"]
         return ToolUseEvent(
             session_id="test-session",
             source_client=SourceClient.CLAUDE_CODE,
             tool_name="Bash" if tool_is_bash else "Read",
             tool_is_bash=tool_is_bash,
             command=command,
-            parameters={"command": command}
+            parameters={"command": command},
+            enabled_bundles=bundles
         )
     return _create
 
@@ -43,8 +47,13 @@ def file_edit_event():
             ("removed", "old code"),
             ("unchanged", "kept line")
         ])
+
+        # With specific bundles
+        event = file_edit_event("pyproject.toml", lines, bundles=["universal", "python_uv"])
     """
-    def _create(file_path: str, lines, operation: str = "write") -> PostFileEditEvent:
+    def _create(file_path: str, lines, operation: str = "write", bundles=None) -> PostFileEditEvent:
+        if bundles is None:
+            bundles = ["universal"]
         # Support two input formats:
         # 1. List of strings (all "added")
         # 2. List of tuples (operation, content)
@@ -75,7 +84,8 @@ def file_edit_event():
             source_client="claude_code",
             file_path=file_path,
             operation=operation,
-            structured_patch=[patch] if lines else None
+            structured_patch=[patch] if lines else None,
+            enabled_bundles=bundles
         )
     return _create
 

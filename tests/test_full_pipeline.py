@@ -1,7 +1,7 @@
 """Test full policy evaluation pipeline to see actual final decisions."""
 
 from src.server.common.models import POLICY_PRECEDENCE, PolicyAction, PolicyDecision
-from src.bundles_impl import bash_rules_bundle_universal
+from src.bundles_impl import evaluate_bash_rules
 from tests.helpers import eval_rule
 
 
@@ -24,7 +24,7 @@ def test_cat_to_tmp_full_pipeline(bash_event):
     """Test cat > /tmp/test.txt through full pipeline."""
     event = bash_event("cat > /tmp/test.txt")
 
-    results = eval_rule(bash_rules_bundle_universal, event)
+    results = eval_rule(evaluate_bash_rules, event)
 
     print(f"\n=== cat > /tmp/test.txt ===")
     print(f"Total results: {len(results)}")
@@ -42,7 +42,7 @@ def test_echo_to_tmp_full_pipeline(bash_event):
     """Test echo > /tmp/test.txt through full pipeline."""
     event = bash_event("echo 'test' > /tmp/test.txt")
 
-    results = eval_rule(bash_rules_bundle_universal, event)
+    results = eval_rule(evaluate_bash_rules, event)
 
     print(f"\n=== echo > /tmp/test.txt ===")
     print(f"Total results: {len(results)}")
@@ -65,7 +65,7 @@ EOF"""
 
     event = bash_event(command)
 
-    results = eval_rule(bash_rules_bundle_universal, event)
+    results = eval_rule(evaluate_bash_rules, event)
 
     print(f"\n=== cat heredoc to /tmp ===")
     print(f"Total results: {len(results)}")
@@ -85,7 +85,7 @@ def test_cat_to_workspace_full_pipeline(bash_event):
     """Test cat > file.txt (safe) through full pipeline."""
     event = bash_event("cat > test.txt")
 
-    results = eval_rule(bash_rules_bundle_universal, event)
+    results = eval_rule(evaluate_bash_rules, event)
 
     print(f"\n=== cat > test.txt (safe) ===")
     print(f"Total results: {len(results)}")
@@ -122,7 +122,7 @@ chmod +x /tmp/add_lifecycle_ignore.sh
 
     event = bash_event(command)
 
-    results = eval_rule(bash_rules_bundle_universal, event)
+    results = eval_rule(evaluate_bash_rules, event)
 
     print(f"\n=== Complex multiline command ===")
     print(f"Total results: {len(results)}")

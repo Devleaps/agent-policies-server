@@ -1,4 +1,4 @@
-"""Provides guidance when import statements appear mid-code (indented)."""
+"""Python import placement guidance."""
 
 import re
 from src.server.common.models import PostFileEditEvent
@@ -24,10 +24,6 @@ def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
     - class Foo:
         from x import y
     """
-    if not input_data.file_path.endswith('.py') or not input_data.structured_patch:
-        return
-
-    # Pattern to match import statements (both "import" and "from...import")
     import_pattern = re.compile(r'^\s+(import\s+\S+|from\s+\S+\s+import\s+)')
 
     for patch in input_data.structured_patch:
@@ -35,11 +31,9 @@ def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
             line_content = patch_line.content
             stripped = line_content.strip()
 
-            # Skip empty lines and comments
             if not stripped or stripped.startswith('#'):
                 continue
 
-            # Check if line starts with whitespace AND contains import statement
             if import_pattern.match(line_content):
                 yield PolicyHelper.guidance(
                     "Import statements should be at the top of the file, not nested inside "

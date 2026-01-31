@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 from regopy import Interpreter, NodeKind
-from src.server.common.models import ToolUseEvent, PolicyDecision, PolicyAction
+from src.server.common.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyAction
 
 from src.core.command_parser import ParsedCommand
 
@@ -117,6 +117,34 @@ class RegoEvaluator:
 
         return all_decisions
 
+    def evaluate_guidance_activations(
+        self,
+        event: PostFileEditEvent,
+        bundles: List[str]
+    ) -> List[str]:
+        """Evaluate which guidance checks should be activated for a file edit.
+
+        Args:
+            event: The file edit event from the client
+            bundles: List of policy bundles to evaluate (e.g., ["universal", "python_uv"])
+
+        Returns:
+            List of guidance check names to activate (e.g., ["comment_ratio", "mid_code_import"])
+        """
+        all_activations = []
+
+        # Build input document from file edit event
+        input_doc = self._build_file_edit_input_document(event)
+
+        for bundle in bundles:
+            try:
+                bundle_activations = self._evaluate_guidance_activations_bundle(bundle, input_doc)
+                all_activations.extend(bundle_activations)
+            except Exception as e:
+                logger.error(f"Error evaluating guidance activations for bundle '{bundle}': {e}")
+
+        return list(set(all_activations))
+
     def _build_input_document(self, event: ToolUseEvent, parsed: ParsedCommand) -> Dict[str, Any]:
         """Convert ToolUseEvent and ParsedCommand to Rego input.
 
@@ -147,6 +175,41 @@ class RegoEvaluator:
                 "parameters": event.parameters or {},
             },
             "parsed": parsed_dict,
+        }
+
+        return input_doc
+
+    def _build_file_edit_input_document(self, event: PostFileEditEvent) -> Dict[str, Any]:
+        """Convert PostFileEditEvent to Rego input.
+
+        Args:
+            event: The file edit event
+
+        Returns:
+            Dictionary suitable for Rego input
+        """
+        input_doc = {
+            "event": {
+                "session_id": event.session_id,
+                "source_client": event.source_client,
+            },
+            "file_path": event.file_path,
+            "structured_patch": [
+                {
+                    "old_start": patch.oldStart,
+                    "old_lines": patch.oldLines,
+                    "new_start": patch.newStart,
+                    "new_lines": patch.newLines,
+                    "lines": [
+                        {
+                            "operation": line.operation,
+                            "content": line.content
+                        }
+                        for line in patch.lines
+                    ]
+                }
+                for patch in (event.structured_patch or [])
+            ]
         }
 
         return input_doc
@@ -263,6 +326,41 @@ class RegoEvaluator:
             logger.error(f"Rego query failed for bundle '{bundle}': {e}")
             raise
 
+    def _evaluate_guidance_activations_bundle(self, bundle: str, input_doc: Dict[str, Any]) -> List[str]:
+        """Evaluate a specific bundle's guidance activation rules.
+
+        Args:
+            bundle: Bundle name (e.g., "universal", "python_uv")
+            input_doc: Rego input document
+
+        Returns:
+            List of guidance check names (e.g., ["comment_ratio", "mid_code_import"])
+        """
+        query = f"data.{bundle}.guidance_activations"
+
+        try:
+            self.interpreter.set_input(input_doc)
+            output = self.interpreter.query(query)
+
+            if not output.ok():
+                return []
+
+            activations_node = output.expressions(index=0)
+            if activations_node is None:
+                return []
+
+            activations = self._node_to_python(activations_node)
+            logger.debug(f"Guidance activations from bundle '{bundle}': {activations}")
+
+            if not activations:
+                return []
+
+            return self._convert_rego_guidance_activations(activations)
+
+        except Exception as e:
+            logger.error(f"Rego query failed for guidance activations in bundle '{bundle}': {e}")
+            raise
+
     def _node_to_python(self, node) -> Any:
         """Convert regopy Node to Python object.
 
@@ -360,3 +458,35 @@ class RegoEvaluator:
                 continue
 
         return decisions
+
+    def _convert_rego_guidance_activations(self, rego_activations: List[Dict[str, Any]]) -> List[str]:
+        """Convert Rego guidance activation results to list of check names.
+
+        Args:
+            rego_activations: List of set elements from Rego guidance_activations[check]
+                             Format: [{"check_name": true}, ...]
+                             Where check_name is the guidance check identifier
+
+        Returns:
+            List of guidance check names (strings)
+        """
+        check_names = []
+
+        for activation_set_item in rego_activations:
+            try:
+                if not isinstance(activation_set_item, dict):
+                    logger.warning(f"Unexpected activation format: {activation_set_item}")
+                    continue
+
+                for check_name in activation_set_item.keys():
+                    if isinstance(check_name, str):
+                        check_names.append(check_name)
+                    else:
+                        logger.warning(f"Unexpected check name type: {type(check_name)}, value: {check_name}")
+
+            except Exception as e:
+                logger.error(f"Failed to process guidance activation: {e}")
+                logger.debug(f"Activation data: {activation_set_item}")
+                continue
+
+        return check_names

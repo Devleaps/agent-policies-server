@@ -50,14 +50,13 @@ def _log_generic_hook_outcome(hook_name: str, input_data, result):
 async def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
     """Handle PreToolUse hook events."""
     input_data = PreToolUseInput(**wrapper.event)
-    bundles = wrapper.bundles
 
     tool_name_str = input_data.tool_name.value if hasattr(input_data.tool_name, 'value') else str(input_data.tool_name)
     logger.info(f"PreToolUse hook: {tool_name_str} in session {input_data.session_id}")
 
-    generic_input = mapper.map_pre_tool_use_input(input_data)
+    generic_input = mapper.map_pre_tool_use_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     # Default to ASK for Bash and WebFetch
     if input_data.tool_name in [ToolName.BASH, ToolName.WEB_FETCH]:
@@ -81,13 +80,12 @@ async def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
 async def post_tool_use_hook(wrapper: RequestWrapper) -> PostToolUseOutput:
     """Handle PostToolUse hook events."""
     input_data = PostToolUseInput(**wrapper.event)
-    bundles = wrapper.bundles
 
     logger.info(f"PostToolUse hook: {input_data.tool_name} in session {input_data.session_id}")
 
-    generic_input = mapper.map_post_tool_use_input(input_data)
+    generic_input = mapper.map_post_tool_use_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = PostToolUseOutput(continue_=True)
     result = mapper.map_to_post_tool_use_output(results, default)
@@ -99,13 +97,11 @@ async def post_tool_use_hook(wrapper: RequestWrapper) -> PostToolUseOutput:
 async def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOutput:
     """Handle UserPromptSubmit hook events."""
     input_data = UserPromptSubmitInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"UserPromptSubmit hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_user_prompt_submit_input(input_data)
+    generic_input = mapper.map_user_prompt_submit_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = UserPromptSubmitOutput(continue_=True)
     result = mapper.map_to_user_prompt_submit_output(results, default)
@@ -117,13 +113,11 @@ async def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOu
 async def stop_hook(wrapper: RequestWrapper) -> StopOutput:
     """Handle Stop hook events."""
     input_data = StopInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"Stop hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_stop_input(input_data)
+    generic_input = mapper.map_stop_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = StopOutput(continue_=True)
     result = mapper.map_to_stop_output(results, default)
@@ -135,13 +129,11 @@ async def stop_hook(wrapper: RequestWrapper) -> StopOutput:
 async def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
     """Handle SubagentStop hook events."""
     input_data = SubagentStopInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"SubagentStop hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_subagent_stop_input(input_data)
+    generic_input = mapper.map_subagent_stop_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = SubagentStopOutput(continue_=True)
     result = mapper.map_to_subagent_stop_output(results, default)
@@ -153,13 +145,11 @@ async def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
 async def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
     """Handle Notification hook events."""
     input_data = NotificationInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"Notification hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_notification_input(input_data)
+    generic_input = mapper.map_notification_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = NotificationOutput(continue_=True)
     result = mapper.map_to_notification_output(results, default)
@@ -171,13 +161,11 @@ async def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
 async def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
     """Handle PreCompact hook events."""
     input_data = PreCompactInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"PreCompact hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_pre_compact_input(input_data)
+    generic_input = mapper.map_pre_compact_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = PreCompactOutput(continue_=True)
     result = mapper.map_to_pre_compact_output(results, default)
@@ -189,13 +177,11 @@ async def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
 async def session_start_hook(wrapper: RequestWrapper) -> SessionStartOutput:
     """Handle SessionStart hook events."""
     input_data = SessionStartInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"SessionStart hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_session_start_input(input_data)
+    generic_input = mapper.map_session_start_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = SessionStartOutput(
         continue_=True,
@@ -210,13 +196,11 @@ async def session_start_hook(wrapper: RequestWrapper) -> SessionStartOutput:
 async def session_end_hook(wrapper: RequestWrapper) -> SessionEndOutput:
     """Handle SessionEnd hook events."""
     input_data = SessionEndInput(**wrapper.event)
-    bundles = wrapper.bundles
-
     logger.info(f"SessionEnd hook: session {input_data.session_id}")
 
-    generic_input = mapper.map_session_end_input(input_data)
+    generic_input = mapper.map_session_end_input(wrapper, input_data)
 
-    results = execute_handlers_generic(generic_input, bundles)
+    results = execute_handlers_generic(generic_input)
 
     default = SessionEndOutput(continue_=True)
     result = mapper.map_to_session_end_output(results, default)

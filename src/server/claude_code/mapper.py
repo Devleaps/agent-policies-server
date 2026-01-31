@@ -4,6 +4,7 @@ Mappers to convert Claude Code hook inputs/outputs to/from generic models.
 from typing import List, TypeVar, Union
 
 from ..common.enums import SourceClient
+from .api.request_wrapper import RequestWrapper
 from ..common.mapper_base import (
     separate_results,
     find_highest_priority_decision,
@@ -80,7 +81,7 @@ def _parse_patch_lines(raw_lines: List[str]) -> List[PatchLine]:
 # INPUT MAPPERS: Claude Code → Generic
 # ============================================================================
 
-def map_pre_tool_use_input(input_data: PreToolUseInput) -> Union[ToolUseEvent, FileEditEvent]:
+def map_pre_tool_use_input(wrapper: RequestWrapper, input_data: PreToolUseInput) -> Union[ToolUseEvent, FileEditEvent]:
     """Map PreToolUse to appropriate event type"""
     tool_name_str = input_data.tool_name.value if isinstance(input_data.tool_name, ToolName) else str(input_data.tool_name)
 
@@ -94,7 +95,8 @@ def map_pre_tool_use_input(input_data: PreToolUseInput) -> Union[ToolUseEvent, F
             file_path=file_path,
             operation=tool_name_str,
             workspace_roots=None,
-            source_event=input_data
+            source_event=input_data,
+            enabled_bundles=wrapper.bundles
         )
 
     command = None
@@ -117,11 +119,12 @@ def map_pre_tool_use_input(input_data: PreToolUseInput) -> Union[ToolUseEvent, F
         workspace_roots=None,
         source_event=input_data,
         tool_is_bash=tool_is_bash,
-        tool_is_mcp=tool_is_mcp
+        tool_is_mcp=tool_is_mcp,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_post_tool_use_input(input_data: PostToolUseInput) -> Union[PostFileEditEvent, PostToolUseEvent]:
+def map_post_tool_use_input(wrapper: RequestWrapper, input_data: PostToolUseInput) -> Union[PostFileEditEvent, PostToolUseEvent]:
     """Map PostToolUse to appropriate post-event type"""
     tool_name_str = input_data.tool_name.value if isinstance(input_data.tool_name, ToolName) else str(input_data.tool_name)
 
@@ -161,7 +164,8 @@ def map_post_tool_use_input(input_data: PostToolUseInput) -> Union[PostFileEditE
             content=content,
             structured_patch=structured_patch,
             workspace_roots=None,
-            source_event=input_data
+            source_event=input_data,
+            enabled_bundles=wrapper.bundles
         )
 
     # All other tools map to PostToolUseEvent
@@ -185,84 +189,92 @@ def map_post_tool_use_input(input_data: PostToolUseInput) -> Union[PostFileEditE
         workspace_roots=None,
         source_event=input_data,
         tool_is_bash=tool_is_bash,
-        tool_is_mcp=tool_is_mcp
+        tool_is_mcp=tool_is_mcp,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_user_prompt_submit_input(input_data: UserPromptSubmitInput) -> PromptSubmitEvent:
+def map_user_prompt_submit_input(wrapper: RequestWrapper, input_data: UserPromptSubmitInput) -> PromptSubmitEvent:
     """Map UserPromptSubmit to PromptSubmitEvent"""
     return PromptSubmitEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         prompt=getattr(input_data, 'prompt', None),
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_stop_input(input_data: StopInput) -> StopEvent:
+def map_stop_input(wrapper: RequestWrapper, input_data: StopInput) -> StopEvent:
     """Map Stop to StopEvent"""
     return StopEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         stop_type="stop",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_subagent_stop_input(input_data: SubagentStopInput) -> StopEvent:
+def map_subagent_stop_input(wrapper: RequestWrapper, input_data: SubagentStopInput) -> StopEvent:
     """Map SubagentStop to StopEvent"""
     return StopEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         stop_type="subagent_stop",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_notification_input(input_data: NotificationInput) -> HookEvent:
+def map_notification_input(wrapper: RequestWrapper, input_data: NotificationInput) -> HookEvent:
     """Map Notification to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="notification",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_pre_compact_input(input_data: PreCompactInput) -> HookEvent:
+def map_pre_compact_input(wrapper: RequestWrapper, input_data: PreCompactInput) -> HookEvent:
     """Map PreCompact to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="pre_compact",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_session_start_input(input_data: SessionStartInput) -> HookEvent:
+def map_session_start_input(wrapper: RequestWrapper, input_data: SessionStartInput) -> HookEvent:
     """Map SessionStart to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="session_start",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 
-def map_session_end_input(input_data: SessionEndInput) -> HookEvent:
+def map_session_end_input(wrapper: RequestWrapper, input_data: SessionEndInput) -> HookEvent:
     """Map SessionEnd to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="session_end",
         workspace_roots=None,
-        source_event=input_data
+        source_event=input_data,
+        enabled_bundles=wrapper.bundles
     )
 
 

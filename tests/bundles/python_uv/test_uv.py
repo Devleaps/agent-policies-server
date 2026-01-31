@@ -1,54 +1,54 @@
 import pytest
-from src.bundles_impl import bash_rules_bundle_python_uv
+from src.bundles_impl import evaluate_bash_rules
 from tests.helpers import assert_allow, assert_deny, assert_pass, assert_ask
 
 
 def test_uv_add(bash_event):
-    assert_allow(bash_rules_bundle_python_uv, bash_event("uv add requests"))
-    assert_allow(bash_rules_bundle_python_uv, bash_event("uv add httpx"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv add this-package-definitely-does-not-exist-12345"))
+    assert_allow(evaluate_bash_rules, bash_event("uv add requests", bundles=["universal", "python_uv"]))
+    assert_allow(evaluate_bash_rules, bash_event("uv add httpx", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv add this-package-definitely-does-not-exist-12345", bundles=["universal", "python_uv"]))
 
 
 def test_uv_pip_install(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv pip install requests"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv pip install requests==2.28.0"))
-    assert_ask(bash_rules_bundle_python_uv, bash_event("uv pip list"))
+    assert_deny(evaluate_bash_rules, bash_event("uv pip install requests", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv pip install requests==2.28.0", bundles=["universal", "python_uv"]))
+    assert_ask(evaluate_bash_rules, bash_event("uv pip list", bundles=["universal", "python_uv"]))
 
 
 def test_uv_python(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event("python script.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("python -m pytest"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("python3 -m mymodule"))
-    assert_ask(bash_rules_bundle_python_uv, bash_event("python scripts/something.py"))
+    assert_deny(evaluate_bash_rules, bash_event("python script.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("python -m pytest", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("python3 -m mymodule", bundles=["universal", "python_uv"]))
+    assert_ask(evaluate_bash_rules, bash_event("python scripts/something.py", bundles=["universal", "python_uv"]))
 
 
 def test_pytest_uv_requirement(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event("pytest tests/"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("pytest -v tests/test_something.py"))
-    assert_allow(bash_rules_bundle_python_uv, bash_event("uv run pytest tests/"))
-    assert_allow(bash_rules_bundle_python_uv, bash_event("uv run pytest -v tests/"))
+    assert_deny(evaluate_bash_rules, bash_event("pytest tests/", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("pytest -v tests/test_something.py", bundles=["universal", "python_uv"]))
+    assert_allow(evaluate_bash_rules, bash_event("uv run pytest tests/", bundles=["universal", "python_uv"]))
+    assert_allow(evaluate_bash_rules, bash_event("uv run pytest -v tests/", bundles=["universal", "python_uv"]))
 
 
 def test_uv_run_python_c_deny(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event('uv run python -c "print(123)"'))
-    assert_deny(bash_rules_bundle_python_uv, bash_event('uv run python -c "import os; os.system(\'echo 123\')"'))
-    assert_deny(bash_rules_bundle_python_uv, bash_event('uv run python3 -c "import sys"'))
+    assert_deny(evaluate_bash_rules, bash_event('uv run python -c "print(123)"', bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event('uv run python -c "import os; os.system(\'echo 123\')"', bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event('uv run python3 -c "import sys"', bundles=["universal", "python_uv"]))
 
 
 def test_uv_run_python_deny(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python script.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python3 script.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python3.11 script.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python -m module"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run python -m pytest"))
+    assert_deny(evaluate_bash_rules, bash_event("uv run python script.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run python3 script.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run python3.11 script.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run python -m module", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run python -m pytest", bundles=["universal", "python_uv"]))
 
 
 def test_uv_run_test_files_deny(bash_event):
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run test_something.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run test_auth.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run tests/test_api.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run unit_test.py"))
-    assert_deny(bash_rules_bundle_python_uv, bash_event("uv run integration_test.py"))
-    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run script.py"))
-    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run migrate.py"))
-    assert_ask(bash_rules_bundle_python_uv, bash_event("uv run some-command"))
+    assert_deny(evaluate_bash_rules, bash_event("uv run test_something.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run test_auth.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run tests/test_api.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run unit_test.py", bundles=["universal", "python_uv"]))
+    assert_deny(evaluate_bash_rules, bash_event("uv run integration_test.py", bundles=["universal", "python_uv"]))
+    assert_ask(evaluate_bash_rules, bash_event("uv run script.py", bundles=["universal", "python_uv"]))
+    assert_ask(evaluate_bash_rules, bash_event("uv run migrate.py", bundles=["universal", "python_uv"]))
+    assert_ask(evaluate_bash_rules, bash_event("uv run some-command", bundles=["universal", "python_uv"]))

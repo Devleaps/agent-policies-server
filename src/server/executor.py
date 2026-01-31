@@ -7,7 +7,7 @@ from .registry import registry
 logger = logging.getLogger(__name__)
 
 
-def execute_handlers_generic(input_data, enabled_bundles: List[str] = []) -> List[Union[PolicyDecision, PolicyGuidance]]:
+def execute_handlers_generic(input_data) -> List[Union[PolicyDecision, PolicyGuidance]]:
     """
     Execute handlers with generic event input and return generic results.
 
@@ -16,12 +16,12 @@ def execute_handlers_generic(input_data, enabled_bundles: List[str] = []) -> Lis
     2. Return raw policy results (decisions and guidance)
 
     Args:
-        input_data: The input event data
-        enabled_bundles: List of enabled bundle names, or None for all bundles
+        input_data: The input event data (bundles read from input_data.enabled_bundles)
 
     Aggregation of results is done by the mapper layer for each editor.
+    Bundle filtering is done by Rego policies, not by the Python registry.
     """
-    handlers = registry.get_handlers(type(input_data), enabled_bundles)
+    handlers = registry.get_handlers(type(input_data))
     all_results = []
 
     for handler in handlers:

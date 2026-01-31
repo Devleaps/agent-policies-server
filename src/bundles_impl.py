@@ -1,42 +1,45 @@
 """Policy bundle functions for different project types."""
 
 import re
-from typing import Generator
-from src.server.common.models import ToolUseEvent, PolicyDecision
+import logging
+from typing import Generator, Callable, Dict
+from src.server.common.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyGuidance
 from src.core.rego_integration import RegoEvaluator
 from src.core.command_parser import BashCommandParser, ParseError
 from src.utils import PolicyHelper
 
-# Single shared evaluator - loads all policies once at module import
-rego_evaluator = RegoEvaluator(policy_dir="policies")
-# Import guidance rules from their current locations
-# These remain in bundles/ subdirectories as they contain actual implementations
-from src.bundles.universal.guidance.comment_ratio import comment_ratio_guidance_rule
-from src.bundles.universal.guidance.comment_overlap import comment_overlap_guidance_rule
-from src.bundles.universal.guidance.commented_code import commented_code_guidance_rule
-from src.bundles.universal.guidance.legacy_code import legacy_code_guidance_rule
-from src.bundles.universal.guidance.mid_code_import import mid_code_import_guidance_rule
-from src.bundles.universal.guidance.readme_license import readme_license_guidance_rule
-from src.bundles.python_uv.guidance import uv_pyproject_guidance_rule
-
-all_guidance_rules = [
+from src.guidance.python_comments import (
     comment_ratio_guidance_rule,
     comment_overlap_guidance_rule,
     commented_code_guidance_rule,
     legacy_code_guidance_rule,
-    mid_code_import_guidance_rule,
-    readme_license_guidance_rule,
-]
+)
+from src.guidance.python_imports import mid_code_import_guidance_rule
+from src.guidance.documentation import license_guidance_rule
+from src.guidance.package_management import uv_pyproject_guidance_rule
 
-all_python_uv_guidance_rules = [uv_pyproject_guidance_rule]
+logger = logging.getLogger(__name__)
+
+rego_evaluator = RegoEvaluator(policy_dir="policies")
+
+# Guidance implementation registry - maps check names (from Rego) to Python implementations
+GuidanceImplementation = Callable[[PostFileEditEvent], Generator[PolicyGuidance, None, None]]
+
+GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
+    "comment_ratio": comment_ratio_guidance_rule,
+    "comment_overlap": comment_overlap_guidance_rule,
+    "commented_code": commented_code_guidance_rule,
+    "legacy_code": legacy_code_guidance_rule,
+    "mid_code_import": mid_code_import_guidance_rule,
+    "license": license_guidance_rule,
+    "uv_pyproject": uv_pyproject_guidance_rule,
+}
 
 
-def _evaluate_bash_rules(event: ToolUseEvent, bundles: list[str]) -> Generator[PolicyDecision, None, None]:
+def evaluate_bash_rules(event: ToolUseEvent) -> Generator[PolicyDecision, None, None]:
     """Evaluate bash rules against the event using Rego policies.
 
-    Args:
-        event: The tool use event to evaluate
-        bundles: List of Rego policy bundles to evaluate (e.g., ["universal"], ["universal", "python_uv"])
+    Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
     """
     if not event.tool_is_bash:
         return
@@ -51,7 +54,7 @@ def _evaluate_bash_rules(event: ToolUseEvent, bundles: list[str]) -> Generator[P
 
     try:
         parsed = BashCommandParser.parse(event.command)
-        decisions = rego_evaluator.evaluate(event, parsed, bundles=bundles)
+        decisions = rego_evaluator.evaluate(event, parsed, bundles=event.enabled_bundles)
         if decisions:
             yield from decisions
         else:
@@ -60,16 +63,23 @@ def _evaluate_bash_rules(event: ToolUseEvent, bundles: list[str]) -> Generator[P
         return
 
 
-def bash_rules_bundle_universal(event: ToolUseEvent) -> Generator[PolicyDecision, None, None]:
-    """Evaluate all universal bash rules against the event using Rego policies."""
-    yield from _evaluate_bash_rules(event, bundles=["universal"])
+def evaluate_guidance(event: PostFileEditEvent) -> Generator[PolicyGuidance, None, None]:
+    """Evaluate guidance checks using Rego activation rules and Python implementations.
 
+    Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
+    """
+    if not event.structured_patch:
+        return
 
-def bash_rules_bundle_python_pip(event: ToolUseEvent) -> Generator[PolicyDecision, None, None]:
-    """Evaluate all python-pip bash rules (including universal) against the event using Rego policies."""
-    yield from _evaluate_bash_rules(event, bundles=["universal", "python_pip"])
+    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=event.enabled_bundles)
 
+    logger.debug(f"Activated guidance checks: {activated_checks}")
 
-def bash_rules_bundle_python_uv(event: ToolUseEvent) -> Generator[PolicyDecision, None, None]:
-    """Evaluate all python-uv bash rules (including universal) against the event using Rego policies."""
-    yield from _evaluate_bash_rules(event, bundles=["universal", "python_uv"])
+    for check_name in activated_checks:
+        try:
+            guidance_impl = GUIDANCE_REGISTRY[check_name]
+            yield from guidance_impl(event)
+        except KeyError:
+            logger.error(f"Unknown guidance check '{check_name}' - not registered in GUIDANCE_REGISTRY")
+        except Exception as e:
+            logger.error(f"Error running guidance check '{check_name}': {e}")
