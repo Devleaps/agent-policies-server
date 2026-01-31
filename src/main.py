@@ -7,9 +7,9 @@ Sets up policy enforcement handlers and starts the FastAPI server.
 
 import uvicorn
 
-from devleaps.policies.server.server import app, get_registry
-from devleaps.policies.server.common.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
-from devleaps.policies.server.session import initialize_session_state
+from src.server.server import app, get_registry
+from src.server.common.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
+from src.server.session import initialize_session_state
 
 from src.bundles_impl import (
     bash_rules_bundle_universal,

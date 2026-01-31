@@ -1,5 +1,5 @@
 import pytest
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.bundles.universal.guidance import (
     comment_overlap_guidance_rule,
     comment_ratio_guidance_rule,

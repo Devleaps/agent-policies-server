@@ -2,7 +2,7 @@
 
 import re
 from typing import Generator
-from devleaps.policies.server.common.models import ToolUseEvent, PolicyDecision
+from src.server.common.models import ToolUseEvent, PolicyDecision
 from src.core.rego_integration import RegoEvaluator
 from src.core.command_parser import BashCommandParser, ParseError
 from src.utils import PolicyHelper

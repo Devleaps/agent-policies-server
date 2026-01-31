@@ -9,17 +9,7 @@ def eval_rule(rule_func, event):
     Usage:
         results = eval_rule(bash_rules_bundle_universal, bash_event("kill 1234"))
     """
-    try:
-        results = list(rule_func(event))
-    except TypeError:
-        if hasattr(event, 'tool_is_bash') and event.tool_is_bash:
-            try:
-                parsed = BashCommandParser.parse(event.command)
-            except ParseError:
-                parsed = None
-            results = list(rule_func(event, parsed))
-        else:
-            results = list(rule_func(event))
+    results = list(rule_func(event))
     return [r for r in results if hasattr(r, 'action')]
 
 
@@ -81,19 +71,7 @@ def assert_pass(rule_func, event):
         assert_pass(comment_ratio_rule, file_edit_event("test.py", []))
         assert_pass(bash_rules_bundle_universal, bash_event("git status"))
     """
-    try:
-        results = list(rule_func(event))
-    except TypeError:
-        if hasattr(event, 'tool_is_bash') and event.tool_is_bash:
-            try:
-                parsed = BashCommandParser.parse(event.command)
-            except ParseError:
-                parsed = None
-            results = list(rule_func(event, parsed))
-        elif hasattr(event, 'tool_is_bash'):
-            results = list(rule_func(event, None))
-        else:
-            results = list(rule_func(event))
+    results = list(rule_func(event))
     assert len(results) == 0, f"Expected no results (pass), got {len(results)}"
 
 
@@ -103,15 +81,5 @@ def assert_guidance(rule_func, event):
     Usage:
         assert_guidance(legacy_code_rule, file_edit_event("test.py", ["DEPRECATED"]))
     """
-    try:
-        results = list(rule_func(event))
-    except TypeError:
-        if hasattr(event, 'tool_is_bash') and event.tool_is_bash:
-            try:
-                parsed = BashCommandParser.parse(event.command)
-            except ParseError:
-                parsed = None
-            results = list(rule_func(event, parsed))
-        else:
-            results = list(rule_func(event))
+    results = list(rule_func(event))
     assert len(results) >= 1, f"Expected at least 1 guidance, got {len(results)}"

@@ -1,7 +1,7 @@
 """Guidance for legacy code modifications."""
 
 import re
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 

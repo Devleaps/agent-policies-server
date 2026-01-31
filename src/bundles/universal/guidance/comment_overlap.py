@@ -1,7 +1,7 @@
 """Provides guidance when comments redundantly describe what code already says."""
 
 import re
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 

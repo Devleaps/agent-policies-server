@@ -1,12 +1,12 @@
 """Shared pytest fixtures for all policy tests."""
 import pytest
-from devleaps.policies.server.common.models import (
+from src.server.common.models import (
     ToolUseEvent,
     PostFileEditEvent,
     StructuredPatch,
     PatchLine
 )
-from devleaps.policies.server.common.enums import SourceClient
+from src.server.common.enums import SourceClient
 
 
 @pytest.fixture

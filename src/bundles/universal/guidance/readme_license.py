@@ -1,7 +1,7 @@
 """Provides guidance when License section is added to README.md."""
 
 import re
-from devleaps.policies.server.common.models import PostFileEditEvent
+from src.server.common.models import PostFileEditEvent
 from src.utils import PolicyHelper
 
 

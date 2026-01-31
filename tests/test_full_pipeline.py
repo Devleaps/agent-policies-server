@@ -1,6 +1,6 @@
 """Test full policy evaluation pipeline to see actual final decisions."""
 
-from devleaps.policies.server.common.models import POLICY_PRECEDENCE, PolicyAction, PolicyDecision
+from src.server.common.models import POLICY_PRECEDENCE, PolicyAction, PolicyDecision
 from src.bundles_impl import bash_rules_bundle_universal
 from tests.helpers import eval_rule
 

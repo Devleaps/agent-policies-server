@@ -189,3 +189,48 @@ def test_chained_cd_rmdir_with_stderr_redirect_and_fallback(bash_event):
     assert_allow(bash_rules_bundle_universal, bash_event(
         "cd project-dir && rmdir dir1 dir2 dir3 2>/dev/null || true"
     ))
+
+
+def test_chained_safe_commands_allowed(bash_event):
+    """Test that chained safe commands are allowed."""
+    assert_allow(bash_rules_bundle_universal, bash_event("cd .. && ls"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git status && git diff"))
+    assert_allow(bash_rules_bundle_universal, bash_event("cd src && cat file.txt && cd .."))
+
+
+def test_chained_dangerous_commands_blocked(bash_event):
+    """Test that dangerous commands in chains are blocked (security vulnerability fix)."""
+    # timeout is blocked - should be denied even in a chain
+    assert_deny(bash_rules_bundle_universal, bash_event("cd .. && timeout 120 sleep 120"))
+
+    # sudo is blocked - should be denied even when chained after safe command
+    assert_deny(bash_rules_bundle_universal, bash_event("ls && sudo rm -rf /"))
+
+    # kill is blocked - should be denied in chain
+    assert_deny(bash_rules_bundle_universal, bash_event("git status && kill 1234"))
+
+    # xargs is blocked - should be denied in chain
+    assert_deny(bash_rules_bundle_universal, bash_event("cd project && ls | xargs rm"))
+
+
+def test_chained_timeout_docker_build_blocked(bash_event):
+    """Test the specific vulnerability case: cd .. && timeout docker build."""
+    assert_deny(bash_rules_bundle_universal, bash_event(
+        "cd .. && cd agent-internal-policies && timeout 120 docker build -t app:latest . 2>&1 | tail"
+    ))
+
+
+def test_piped_dangerous_commands_blocked(bash_event):
+    """Test that dangerous commands in pipes are also evaluated."""
+    # xargs is blocked - should be denied in pipe
+    assert_deny(bash_rules_bundle_universal, bash_event("ls | xargs rm"))
+
+    # awk is blocked - should be denied in pipe
+    assert_deny(bash_rules_bundle_universal, bash_event("cat file.txt | awk '{print $1}'"))
+
+
+def test_safe_pipes_allowed(bash_event):
+    """Test that safe piped commands are allowed."""
+    assert_allow(bash_rules_bundle_universal, bash_event("cat file.txt | head -10"))
+    assert_allow(bash_rules_bundle_universal, bash_event("git log | grep 'fix'"))
+    assert_allow(bash_rules_bundle_universal, bash_event("ls -la | tail -20"))
