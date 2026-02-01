@@ -3,7 +3,7 @@
 import time
 import pytest
 from unittest.mock import patch
-from src.server.session.flags import get_flag, clear_flags, initialize_flags_storage
+from src.server.session import get_flag, clear_flags, initialize_flags_storage
 from src.server.executor import execute_handlers_generic
 
 
@@ -49,7 +49,7 @@ def test_docker_push_allowed_with_build_cache(bash_event):
 
 def test_build_cache_expires_after_2_seconds(bash_event):
     """Test that build_cached flag expires after 2 seconds."""
-    with patch('src.server.session.flags.time.time') as mock_time:
+    with patch('src.server.session.time.time') as mock_time:
         mock_time.return_value = 1000.0
 
         build_event = bash_event("docker build -t myimage:latest .", bundles=["universal", "demo_flags"])

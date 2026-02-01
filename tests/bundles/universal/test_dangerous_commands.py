@@ -1,5 +1,5 @@
 """Test dangerous command combinations."""
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 from tests.helpers import assert_deny
 
 

@@ -1,6 +1,6 @@
 """Test /tmp redirect blocking."""
 import pytest
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 from tests.helpers import assert_allow, assert_deny, assert_pass
 
 

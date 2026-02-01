@@ -1,13 +1,14 @@
 """
-Session flag management with expiration support.
+Session flag management for policy enforcement.
 
 Provides flag setting/checking with invocation count and time-based expiration.
+Thread-safe storage keyed by session ID.
 """
 
 import time
 import threading
 from typing import Any, Dict, Optional
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 # Thread lock for flag operations

@@ -1,7 +1,7 @@
 """Tests for demo_flags cooldown pattern."""
 
 import pytest
-from src.server.session.flags import get_flag, clear_flags, initialize_flags_storage
+from src.server.session import get_flag, clear_flags, initialize_flags_storage
 from src.server.executor import execute_handlers_generic
 
 

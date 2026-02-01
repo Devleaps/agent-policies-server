@@ -8,13 +8,9 @@ Sets up policy enforcement handlers and starts the FastAPI server.
 import uvicorn
 
 from src.server.server import app, get_registry
-from src.server.common.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
-from src.server.session import initialize_session_state
+from src.server.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
 
-from src.bundles_impl import (
-    evaluate_bash_rules,
-    evaluate_guidance,
-)
+from src.evaluation import evaluate_bash_rules, evaluate_guidance
 
 
 def setup_all_policies():
@@ -31,9 +27,6 @@ def setup_all_policies():
 def main():
     """Start the server with all policies registered."""
     print("Starting AI Agent Policy Server...")
-
-    initialize_session_state()
-    print("Session state management initialized")
 
     setup_all_policies()
 

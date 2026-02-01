@@ -1,5 +1,5 @@
 """Test uv run pytest with absolute paths."""
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 
 
 def test_uv_run_pytest_with_absolute_path(bash_event):

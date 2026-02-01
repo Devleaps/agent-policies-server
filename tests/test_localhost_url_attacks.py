@@ -1,7 +1,7 @@
 """Test that localhost URL detection is defensive against attack vectors."""
-from src.core.rego_integration import RegoEvaluator
-from src.core.command_parser import BashCommandParser
-from src.server.common.models import ToolUseEvent
+from src.evaluation.rego import RegoEvaluator
+from src.evaluation.parser import BashCommandParser
+from src.server.models import ToolUseEvent
 
 
 def test_localhost_in_query_param_should_deny():

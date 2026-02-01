@@ -3,9 +3,9 @@ Mappers to convert Cursor hook inputs/outputs to/from generic models.
 """
 from typing import List, Union
 
-from ..common.enums import SourceClient
-from ..common.mapper_base import separate_results, find_highest_priority_decision
-from ..common.models import (
+from ..enums import SourceClient
+from ..mapper_utils import separate_results, find_highest_priority_decision
+from ..models import (
     HookEvent,
     PolicyAction,
     PolicyDecision,

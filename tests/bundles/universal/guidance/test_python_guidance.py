@@ -1,5 +1,5 @@
 import pytest
-from src.server.common.models import PostFileEditEvent
+from src.server.models import PostFileEditEvent
 from src.guidance.python_comments import (
     comment_overlap_guidance_rule,
     comment_ratio_guidance_rule,

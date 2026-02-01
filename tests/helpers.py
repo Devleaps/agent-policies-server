@@ -1,6 +1,6 @@
 """Helper functions for evaluating rules and asserting results."""
 
-from src.core.command_parser import BashCommandParser, ParseError
+from src.evaluation.parser import BashCommandParser, ParseError
 
 
 def eval_rule(rule_func, event):

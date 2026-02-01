@@ -3,7 +3,7 @@
 import time
 import pytest
 from unittest.mock import patch
-from src.server.session.flags import (
+from src.server.session import (
     set_flag,
     get_flag,
     cleanup_expired_flags,
@@ -92,7 +92,7 @@ def test_time_based_expiration():
     """Test flag expiration by time."""
     session_id = "test-session-6"
 
-    with patch('src.server.session.flags.time.time') as mock_time:
+    with patch('src.server.session.time.time') as mock_time:
         mock_time.return_value = 1000.0
 
         set_flag(session_id, {

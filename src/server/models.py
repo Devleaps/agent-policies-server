@@ -40,6 +40,21 @@ class PolicyDecision:
     reason: Optional[str] = None
     flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
+    @staticmethod
+    def deny(reason: str) -> 'PolicyDecision':
+        """Create a DENY decision with the given reason."""
+        return PolicyDecision(action=PolicyAction.DENY, reason=reason)
+
+    @staticmethod
+    def allow(reason: str = None) -> 'PolicyDecision':
+        """Create an ALLOW decision with an optional reason."""
+        return PolicyDecision(action=PolicyAction.ALLOW, reason=reason)
+
+    @staticmethod
+    def ask(reason: str = None) -> 'PolicyDecision':
+        """Create an ASK decision (prompt user) with an optional reason."""
+        return PolicyDecision(action=PolicyAction.ASK, reason=reason)
+
 
 @dataclass
 class PolicyGuidance:

@@ -1,8 +1,7 @@
 """Python code comment quality guidance."""
 
 import re
-from src.server.common.models import PostFileEditEvent
-from src.utils import PolicyHelper
+from src.server.models import PostFileEditEvent, PolicyGuidance
 
 
 def comment_ratio_guidance_rule(input_data: PostFileEditEvent):
@@ -31,7 +30,7 @@ def comment_ratio_guidance_rule(input_data: PostFileEditEvent):
         ratio = comment_count / (code_count + comment_count)
         if ratio > 0.4:
             percentage = round(ratio * 100)
-            yield PolicyHelper.guidance(
+            yield PolicyGuidance(content=
                 f"Comment-to-code ratio is {percentage}%. "
                 "Write self-explanatory code. Consider removing redundant comments."
             )
@@ -72,7 +71,7 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
                     overlap_ratio = len(overlap) / len(comment_keywords)
 
                     if overlap_ratio >= 0.4:
-                        yield PolicyHelper.guidance(
+                        yield PolicyGuidance(content=
                             "Ensure comments add value beyond describing what's obvious from the code. "
                             "This comment may be redundant with the code it describes. "
                             "Comments are fine when they add value beyond the code or separate segments of code."
@@ -96,7 +95,7 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
                         overlap_ratio = len(overlap) / len(comment_keywords)
 
                         if overlap_ratio >= 0.4:
-                            yield PolicyHelper.guidance(
+                            yield PolicyGuidance(content=
                                 "Ensure comments add value beyond describing what's obvious from the code. "
                                 "This comment may be redundant with the code it describes. "
                                 "Comments are fine when they add value beyond the code or separate segments of code."
@@ -134,7 +133,7 @@ def commented_code_guidance_rule(input_data: PostFileEditEvent):
                 consecutive_commented_code += 1
 
                 if consecutive_commented_code >= 2:
-                    yield PolicyHelper.guidance(
+                    yield PolicyGuidance(content=
                         "If a large segment of code was commented out within a Git project, "
                         "it should be removed rather than maintained for historical purposes."
                     )
@@ -161,7 +160,7 @@ def legacy_code_guidance_rule(input_data: PostFileEditEvent):
             line = patch_line.content.lower()
             for pattern in legacy_patterns:
                 if re.search(pattern, line):
-                    yield PolicyHelper.guidance(
+                    yield PolicyGuidance(content=
                         "Detected a note on backwards compatibility, legacy, or deprecated code. "
                         "Are you sure about backwards compatibility as a requirement? If not explicitly requested, check with the user first."
                     )

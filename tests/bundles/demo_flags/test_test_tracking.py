@@ -1,8 +1,8 @@
 """Tests for demo_flags test tracking policies."""
 
 import pytest
-from src.bundles_impl import evaluate_bash_rules
-from src.server.session.flags import get_flag, clear_flags, initialize_flags_storage
+from src.evaluation import evaluate_bash_rules
+from src.server.session import get_flag, clear_flags, initialize_flags_storage
 from src.server.executor import execute_handlers_generic
 from tests.helpers import assert_allow, assert_deny
 

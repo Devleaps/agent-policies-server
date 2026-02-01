@@ -190,110 +190,49 @@ decisions[decision] if {
 # kubectl/k read-only subcommands
 kubectl_read_only_subcommands := ["get", "list", "describe", "logs", "top", "version", "api-versions", "api-resources", "explain", "cluster-info"]
 
-# kubectl read-only subcommands - allow
-decisions[decision] if {
+# Helper: check if executable is kubectl or its alias
+is_kube_exe if {
 	input.parsed.executable == "kubectl"
-	some subcommand in kubectl_read_only_subcommands
-	input.parsed.subcommand == subcommand
-	decision := {"action": "allow"}
 }
 
-# kubectl config view - allow
-decisions[decision] if {
-	input.parsed.executable == "kubectl"
+is_kube_exe if {
+	input.parsed.executable == "k"
+}
+
+# Helper: check if kube command is read-only allowed
+kube_is_allowed if {
+	is_kube_exe
+	some subcommand in kubectl_read_only_subcommands
+	input.parsed.subcommand == subcommand
+}
+
+kube_is_allowed if {
+	is_kube_exe
 	input.parsed.subcommand == "config"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "view"
-	decision := {"action": "allow"}
 }
 
-# kubectl auth can-i - allow
-decisions[decision] if {
-	input.parsed.executable == "kubectl"
+kube_is_allowed if {
+	is_kube_exe
 	input.parsed.subcommand == "auth"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "can-i"
+}
+
+# kubectl/k read-only - allow
+decisions[decision] if {
+	is_kube_exe
+	kube_is_allowed
 	decision := {"action": "allow"}
 }
 
-# kubectl other commands - deny
+# kubectl/k non-read-only - deny
 decisions[decision] if {
-	input.parsed.executable == "kubectl"
-	not kubectl_is_allowed
+	is_kube_exe
+	not kube_is_allowed
 	decision := {
 		"action": "deny",
 		"reason": "Only read-only kubectl operations are allowed",
 	}
-}
-
-# Helper to check if kubectl command is allowed
-kubectl_is_allowed if {
-	some subcommand in kubectl_read_only_subcommands
-	input.parsed.subcommand == subcommand
-}
-
-kubectl_is_allowed if {
-	input.parsed.subcommand == "config"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "view"
-}
-
-kubectl_is_allowed if {
-	input.parsed.subcommand == "auth"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "can-i"
-}
-
-# k (kubectl alias) read-only subcommands - allow
-decisions[decision] if {
-	input.parsed.executable == "k"
-	some subcommand in kubectl_read_only_subcommands
-	input.parsed.subcommand == subcommand
-	decision := {"action": "allow"}
-}
-
-# k config view - allow
-decisions[decision] if {
-	input.parsed.executable == "k"
-	input.parsed.subcommand == "config"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "view"
-	decision := {"action": "allow"}
-}
-
-# k auth can-i - allow
-decisions[decision] if {
-	input.parsed.executable == "k"
-	input.parsed.subcommand == "auth"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "can-i"
-	decision := {"action": "allow"}
-}
-
-# k other commands - deny
-decisions[decision] if {
-	input.parsed.executable == "k"
-	not k_is_allowed
-	decision := {
-		"action": "deny",
-		"reason": "Only read-only kubectl operations are allowed",
-	}
-}
-
-# Helper to check if k command is allowed
-k_is_allowed if {
-	some subcommand in kubectl_read_only_subcommands
-	input.parsed.subcommand == subcommand
-}
-
-k_is_allowed if {
-	input.parsed.subcommand == "config"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "view"
-}
-
-k_is_allowed if {
-	input.parsed.subcommand == "auth"
-	count(input.parsed.arguments) > 0
-	input.parsed.arguments[0] == "can-i"
 }

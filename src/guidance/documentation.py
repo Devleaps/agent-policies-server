@@ -1,8 +1,7 @@
 """Documentation-related guidance."""
 
 import re
-from src.server.common.models import PostFileEditEvent
-from src.utils import PolicyHelper
+from src.server.models import PostFileEditEvent, PolicyGuidance
 
 
 def license_guidance_rule(input_data: PostFileEditEvent):
@@ -11,7 +10,7 @@ def license_guidance_rule(input_data: PostFileEditEvent):
         for patch_line in patch.lines:
             if patch_line.operation == "added":
                 if re.search(r'\blicense\b', patch_line.content, re.IGNORECASE):
-                    yield PolicyHelper.guidance(
+                    yield PolicyGuidance(content=
                         "An AI is only allowed to add a License segment to documentation when explicit "
                         "permission was granted by the user, and the user selected the license documented."
                     )

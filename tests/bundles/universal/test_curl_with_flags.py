@@ -1,5 +1,5 @@
 """Test curl commands with flags like -s that take URL as option value."""
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 from tests.helpers import assert_allow, assert_deny
 
 

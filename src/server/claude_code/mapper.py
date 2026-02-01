@@ -3,13 +3,13 @@ Mappers to convert Claude Code hook inputs/outputs to/from generic models.
 """
 from typing import List, TypeVar, Union
 
-from ..common.enums import SourceClient
+from ..enums import SourceClient
 from .api.request_wrapper import RequestWrapper
-from ..common.mapper_base import (
+from ..mapper_utils import (
     separate_results,
     find_highest_priority_decision,
 )
-from ..common.models import (
+from ..models import (
     FileEditEvent,
     HookEvent,
     PatchLine,
@@ -24,22 +24,29 @@ from ..common.models import (
     ToolUseEvent,
 )
 from .api.enums import PermissionDecision, ToolName
-from .api.notification import NotificationInput, NotificationOutput
+from .api.hooks import (
+    NotificationInput,
+    NotificationOutput,
+    PreCompactInput,
+    PreCompactOutput,
+    SessionEndInput,
+    SessionEndOutput,
+    SessionStartHookSpecificOutput,
+    SessionStartInput,
+    SessionStartOutput,
+    StopInput,
+    StopOutput,
+    SubagentStopInput,
+    SubagentStopOutput,
+    UserPromptSubmitInput,
+    UserPromptSubmitOutput,
+)
 from .api.post_tool_use import PostToolUseInput, PostToolUseOutput, PostToolUseHookSpecificOutput
-from .api.pre_compact import PreCompactInput, PreCompactOutput
 from .api.pre_tool_use import (
     PreToolUseHookSpecificOutput,
     PreToolUseInput,
     PreToolUseOutput,
 )
-from .api.session_end import SessionEndInput, SessionEndOutput
-from .api.session_start import (
-    SessionStartHookSpecificOutput,
-    SessionStartInput,
-    SessionStartOutput,
-)
-from .api.stop import StopInput, StopOutput, SubagentStopInput, SubagentStopOutput
-from .api.user_prompt_submit import UserPromptSubmitInput, UserPromptSubmitOutput
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -345,43 +352,8 @@ def map_to_post_tool_use_output(
     ) if additional_context else default_output
 
 
-def map_to_user_prompt_submit_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: UserPromptSubmitOutput
-) -> UserPromptSubmitOutput:
-    """Map generic results to UserPromptSubmitOutput"""
-    return default_output
-
-
-def map_to_stop_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: StopOutput
-) -> StopOutput:
-    """Map generic results to StopOutput"""
-    return default_output
-
-
-def map_to_subagent_stop_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: SubagentStopOutput
-) -> SubagentStopOutput:
-    """Map generic results to SubagentStopOutput"""
-    return default_output
-
-
-def map_to_notification_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: NotificationOutput
-) -> NotificationOutput:
-    """Map generic results to NotificationOutput"""
-    return default_output
-
-
-def map_to_pre_compact_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: PreCompactOutput
-) -> PreCompactOutput:
-    """Map generic results to PreCompactOutput"""
+def map_to_default_output(results, default_output):
+    """Return default output for hooks with no policy mapping."""
     return default_output
 
 
@@ -400,12 +372,4 @@ def map_to_session_start_output(
             )
         )
 
-    return default_output
-
-
-def map_to_session_end_output(
-    results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: SessionEndOutput
-) -> SessionEndOutput:
-    """Map generic results to SessionEndOutput"""
     return default_output
