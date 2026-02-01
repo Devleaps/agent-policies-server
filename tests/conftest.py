@@ -7,6 +7,13 @@ from src.server.common.models import (
     PatchLine
 )
 from src.server.common.enums import SourceClient
+from src.main import setup_all_policies
+
+
+@pytest.fixture(autouse=True, scope="session")
+def register_policies():
+    """Register all policy handlers once for all tests."""
+    setup_all_policies()
 
 
 @pytest.fixture
