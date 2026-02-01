@@ -1,8 +1,7 @@
 """Python import placement guidance."""
 
 import re
-from src.server.common.models import PostFileEditEvent
-from src.utils import PolicyHelper
+from src.server.models import PostFileEditEvent, PolicyGuidance
 
 
 def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
@@ -35,7 +34,7 @@ def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
                 continue
 
             if import_pattern.match(line_content):
-                yield PolicyHelper.guidance(
+                yield PolicyGuidance(content=
                     "Import statements should be at the top of the file, not nested inside "
                     "functions, classes, or other blocks. Move imports to the module level "
                     "unless there's a specific reason for lazy importing (e.g., avoiding "

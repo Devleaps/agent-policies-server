@@ -1,8 +1,9 @@
 """Test the Rego-based guidance activation system."""
 import pytest
-from src.core.rego_integration import RegoEvaluator
-from src.server.common.models import PostFileEditEvent, SourceClient, PatchLine, StructuredPatch
-from src.bundles_impl import evaluate_guidance
+from src.evaluation.rego import RegoEvaluator
+from src.server.models import PostFileEditEvent, PatchLine, StructuredPatch
+from src.server.enums import SourceClient
+from src.evaluation import evaluate_guidance
 
 
 @pytest.fixture

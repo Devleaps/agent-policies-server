@@ -1,7 +1,6 @@
 """Package management guidance."""
 
-from src.server.common.models import PostFileEditEvent
-from src.utils import PolicyHelper
+from src.server.models import PostFileEditEvent, PolicyGuidance
 
 
 def uv_pyproject_guidance_rule(input_data: PostFileEditEvent):
@@ -10,7 +9,7 @@ def uv_pyproject_guidance_rule(input_data: PostFileEditEvent):
     Detects if dependencies were added and suggests using 'uv add' instead,
     which has an integrated whitelist for security.
     """
-    yield PolicyHelper.guidance(
+    yield PolicyGuidance(content=
         "A change was detected on pyproject.toml. In the case that dependencies were modified:\n"
         "Use 'uv add package-name' instead, which has an integrated whitelist for security.\n"
         "Example: uv add requests"

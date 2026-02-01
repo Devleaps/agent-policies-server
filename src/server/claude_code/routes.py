@@ -5,28 +5,34 @@ from fastapi import APIRouter
 from ..executor import execute_handlers_generic
 from . import mapper
 from .api.enums import PermissionDecision, ToolName
-from .api.notification import NotificationInput, NotificationOutput
+from .api.hooks import (
+    NotificationInput,
+    NotificationOutput,
+    PreCompactInput,
+    PreCompactOutput,
+    SessionEndInput,
+    SessionEndOutput,
+    SessionStartHookSpecificOutput,
+    SessionStartInput,
+    SessionStartOutput,
+    StopInput,
+    StopOutput,
+    SubagentStopInput,
+    SubagentStopOutput,
+    UserPromptSubmitInput,
+    UserPromptSubmitOutput,
+)
 from .api.post_tool_use import PostToolUseInput, PostToolUseOutput
-from .api.pre_compact import PreCompactInput, PreCompactOutput
 from .api.pre_tool_use import (
     PreToolUseHookSpecificOutput,
     PreToolUseInput,
     PreToolUseOutput,
 )
 from .api.request_wrapper import RequestWrapper
-from .api.session_end import SessionEndInput, SessionEndOutput
-from .api.session_start import (
-    SessionStartHookSpecificOutput,
-    SessionStartInput,
-    SessionStartOutput,
-)
-from .api.stop import StopInput, StopOutput, SubagentStopInput, SubagentStopOutput
-from .api.user_prompt_submit import UserPromptSubmitInput, UserPromptSubmitOutput
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/policy/claude-code")
-
 
 
 
@@ -104,7 +110,7 @@ async def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOu
     results = execute_handlers_generic(generic_input)
 
     default = UserPromptSubmitOutput(continue_=True)
-    result = mapper.map_to_user_prompt_submit_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("UserPromptSubmit", input_data, result)
     return result
 
@@ -120,7 +126,7 @@ async def stop_hook(wrapper: RequestWrapper) -> StopOutput:
     results = execute_handlers_generic(generic_input)
 
     default = StopOutput(continue_=True)
-    result = mapper.map_to_stop_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("Stop", input_data, result)
     return result
 
@@ -136,7 +142,7 @@ async def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
     results = execute_handlers_generic(generic_input)
 
     default = SubagentStopOutput(continue_=True)
-    result = mapper.map_to_subagent_stop_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("SubagentStop", input_data, result)
     return result
 
@@ -152,7 +158,7 @@ async def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
     results = execute_handlers_generic(generic_input)
 
     default = NotificationOutput(continue_=True)
-    result = mapper.map_to_notification_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("Notification", input_data, result)
     return result
 
@@ -168,7 +174,7 @@ async def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
     results = execute_handlers_generic(generic_input)
 
     default = PreCompactOutput(continue_=True)
-    result = mapper.map_to_pre_compact_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("PreCompact", input_data, result)
     return result
 
@@ -203,6 +209,6 @@ async def session_end_hook(wrapper: RequestWrapper) -> SessionEndOutput:
     results = execute_handlers_generic(generic_input)
 
     default = SessionEndOutput(continue_=True)
-    result = mapper.map_to_session_end_output(results, default)
+    result = mapper.map_to_default_output(results, default)
     _log_generic_hook_outcome("SessionEnd", input_data, result)
     return result

@@ -1,5 +1,5 @@
 """Test piped command combinations."""
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 
 
 def test_pytest_pipe_head(bash_event):

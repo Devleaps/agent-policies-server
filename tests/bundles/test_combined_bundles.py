@@ -1,5 +1,5 @@
 """Test with multiple bundles combined."""
-from src.bundles_impl import evaluate_bash_rules
+from src.evaluation import evaluate_bash_rules
 
 
 def test_uv_pytest_with_both_bundles(bash_event):

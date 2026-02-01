@@ -16,10 +16,10 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 from regopy import Interpreter, NodeKind
-from src.server.common.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyAction
-from src.server.session.flags import get_all_flags
+from src.server.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyAction
+from src.server.session import get_all_flags
 
-from src.core.command_parser import ParsedCommand
+from src.evaluation.parser import ParsedCommand
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,35 @@ class RegoEvaluator:
         for piped_cmd in parsed.pipes:
             piped_decisions = self.evaluate(event, piped_cmd, bundles)
             all_decisions.extend(piped_decisions)
+
+        return all_decisions
+
+    def evaluate_file_edit_decisions(
+        self,
+        event: PostFileEditEvent,
+        bundles: List[str]
+    ) -> List[PolicyDecision]:
+        """Evaluate decisions rules for a file edit event.
+
+        This allows Rego policies to set session flags in response to file edits
+        (e.g., invalidating a 'ran_tests' flag when a .py file is edited).
+
+        Args:
+            event: The file edit event from the client
+            bundles: List of policy bundles to evaluate
+
+        Returns:
+            List of PolicyDecision objects from all matching rules
+        """
+        all_decisions = []
+        input_doc = self._build_file_edit_input_document(event)
+
+        for bundle in bundles:
+            try:
+                bundle_decisions = self._evaluate_bundle(bundle, input_doc)
+                all_decisions.extend(bundle_decisions)
+            except Exception as e:
+                logger.error(f"Error evaluating file edit decisions for bundle '{bundle}': {e}")
 
         return all_decisions
 
@@ -312,6 +341,12 @@ class RegoEvaluator:
             if not output.ok():
                 return []
 
+            # regopy's C++ backend aborts if expressions() is called on
+            # an undefined result (e.g. bundle doesn't define decisions).
+            # Check the string representation before touching expressions().
+            if str(output) == "undefined":
+                return []
+
             # Get the first expression result (not binding, since we're querying a data path)
             decisions_node = output.expressions(index=0)
             if decisions_node is None:
@@ -346,6 +381,9 @@ class RegoEvaluator:
             output = self.interpreter.query(query)
 
             if not output.ok():
+                return []
+
+            if str(output) == "undefined":
                 return []
 
             activations_node = output.expressions(index=0)
@@ -446,8 +484,12 @@ class RegoEvaluator:
 
                         action = action_map.get(action_str)
                         if not action:
-                            logger.warning(f"Unknown action '{action_str}' in decision, skipping")
-                            continue
+                            if flags:
+                                # Flag-only decisions (no action) default to ALLOW
+                                action = PolicyAction.ALLOW
+                            else:
+                                logger.warning(f"Unknown action '{action_str}' in decision, skipping")
+                                continue
 
                         decisions.append(PolicyDecision(action=action, reason=reason, flags=flags))
 

@@ -622,7 +622,7 @@ Create tests in `tests/policies/`:
 import pytest
 from src.core.rego_integration import RegoEvaluator
 from src.core.command_parser import BashCommandParser
-from src.server.common.models import ToolUseEvent, PolicyAction
+from src.server.models import ToolUseEvent, PolicyAction
 
 @pytest.fixture
 def rego_evaluator():

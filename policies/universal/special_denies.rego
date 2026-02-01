@@ -19,21 +19,3 @@ decisions[decision] if {
 		"reason": "Direct execution from `.venv/bin/` is not allowed.\nUse `uv run` to execute tools (e.g., `uv run pytest`).",
 	}
 }
-
-# Helper: check if redirect path is unsafe
-is_unsafe_redirect(redirect) if {
-	unsafe_prefixes := ["/tmp/", "/home/", "/etc/"]
-	some prefix in unsafe_prefixes
-	startswith(redirect.path, prefix)
-}
-
-# Deny redirects to unsafe paths
-decisions[decision] if {
-	count(input.parsed.redirects) > 0
-	some redirect in input.parsed.redirects
-	is_unsafe_redirect(redirect)
-	decision := {
-		"action": "deny",
-		"reason": "Writing to `/tmp/`, `/home/`, or `/etc/` is not allowed.\nUse workspace-relative paths instead.",
-	}
-}

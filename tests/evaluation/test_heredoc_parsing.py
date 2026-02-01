@@ -1,6 +1,6 @@
 """Test heredoc command parsing."""
 import pytest
-from src.core.command_parser import BashCommandParser, ParseError
+from src.evaluation.parser import BashCommandParser, ParseError
 
 
 def test_heredoc_incomplete_raises_error():

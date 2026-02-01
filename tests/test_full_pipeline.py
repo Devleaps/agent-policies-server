@@ -1,7 +1,7 @@
 """Test full policy evaluation pipeline to see actual final decisions."""
 
-from src.server.common.models import POLICY_PRECEDENCE, PolicyAction, PolicyDecision
-from src.bundles_impl import evaluate_bash_rules
+from src.server.models import POLICY_PRECEDENCE, PolicyAction, PolicyDecision
+from src.evaluation import evaluate_bash_rules
 from tests.helpers import eval_rule
 
 

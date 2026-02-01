@@ -1,9 +1,9 @@
 import logging
 from typing import List, Union
 
-from .common.models import PolicyDecision, PolicyGuidance, BaseEvent
+from .models import PolicyDecision, PolicyGuidance, BaseEvent
 from .registry import registry
-from .session.flags import (
+from .session import (
     cleanup_expired_flags,
     decrement_invocation_flags,
     set_flag

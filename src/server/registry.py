@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Type, TypeVar, Union
 
-from .common.models import PolicyDecision, PolicyGuidance
+from .models import PolicyDecision, PolicyGuidance
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,6 @@ class HookRegistry:
         """Get all handlers for input class."""
         return self.handlers.get(input_class, [])
 
-    def register_all_handlers(self, input_class: Type[InputType], handler_list: List[HandlerFunction]):
-        """Register multiple handlers at once."""
-        for handler in handler_list:
-            self.register_handler(input_class, handler)
 
 
 registry: HookRegistry = HookRegistry()

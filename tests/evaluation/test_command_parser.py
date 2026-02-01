@@ -1,7 +1,7 @@
 """Tests for bashlex-based command parser."""
 
 import pytest
-from src.core.command_parser import BashCommandParser, ParsedCommand, ParseError
+from src.evaluation.parser import BashCommandParser, ParsedCommand, ParseError
 
 
 def test_simple_command():
