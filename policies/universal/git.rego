@@ -108,6 +108,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.subcommand == "commit"
+
 	# Require one of: -m, --message, or --amend
 	has_message_or_amend
 	decision := {"action": "allow"}

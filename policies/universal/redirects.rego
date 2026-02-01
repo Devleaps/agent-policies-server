@@ -19,6 +19,7 @@ is_unsafe_redirect(path) if {
 decisions[decision] if {
 	count(input.parsed.redirects) > 0
 	some redirect in input.parsed.redirects
+
 	# redirect is a dict with "op" and "path" fields
 	path := redirect.path
 	is_unsafe_redirect(path)

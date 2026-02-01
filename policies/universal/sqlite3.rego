@@ -11,6 +11,7 @@ command_upper := upper(input.event.command)
 has_write_operation if {
 	write_ops := ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "REPLACE", "ATTACH", "DETACH", "PRAGMA"]
 	some op in write_ops
+
 	# Use regex with word boundaries - pattern must match entire string in Rego
 	# So we use .* before and after to match the whole command
 	pattern := sprintf(".*\\b%s\\b.*", [op])

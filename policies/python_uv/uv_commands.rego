@@ -132,9 +132,7 @@ decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
 	input.pypi_metadata.age_days >= 365
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny uv add if PyPI metadata is missing (package not found)
@@ -179,9 +177,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "sync"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Whitelisted tools allowed
@@ -194,7 +190,5 @@ decisions[decision] if {
 	count(input.parsed.arguments) > 0
 	some tool in uv_run_allowed_tools
 	input.parsed.arguments[0] == tool
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }

@@ -69,13 +69,15 @@ is_localhost_url(url) if {
 	# Valid: 127.0.0.1:8080 -> no dots after first segment
 	# Invalid: 127.0.0.1.evil.com -> dots after
 	colon_parts := split(host_and_port, ":")
+
 	# If there's a colon, everything before it should be 127.x.x.x
 	# If no colon, the whole thing should be 127.x.x.x
 	# Count dots in the host part (before colon)
 	ip_part := colon_parts[0]
+
 	# Valid 127.x.x.x has exactly 3 dots, nothing more
-	not contains(ip_part, "..")  # no double dots
-	count(split(ip_part, ".")) == 4  # exactly 4 octets
+	not contains(ip_part, "..") # no double dots
+	count(split(ip_part, ".")) == 4 # exactly 4 octets
 }
 
 # Helper to check if URL matches [::1] exactly

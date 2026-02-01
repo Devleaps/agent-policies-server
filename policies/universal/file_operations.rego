@@ -45,6 +45,7 @@ all_args_and_options_safe if {
 bracket_args_and_options_safe if {
 	# Filter out ']' from arguments
 	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
+
 	# Check filtered arguments
 	count(filtered_args) > 0
 	every arg in filtered_args {
@@ -63,6 +64,7 @@ bracket_args_and_options_safe if {
 bracket_args_and_options_safe if {
 	# Filter out ']' from arguments
 	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
+
 	# Allow if both filtered args and options are empty
 	count(filtered_args) == 0
 	count(input.parsed.options) == 0
@@ -72,9 +74,7 @@ bracket_args_and_options_safe if {
 decisions[decision] if {
 	input.parsed.executable == "cat"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny cat with unsafe paths
@@ -91,9 +91,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "chmod"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny chmod with unsafe paths
@@ -110,9 +108,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "cp"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny cp with unsafe paths
@@ -129,9 +125,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "cut"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny cut with unsafe paths
@@ -148,9 +142,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "diff"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny diff with unsafe paths
@@ -167,9 +159,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "du"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny du with unsafe paths
@@ -186,9 +176,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "ls"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny ls with unsafe paths
@@ -205,9 +193,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "mkdir"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny mkdir with unsafe paths
@@ -224,9 +210,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "sed"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny sed with unsafe paths
@@ -243,9 +227,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "sort"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny sort with unsafe paths
@@ -262,9 +244,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "tail"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny tail with unsafe paths
@@ -281,9 +261,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "head"
 	all_args_safe(input.parsed.arguments)
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # Deny head with unsafe paths
@@ -299,65 +277,47 @@ decisions[decision] if {
 # Always allow commands (no path arguments required)
 decisions[decision] if {
 	input.parsed.executable == "grep"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "lsof"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "pkill"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "ps"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "pwd"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "echo"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "nslookup"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "pytest"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "tflint"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # opa test - allow policy testing
@@ -365,23 +325,17 @@ decisions[decision] if {
 	input.parsed.executable == "opa"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "test"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "which"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "true"
-	decision := {
-		"action": "allow",
-	}
+	decision := {"action": "allow"}
 }
 
 # mv - move/rename files (safe paths required)
