@@ -11,11 +11,16 @@ RUN pip install --no-cache-dir uv
 
 WORKDIR /app
 
+# Install dependencies only (cached when pyproject.toml/uv.lock unchanged)
 COPY pyproject.toml uv.lock ./
+RUN uv export --no-hashes > requirements.txt && \
+    uv pip install --system -r requirements.txt && \
+    rm requirements.txt
+
+# Copy source code and install local package without dependencies
 COPY src ./src
 COPY policies ./policies
-
-RUN uv pip install --system .
+RUN uv pip install --system --no-deps .
 
 EXPOSE 8338
 
