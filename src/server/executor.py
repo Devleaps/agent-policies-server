@@ -62,7 +62,7 @@ def execute_handlers_generic(input_data) -> List[Union[PolicyDecision, PolicyGui
     # Process flags from policy decisions
     if isinstance(input_data, BaseEvent):
         for result in all_results:
-            if isinstance(result, PolicyDecision) and result.flags:
+            if hasattr(result, 'flags') and result.flags:
                 for flag_spec in result.flags:
                     try:
                         set_flag(input_data.session_id, flag_spec)

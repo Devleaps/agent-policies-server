@@ -61,6 +61,7 @@ class PolicyGuidance:
     """Guidance/context without making a decision - always shown to both user and agent"""
     content: str
     metadata: Optional[Dict[str, Any]] = None
+    flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
 
 class PatchLine(BaseModel):

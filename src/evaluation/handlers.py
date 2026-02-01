@@ -35,10 +35,11 @@ GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
 }
 
 
-def evaluate_bash_rules(event: ToolUseEvent) -> Generator[PolicyDecision, None, None]:
+def evaluate_bash_rules(event: ToolUseEvent) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
     """Evaluate bash rules against the event using Rego policies.
 
     Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
+    Yields both PolicyDecision and PolicyGuidance objects.
     """
     if not event.tool_is_bash:
         return
@@ -58,6 +59,10 @@ def evaluate_bash_rules(event: ToolUseEvent) -> Generator[PolicyDecision, None, 
             yield from decisions
         else:
             yield PolicyDecision.ask()
+
+        # Also yield Rego guidances for bash commands
+        guidances = rego_evaluator.evaluate_guidances(event, parsed, bundles=event.enabled_bundles)
+        yield from guidances
     except ParseError:
         return
 
@@ -74,6 +79,10 @@ def evaluate_guidance(event: PostFileEditEvent) -> Generator[Union[PolicyDecisio
     file_edit_decisions = rego_evaluator.evaluate_file_edit_decisions(event, bundles=event.enabled_bundles)
     if file_edit_decisions:
         yield from file_edit_decisions
+
+    # Evaluate Rego guidances for file edits (may trigger on file_path alone, no structured_patch needed)
+    rego_guidances = rego_evaluator.evaluate_file_edit_guidances(event, bundles=event.enabled_bundles)
+    yield from rego_guidances
 
     if not event.structured_patch:
         return
