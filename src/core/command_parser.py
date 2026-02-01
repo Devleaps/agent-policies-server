@@ -230,7 +230,8 @@ class BashCommandParser:
         # Commands known to use subcommands
         subcommand_executables = {
             'git', 'docker', 'kubectl', 'terraform', 'terragrunt',
-            'gh', 'az', 'gcloud', 'aws', 'npm', 'pip', 'uv', 'cargo'
+            'gh', 'az', 'gcloud', 'aws', 'npm', 'pip', 'uv', 'cargo',
+            'ruff', 'mypy', 'black', 'pytest'
         }
 
         # If executable is known to use subcommands and word doesn't look like a path/file

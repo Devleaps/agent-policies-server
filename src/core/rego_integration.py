@@ -17,6 +17,7 @@ from typing import List, Dict, Any, Optional
 import httpx
 from regopy import Interpreter, NodeKind
 from src.server.common.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyAction
+from src.server.session.flags import get_all_flags
 
 from src.core.command_parser import ParsedCommand
 
@@ -175,6 +176,7 @@ class RegoEvaluator:
                 "parameters": event.parameters or {},
             },
             "parsed": parsed_dict,
+            "session_flags": get_all_flags(event.session_id),
         }
 
         return input_doc
@@ -209,7 +211,8 @@ class RegoEvaluator:
                     ]
                 }
                 for patch in (event.structured_patch or [])
-            ]
+            ],
+            "session_flags": get_all_flags(event.session_id),
         }
 
         return input_doc
@@ -433,6 +436,7 @@ class RegoEvaluator:
 
                         action_str = decision_obj.get("action", "").lower()
                         reason = decision_obj.get("reason")
+                        flags = decision_obj.get("flags")
 
                         action_map = {
                             "allow": PolicyAction.ALLOW,
@@ -445,7 +449,7 @@ class RegoEvaluator:
                             logger.warning(f"Unknown action '{action_str}' in decision, skipping")
                             continue
 
-                        decisions.append(PolicyDecision(action=action, reason=reason))
+                        decisions.append(PolicyDecision(action=action, reason=reason, flags=flags))
 
                     except Exception as e:
                         logger.error(f"Failed to convert decision to PolicyDecision: {e}")

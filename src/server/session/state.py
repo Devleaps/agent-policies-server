@@ -1,28 +1,30 @@
 """
 Session state management implementation.
 
-Provides thread-safe session state storage using FastAPI's app.state.
+Provides thread-safe session state storage using module-level dict.
 """
 
 import threading
 from typing import Any, Dict, Optional, Union
 
-from ..server import app
 from ..common.models import BaseEvent
 
 
 # Thread lock for session state access
 _state_lock = threading.Lock()
 
+# Global session storage (keyed by session_id)
+_sessions: Dict[str, Dict[str, Any]] = {}
+
 
 def initialize_session_state():
     """
-    Initialize the session state storage in app.state.
+    Initialize the session state storage.
 
     Should be called once at server startup before any policies are registered.
     """
-    if not hasattr(app.state, "sessions"):
-        app.state.sessions = {}
+    # Already initialized as module-level dict
+    pass
 
 
 def get_session_state(event: BaseEvent) -> Dict[str, Any]:
@@ -40,13 +42,10 @@ def get_session_state(event: BaseEvent) -> Dict[str, Any]:
     session_id = event.session_id
 
     with _state_lock:
-        if not hasattr(app.state, "sessions"):
-            initialize_session_state()
+        if session_id not in _sessions:
+            _sessions[session_id] = {}
 
-        if session_id not in app.state.sessions:
-            app.state.sessions[session_id] = {}
-
-        return app.state.sessions[session_id].copy()
+        return _sessions[session_id].copy()
 
 
 def set_session_flag(event: BaseEvent, key: str, value: Any) -> None:
@@ -61,13 +60,10 @@ def set_session_flag(event: BaseEvent, key: str, value: Any) -> None:
     session_id = event.session_id
 
     with _state_lock:
-        if not hasattr(app.state, "sessions"):
-            initialize_session_state()
+        if session_id not in _sessions:
+            _sessions[session_id] = {}
 
-        if session_id not in app.state.sessions:
-            app.state.sessions[session_id] = {}
-
-        app.state.sessions[session_id][key] = value
+        _sessions[session_id][key] = value
 
 
 def get_session_flag(event: BaseEvent, key: str, default: Any = None) -> Any:
@@ -85,13 +81,10 @@ def get_session_flag(event: BaseEvent, key: str, default: Any = None) -> Any:
     session_id = event.session_id
 
     with _state_lock:
-        if not hasattr(app.state, "sessions"):
-            initialize_session_state()
-
-        if session_id not in app.state.sessions:
+        if session_id not in _sessions:
             return default
 
-        return app.state.sessions[session_id].get(key, default)
+        return _sessions[session_id].get(key, default)
 
 
 def clear_session_state(event: BaseEvent) -> None:
@@ -104,11 +97,8 @@ def clear_session_state(event: BaseEvent) -> None:
     session_id = event.session_id
 
     with _state_lock:
-        if not hasattr(app.state, "sessions"):
-            initialize_session_state()
-
-        if session_id in app.state.sessions:
-            del app.state.sessions[session_id]
+        if session_id in _sessions:
+            del _sessions[session_id]
 
 
 def list_sessions() -> list[str]:
@@ -119,7 +109,4 @@ def list_sessions() -> list[str]:
         List of session IDs that have state stored
     """
     with _state_lock:
-        if not hasattr(app.state, "sessions"):
-            initialize_session_state()
-
-        return list(app.state.sessions.keys())
+        return list(_sessions.keys())

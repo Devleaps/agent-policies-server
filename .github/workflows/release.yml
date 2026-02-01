@@ -31,6 +31,7 @@ jobs:
           token: ${{ github.token }}
           branch: master
           fallbackTag: v0.0.0
+          noVersionBumpBehavior: major
 
       - name: Git Tag
         env:

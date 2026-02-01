@@ -38,6 +38,7 @@ class PolicyDecision:
     """A decision about whether to allow/deny/ask about an action"""
     action: PolicyAction
     reason: Optional[str] = None
+    flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
 
 @dataclass

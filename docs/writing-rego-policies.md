@@ -55,6 +55,10 @@ Policies receive this input:
     "options": {"-m": "message"},
     "redirects": [],
     "original": "git commit -m 'message'"
+  },
+  "session_flags": {
+    "ran_tests": true,
+    "build_cached": true
   }
 }
 ```
@@ -183,6 +187,251 @@ decisions[decision] if {
 }
 ```
 
+### 7. Session Flags - Stateful Policies
+
+Session flags enable stateful policy workflows that persist across multiple commands. Flags can expire based on invocation count or time.
+
+#### Basic Flag Usage
+
+```rego
+import data.helpers.flags
+
+# Check if a flag is set (truthy)
+decisions[decision] if {
+    flags.is_set("flag_name")
+    # ... policy logic
+}
+
+# Check if a flag has a specific value
+decisions[decision] if {
+    flags.equals("flag_name", true)
+    # ... policy logic
+}
+```
+
+#### Setting Flags
+
+Policies can set flags by including them in decisions:
+
+```rego
+# Set a flag that expires after 100 invocations
+decisions[decision] if {
+    input.parsed.executable == "pytest"
+    decision := {
+        "action": "allow",
+        "flags": [
+            {
+                "name": "ran_tests",
+                "value": true,
+                "expires_after": 100,
+                "expires_unit": "invocations"
+            }
+        ]
+    }
+}
+
+# Set a flag that expires after 60 seconds
+decisions[decision] if {
+    input.parsed.executable == "docker"
+    input.parsed.subcommand == "build"
+    decision := {
+        "action": "allow",
+        "flags": [
+            {
+                "name": "build_cached",
+                "value": true,
+                "expires_after": 60,
+                "expires_unit": "seconds"
+            }
+        ]
+    }
+}
+```
+
+#### Pattern 1: Test Tracking
+
+Require tests before commits:
+
+```rego
+import data.helpers.flags
+
+# Running pytest sets a flag
+decisions[decision] if {
+    input.parsed.executable == "pytest"
+    decision := {
+        "action": "allow",
+        "flags": [
+            {
+                "name": "ran_tests",
+                "value": true,
+                "expires_after": 100,
+                "expires_unit": "invocations"
+            }
+        ]
+    }
+}
+
+# Commit requires tests
+decisions[decision] if {
+    input.parsed.executable == "git"
+    input.parsed.subcommand == "commit"
+    not flags.equals("ran_tests", true)
+    decision := {
+        "action": "deny",
+        "reason": "Please run pytest before committing"
+    }
+}
+```
+
+#### Pattern 2: Cooldown
+
+Show a warning once, then allow for N invocations:
+
+```rego
+import data.helpers.flags
+
+# Deny once with warning, then set cooldown
+decisions[decision] if {
+    input.parsed.executable == "gh"
+    input.parsed.subcommand == "pr"
+    count(input.parsed.arguments) >= 1
+    input.parsed.arguments[0] == "create"
+    not flags.is_set("pr_template_cooldown")
+    decision := {
+        "action": "deny",
+        "reason": "Please check .github/PULL_REQUEST_TEMPLATE.md",
+        "flags": [
+            {
+                "name": "pr_template_cooldown",
+                "expires_after": 10,
+                "expires_unit": "invocations"
+            }
+        ]
+    }
+}
+
+# During cooldown, the deny rule doesn't match, so command is allowed
+```
+
+#### Pattern 3: Multi-Step Workflow
+
+Enforce ordered workflow steps (lint → test → deploy):
+
+```rego
+import data.helpers.flags
+
+# Step 1: Linting sets a flag
+decisions[decision] if {
+    input.parsed.executable == "ruff"
+    input.parsed.subcommand == "check"
+    decision := {
+        "action": "allow",
+        "flags": [
+            {
+                "name": "passed_lint",
+                "value": true,
+                "expires_after": 50,
+                "expires_unit": "invocations"
+            }
+        ]
+    }
+}
+
+# Step 2: Testing requires lint
+decisions[decision] if {
+    input.parsed.executable == "pytest"
+    not flags.equals("passed_lint", true)
+    decision := {
+        "action": "deny",
+        "reason": "Please run 'ruff check' before running tests"
+    }
+}
+
+# Step 3: Deploy requires both lint and tests
+decisions[decision] if {
+    input.parsed.executable == "docker"
+    input.parsed.subcommand == "push"
+    not flags.equals("passed_lint", true)
+    decision := {
+        "action": "deny",
+        "reason": "Deploy requires lint. Run 'ruff check' first."
+    }
+}
+
+decisions[decision] if {
+    input.parsed.executable == "docker"
+    input.parsed.subcommand == "push"
+    not flags.equals("passed_tests", true)
+    decision := {
+        "action": "deny",
+        "reason": "Deploy requires tests. Run 'pytest' first."
+    }
+}
+```
+
+#### Pattern 4: Immediate Expiration
+
+Flags with `expires_after: 0` expire immediately and are only visible in the same policy evaluation:
+
+```rego
+# Set a flag that expires immediately
+decisions[decision] if {
+    input.parsed.executable == "echo"
+    count(input.parsed.arguments) > 0
+    input.parsed.arguments[0] == "trigger"
+    decision := {
+        "action": "allow",
+        "flags": [
+            {
+                "name": "one_time_flag",
+                "expires_after": 0,
+                "expires_unit": "invocations"
+            }
+        ]
+    }
+}
+
+# This rule will never match (flag already expired)
+decisions[decision] if {
+    flags.is_set("one_time_flag")
+    # ... this won't execute
+}
+```
+
+#### Invalidating Flags
+
+Set a flag to `false` to invalidate it:
+
+```rego
+# File edit invalidates test flag
+decisions[decision] if {
+    input.file_path
+    endswith(input.file_path, ".py")
+    decision := {
+        "flags": [
+            {
+                "name": "ran_tests",
+                "value": false
+            }
+        ]
+    }
+}
+```
+
+#### Flag Input Structure
+
+Session flags are available in `input.session_flags`:
+
+```json
+{
+  "session_flags": {
+    "ran_tests": true,
+    "build_cached": true,
+    "passed_lint": true
+  }
+}
+```
+
 ## Helper Functions
 
 ### Available Helpers (`data.helpers`)
@@ -223,6 +472,34 @@ decisions[decision] if {
     count(input.parsed.arguments) > 0
     helpers.is_localhost_url(input.parsed.arguments[0])
     decision := {"action": "allow", "reason": null}
+}
+```
+
+### Available Helpers (`data.helpers.flags`)
+
+#### flags.is_set(name)
+Check if a session flag exists and has a truthy value.
+
+**Example:**
+```rego
+import data.helpers.flags
+
+decisions[decision] if {
+    flags.is_set("cooldown_active")
+    # Flag exists and is truthy
+}
+```
+
+#### flags.equals(name, value)
+Check if a session flag exists and has a specific value.
+
+**Example:**
+```rego
+import data.helpers.flags
+
+decisions[decision] if {
+    flags.equals("ran_tests", true)
+    # Flag exists and equals true
 }
 ```
 
