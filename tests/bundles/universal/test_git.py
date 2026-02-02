@@ -40,10 +40,18 @@ def test_git_rm(bash_event):
     assert_deny(evaluate_bash_rules, bash_event("git rm -f file.txt"))
 
 
-def test_git_with_c_option(bash_event):
-    assert_allow(evaluate_bash_rules, bash_event("git -C /path/to/repo add file.txt"))
-    assert_allow(evaluate_bash_rules, bash_event('git -C src commit -m "message"'))
-    assert_deny(evaluate_bash_rules, bash_event("git -C /repo push --force"))
+def test_git_with_c_option_safe_paths(bash_event):
+    """Test git -C with safe relative paths."""
+    assert_allow(evaluate_bash_rules, bash_event("git -C src status"))
+    assert_allow(evaluate_bash_rules, bash_event('git -C subdir commit -m "message"'))
+    assert_allow(evaluate_bash_rules, bash_event("git -C agent-skills remote -v"))
+
+
+def test_git_with_c_option_unsafe_paths(bash_event):
+    """Test git -C with unsafe paths."""
+    assert_deny(evaluate_bash_rules, bash_event("git -C /absolute/path status"))
+    assert_deny(evaluate_bash_rules, bash_event("git -C ../parent status"))
+    assert_deny(evaluate_bash_rules, bash_event("git -C /tmp/repo status"))
 
 
 def test_git_branch_read_only(bash_event):
@@ -84,3 +92,29 @@ def test_git_init(bash_event):
     assert_allow(evaluate_bash_rules, bash_event("git init"))
     assert_allow(evaluate_bash_rules, bash_event("git init my-repo"))
     assert_allow(evaluate_bash_rules, bash_event("git init --bare"))
+
+
+def test_git_stash(bash_event):
+    """Test git stash operations."""
+    assert_allow(evaluate_bash_rules, bash_event("git stash"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash list"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash show"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash push -m 'WIP'"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash pop"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash apply"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash drop"))
+    assert_allow(evaluate_bash_rules, bash_event("git stash clear"))
+
+
+def test_git_remote_read_only(bash_event):
+    """Test git remote read-only operations."""
+    assert_allow(evaluate_bash_rules, bash_event("git remote"))
+    assert_allow(evaluate_bash_rules, bash_event("git remote -v"))
+    assert_allow(evaluate_bash_rules, bash_event("git remote --verbose"))
+    assert_allow(evaluate_bash_rules, bash_event("git remote show origin"))
+    assert_allow(evaluate_bash_rules, bash_event("git remote get-url origin"))
+
+
+def test_git_remote_with_pipes(bash_event):
+    """Test git remote with piped commands."""
+    assert_allow(evaluate_bash_rules, bash_event("git remote -v 2>/dev/null | head -5"))

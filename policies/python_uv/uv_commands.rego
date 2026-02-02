@@ -112,7 +112,7 @@ decisions[decision] if {
 	not contains(input.event.command, "scripts/")
 	decision := {
 		"action": "deny",
-		"reason": "Direct python execution not allowed. Use `uv run` instead.\\nExample: `python script.py` → `uv run script.py`\\nOr move scripts to `scripts/` folder for user review.",
+		"reason": "Write a test to debug code.\\nUse: uv run pytest -s -k test_name\\nOr move scripts to scripts/ folder for user review.",
 	}
 }
 
@@ -156,7 +156,7 @@ decisions[decision] if {
 	endswith(arg, ".py")
 	decision := {
 		"action": "deny",
-		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+		"reason": "Debug by writing tests.\\nRun with: uv run pytest -s -k test_name\\nExample: uv run pytest tests/",
 	}
 }
 
@@ -169,7 +169,7 @@ decisions[decision] if {
 	endswith(arg, ".py")
 	decision := {
 		"action": "deny",
-		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+		"reason": "Debug by writing tests.\\nRun with: uv run pytest -s -k test_name\\nExample: uv run pytest tests/",
 	}
 }
 

@@ -272,3 +272,66 @@ decisions[decision] if {
 		"reason": "`git branch -D` is not allowed.\nForce-deleting branches can result in data loss.",
 	}
 }
+
+# git stash - allow all subcommands (list, show, save, push, pop, apply, drop, clear)
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "stash"
+	decision := {"action": "allow"}
+}
+
+# git remote (read-only) - allow without arguments (lists remotes)
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.arguments) == 0
+	decision := {"action": "allow"}
+}
+
+# Read-only git remote subcommands
+git_remote_read_subcommands := ["show", "get-url", "-v", "--verbose"]
+
+# git remote with read-only subcommands/flags - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] in git_remote_read_subcommands
+	decision := {"action": "allow"}
+}
+
+# git remote with -v or --verbose flag - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	has_git_flag("-v")
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	has_git_flag("--verbose")
+	decision := {"action": "allow"}
+}
+
+# git -C with safe path - allow if the -C path is safe
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.options["-C"]
+	c_path := input.parsed.options["-C"]
+	helpers.is_safe_path(c_path)
+	decision := {"action": "allow"}
+}
+
+# git -C with unsafe path - deny
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.options["-C"]
+	c_path := input.parsed.options["-C"]
+	not helpers.is_safe_path(c_path)
+	decision := {
+		"action": "deny",
+		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}

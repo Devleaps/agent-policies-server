@@ -113,7 +113,7 @@ def test_edge_case_empty_and_whitespace(bash_event):
 
 def test_subcommand_with_options_before_and_after(bash_event):
     """Test commands with options both before and after subcommand."""
-    assert_allow(evaluate_bash_rules, bash_event('git -C /repo commit -m "message"'))
+    assert_allow(evaluate_bash_rules, bash_event('git -C repo commit -m "message"'))
     assert_allow(evaluate_bash_rules, bash_event("git -C src add file.txt"))
 
 

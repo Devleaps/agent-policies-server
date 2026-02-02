@@ -34,6 +34,6 @@ decisions[decision] if {
 	input.parsed.executable == "pytest"
 	decision := {
 		"action": "deny",
-		"reason": "Pytest must be run via uv.\nUse: uv run pytest",
+		"reason": "Write a test and run with pytest.\nUse: uv run pytest -s",
 	}
 }

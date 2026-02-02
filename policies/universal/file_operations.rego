@@ -18,27 +18,24 @@ all_args_safe(args) if {
 }
 
 # Helper to check if all arguments and option values are safe paths
-# This handles commands like "wc -l file.txt" where file.txt is in options
+# Both arguments AND options must be safe
 all_args_and_options_safe if {
-	# Check arguments
-	count(input.parsed.arguments) > 0
-	every arg in input.parsed.arguments {
-		helpers.is_safe_path(arg)
-	}
+	# Arguments must be safe (or empty)
+	all_args_safe(input.parsed.arguments)
+
+	# Options must be safe (or empty)
+	count(input.parsed.options) == 0
 }
 
 all_args_and_options_safe if {
-	# Check option values
+	# Arguments must be safe (or empty)
+	all_args_safe(input.parsed.arguments)
+
+	# All option values must be safe
 	count(input.parsed.options) > 0
 	every key, value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
-}
-
-all_args_and_options_safe if {
-	# Allow if both are empty (command with no file arguments)
-	count(input.parsed.arguments) == 0
-	count(input.parsed.options) == 0
 }
 
 # Helper for [ command - filters out closing ] bracket from arguments
@@ -175,14 +172,14 @@ decisions[decision] if {
 # Allow ls with safe paths
 decisions[decision] if {
 	input.parsed.executable == "ls"
-	all_args_safe(input.parsed.arguments)
+	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny ls with unsafe paths
 decisions[decision] if {
 	input.parsed.executable == "ls"
-	not all_args_safe(input.parsed.arguments)
+	not all_args_and_options_safe
 	decision := {
 		"action": "deny",
 		"reason": "ls: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
@@ -274,10 +271,21 @@ decisions[decision] if {
 	}
 }
 
-# Always allow commands (no path arguments required)
+# grep with safe paths
 decisions[decision] if {
 	input.parsed.executable == "grep"
+	all_args_and_options_safe
 	decision := {"action": "allow"}
+}
+
+# grep with unsafe paths - deny
+decisions[decision] if {
+	input.parsed.executable == "grep"
+	not all_args_and_options_safe
+	decision := {
+		"action": "deny",
+		"reason": "grep: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
 }
 
 decisions[decision] if {
@@ -336,6 +344,35 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "true"
 	decision := {"action": "allow"}
+}
+
+# tree - directory listing (always allow, read-only)
+decisions[decision] if {
+	input.parsed.executable == "tree"
+	decision := {"action": "allow"}
+}
+
+# df - disk space usage (always allow, read-only, system-wide info)
+decisions[decision] if {
+	input.parsed.executable == "df"
+	decision := {"action": "allow"}
+}
+
+# file - file type detection (safe paths required)
+decisions[decision] if {
+	input.parsed.executable == "file"
+	all_args_safe(input.parsed.arguments)
+	decision := {"action": "allow"}
+}
+
+# file with unsafe paths - deny
+decisions[decision] if {
+	input.parsed.executable == "file"
+	not all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "deny",
+		"reason": "file: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
 }
 
 # mv - move/rename files (safe paths required)
