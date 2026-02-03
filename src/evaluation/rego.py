@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 from regopy import Interpreter, NodeKind
-from src.server.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyAction
+from src.server.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyGuidance, PolicyAction
 from src.server.session import get_all_flags
 
 from src.evaluation.parser import ParsedCommand
@@ -536,3 +536,153 @@ class RegoEvaluator:
                 continue
 
         return check_names
+
+    def evaluate_guidances(
+        self,
+        event: ToolUseEvent,
+        parsed: ParsedCommand,
+        bundles: List[str]
+    ) -> List[PolicyGuidance]:
+        """Evaluate guidances for bash commands.
+
+        Recursively evaluates the main command plus all chained and piped
+        commands, same as evaluate() does for decisions.
+
+        Args:
+            event: The tool use event from the client
+            parsed: Parsed command structure (from bashlex)
+            bundles: List of policy bundles to evaluate
+
+        Returns:
+            List of PolicyGuidance objects from all matching rules
+        """
+        all_guidances = []
+
+        input_doc = self._build_input_document(event, parsed)
+        self._enrich_input(input_doc, parsed)
+
+        for bundle in bundles:
+            try:
+                bundle_guidances = self._evaluate_guidances_bundle(bundle, input_doc)
+                all_guidances.extend(bundle_guidances)
+            except Exception as e:
+                logger.error(f"Error evaluating guidances for bundle '{bundle}': {e}")
+
+        # Recursively evaluate chained and piped commands
+        for chained_cmd in parsed.chained:
+            chained_guidances = self.evaluate_guidances(event, chained_cmd, bundles)
+            all_guidances.extend(chained_guidances)
+
+        for piped_cmd in parsed.pipes:
+            piped_guidances = self.evaluate_guidances(event, piped_cmd, bundles)
+            all_guidances.extend(piped_guidances)
+
+        return all_guidances
+
+    def evaluate_file_edit_guidances(
+        self,
+        event: PostFileEditEvent,
+        bundles: List[str]
+    ) -> List[PolicyGuidance]:
+        """Evaluate guidances for file edits.
+
+        Args:
+            event: The file edit event from the client
+            bundles: List of policy bundles to evaluate
+
+        Returns:
+            List of PolicyGuidance objects from all matching rules
+        """
+        all_guidances = []
+        input_doc = self._build_file_edit_input_document(event)
+
+        for bundle in bundles:
+            try:
+                bundle_guidances = self._evaluate_guidances_bundle(bundle, input_doc)
+                all_guidances.extend(bundle_guidances)
+            except Exception as e:
+                logger.error(f"Error evaluating file edit guidances for bundle '{bundle}': {e}")
+
+        return all_guidances
+
+    def _evaluate_guidances_bundle(self, bundle: str, input_doc: Dict[str, Any]) -> List[PolicyGuidance]:
+        """Evaluate a specific bundle's guidances.
+
+        Args:
+            bundle: Bundle name (e.g., "universal", "demo_guidances")
+            input_doc: Rego input document
+
+        Returns:
+            List of PolicyGuidance objects from this bundle
+        """
+        query = f"data.{bundle}.guidances"
+
+        try:
+            self.interpreter.set_input(input_doc)
+            output = self.interpreter.query(query)
+
+            if not output.ok():
+                return []
+
+            if str(output) == "undefined":
+                return []
+
+            guidances_node = output.expressions(index=0)
+            if guidances_node is None:
+                return []
+
+            guidances = self._node_to_python(guidances_node)
+            logger.debug(f"Guidances from bundle '{bundle}': {guidances}")
+
+            if not guidances:
+                return []
+
+            return self._convert_rego_guidances(guidances)
+
+        except Exception as e:
+            logger.error(f"Rego query failed for guidances in bundle '{bundle}': {e}")
+            raise
+
+    def _convert_rego_guidances(self, rego_guidances: List[Dict[str, Any]]) -> List[PolicyGuidance]:
+        """Convert Rego guidance results to PolicyGuidance objects.
+
+        Args:
+            rego_guidances: List of set elements from Rego guidances[g]
+                           Format: [{"json_string": true}, ...]
+                           Where json_string is the serialized guidance object
+
+        Returns:
+            List of PolicyGuidance objects
+        """
+        guidances = []
+
+        for guidance_set_item in rego_guidances:
+            try:
+                if not isinstance(guidance_set_item, dict):
+                    logger.warning(f"Unexpected guidance format: {guidance_set_item}")
+                    continue
+
+                for guidance_json_str in guidance_set_item.keys():
+                    try:
+                        guidance_obj = json.loads(guidance_json_str)
+
+                        content = guidance_obj.get("content", "")
+                        flags = guidance_obj.get("flags")
+
+                        if not content:
+                            logger.warning("Guidance with empty content, skipping")
+                            continue
+
+                        guidances.append(PolicyGuidance(content=content, flags=flags))
+
+                    except Exception as e:
+                        logger.error(f"Failed to convert guidance to PolicyGuidance: {e}")
+                        logger.debug(f"Guidance data: {guidance_json_str}")
+                        continue
+
+            except Exception as e:
+                logger.error(f"Failed to process guidance set: {e}")
+                logger.debug(f"Guidance set data: {guidance_set_item}")
+                continue
+
+        return guidances
