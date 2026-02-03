@@ -114,8 +114,8 @@ def test_fastapi_skill_cooldown(bash_event):
     assert len(fastapi_guidances) == 0
 
 
-def test_uvicorn_also_triggers_python_skill(bash_event):
-    """Test that uvicorn also triggers the base python skill (not just FastAPI)."""
+def test_uvicorn_triggers_only_fastapi_not_python_skill(bash_event):
+    """Test that uvicorn triggers only FastAPI skill, not the base python skill."""
     event = bash_event("uvicorn main:app", bundles=["universal", "devleaps"])
     results = list(execute_handlers_generic(event))
 
