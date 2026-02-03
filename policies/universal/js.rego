@@ -1,8 +1,34 @@
 package universal
 
 # JavaScript/Node.js command policies
+# - npm: Allow common development commands
 # - yarn: Allow common development commands
 # - pnpm: Allow common development commands
+
+# npm test - allow
+decisions[decision] if {
+	input.parsed.executable == "npm"
+	input.parsed.subcommand == "test"
+	decision := {"action": "allow"}
+}
+
+# npm run test - allow
+decisions[decision] if {
+	input.parsed.executable == "npm"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "test"
+	decision := {"action": "allow"}
+}
+
+# npm run build - allow
+decisions[decision] if {
+	input.parsed.executable == "npm"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "build"
+	decision := {"action": "allow"}
+}
 
 # yarn test - allow
 decisions[decision] if {

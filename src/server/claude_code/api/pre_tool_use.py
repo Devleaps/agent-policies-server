@@ -8,7 +8,10 @@ from .output_base import BaseHookOutput
 
 class PreToolUseInput(BaseModel):
     """Input for PreToolUse hook based on Claude Code documentation."""
-    model_config = ConfigDict(validate_assignment=True)  # Allow field mutations
+    model_config = ConfigDict(
+        validate_assignment=True,
+        extra='allow'  # Allow extra fields from Claude Code
+    )
 
     session_id: str
     transcript_path: str
