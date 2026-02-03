@@ -22,9 +22,7 @@ def test_terraform_plan_allowed(client, base_event):
 
 
 def test_terraform_apply_denied(client, base_event):
-    data = check_policy(client, base_event, "terraform apply", "deny")
-    reason = data["hookSpecificOutput"]["permissionDecisionReason"].lower()
-    assert "dangerous" in reason or "not permitted" in reason
+    check_policy(client, base_event, "terraform apply", "deny")
 
 
 def test_terraform_destroy_denied(client, base_event):

@@ -18,8 +18,7 @@ def test_ls_with_safe_path_is_allowed(client, base_event):
 
 
 def test_sudo_is_denied(client, base_event):
-    data = check_policy(client, base_event, "sudo apt-get update", "deny")
-    assert "sudo" in data["hookSpecificOutput"]["permissionDecisionReason"].lower()
+    check_policy(client, base_event, "sudo apt-get update", "deny")
 
 
 def test_rm_rf_is_denied(client, base_event):

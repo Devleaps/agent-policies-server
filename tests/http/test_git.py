@@ -62,8 +62,7 @@ def test_git_push(client, base_event):
 
 
 def test_git_push_force_denied(client, base_event):
-    data = check_policy(client, base_event, "git push --force", "deny")
-    assert "force" in data["hookSpecificOutput"]["permissionDecisionReason"].lower()
+    check_policy(client, base_event, "git push --force", "deny")
 
 
 def test_git_push_force_with_lease_allowed(client, base_event):

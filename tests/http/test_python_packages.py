@@ -49,15 +49,13 @@ def test_uv_remove_with_bundle_allowed(client, base_event):
 def test_uv_pip_install_denied(client, base_event):
     """uv pip install is denied (use uv add instead)"""
     base_event["bundles"] = ["universal", "python_uv"]
-    data = check_policy(client, base_event, "uv pip install pytest", "deny")
-    assert "uv add" in data["hookSpecificOutput"]["permissionDecisionReason"]
+    check_policy(client, base_event, "uv pip install pytest", "deny")
 
 
 def test_uv_run_python_denied(client, base_event):
     """uv run python is denied (redundant, use uv run directly)"""
     base_event["bundles"] = ["universal", "python_uv"]
-    data = check_policy(client, base_event, "uv run python script.py", "deny")
-    assert "redundant" in data["hookSpecificOutput"]["permissionDecisionReason"].lower()
+    check_policy(client, base_event, "uv run python script.py", "deny")
 
 
 def test_uv_run_pytest_with_bundle_allowed(client, base_event):

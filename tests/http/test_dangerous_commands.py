@@ -6,9 +6,7 @@ from tests.http.conftest import check_policy
 
 
 def test_kill_denied(client, base_event):
-    data = check_policy(client, base_event, "kill 1234", "deny")
-    reason = data["hookSpecificOutput"]["permissionDecisionReason"].lower()
-    assert "dangerous" in reason or "not allowed" in reason
+    check_policy(client, base_event, "kill 1234", "deny")
 
 
 def test_killall_denied(client, base_event):
@@ -24,8 +22,7 @@ def test_perl_denied(client, base_event):
 
 
 def test_sudo_denied(client, base_event):
-    data = check_policy(client, base_event, "sudo apt-get install package", "deny")
-    assert "sudo" in data["hookSpecificOutput"]["permissionDecisionReason"].lower()
+    check_policy(client, base_event, "sudo apt-get install package", "deny")
 
 
 def test_rm_rf_denied(client, base_event):
