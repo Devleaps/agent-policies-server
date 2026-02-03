@@ -77,10 +77,31 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
-# git init - allow
+# git init with unsafe path - deny
 decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.subcommand == "init"
+	count(input.parsed.arguments) > 0
+	not helpers.is_safe_path(input.parsed.arguments[0])
+	decision := {
+		"action": "deny",
+		"reason": "git init with unsafe paths is not allowed. Use workspace-relative paths only (no absolute paths, no ../, no /tmp).",
+	}
+}
+
+# git init without path or with safe relative path - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "init"
+	count(input.parsed.arguments) == 0
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "init"
+	count(input.parsed.arguments) > 0
+	helpers.is_safe_path(input.parsed.arguments[0])
 	decision := {"action": "allow"}
 }
 
@@ -134,7 +155,7 @@ decisions[decision] if {
 	not has_message_or_amend
 	decision := {
 		"action": "deny",
-		"reason": "`git commit` requires a message.\nUse `git commit -m \"message\"` or `git commit --amend`.",
+		"reason": "`git commit` requires a message. Use `git commit -m \"message\"` or `git commit --amend`.",
 	}
 }
 
@@ -198,7 +219,7 @@ decisions[decision] if {
 	has_force_flag
 	decision := {
 		"action": "deny",
-		"reason": "Force push is not allowed.\nForce pushing can overwrite history and cause data loss for other collaborators.",
+		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators.",
 	}
 }
 
@@ -208,7 +229,7 @@ decisions[decision] if {
 	input.parsed.subcommand == "rm"
 	decision := {
 		"action": "deny",
-		"reason": "`git rm` is not allowed. Use `trash` instead.\nThe macOS `trash` command safely moves files to Trash.",
+		"reason": "`git rm` is not allowed. Use `trash` instead. The macOS `trash` command safely moves files to Trash.",
 	}
 }
 
@@ -269,6 +290,6 @@ decisions[decision] if {
 	input.parsed.options["-D"]
 	decision := {
 		"action": "deny",
-		"reason": "`git branch -D` is not allowed.\nForce-deleting branches can result in data loss.",
+		"reason": "`git branch -D` is not allowed. Force-deleting branches can result in data loss.",
 	}
 }

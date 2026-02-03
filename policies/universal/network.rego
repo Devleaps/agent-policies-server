@@ -68,6 +68,6 @@ decisions[decision] if {
 	not has_allowed_domain
 	decision := {
 		"action": "deny",
-		"reason": "By policy, curl is only allowed to localhost or policy server endpoints.\nUse localhost, 127.0.0.1, or ::1",
+		"reason": "By policy, curl is only allowed to localhost or policy server endpoints. Use localhost, 127.0.0.1, or ::1",
 	}
 }

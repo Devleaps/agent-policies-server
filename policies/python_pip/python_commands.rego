@@ -17,7 +17,7 @@ decisions[decision] if {
 	input.parsed.options["-m"] == "venv"
 	decision := {
 		"action": "deny",
-		"reason": "By policy, `python -m venv` is not allowed.\nUse `uv sync` for virtual environment management.",
+		"reason": "By policy, `python -m venv` is not allowed. Use `uv sync` for virtual environment management.",
 	}
 }
 
@@ -27,7 +27,7 @@ decisions[decision] if {
 	input.parsed.options["-c"]
 	decision := {
 		"action": "deny",
-		"reason": "By policy, python -c commands are not allowed.\nFor scripts, place them in a directory and run with python.\nTo test new functionality: add test cases and run with `pytest`.\nQuick verification scripts are discouraged - use the existing test framework instead.",
+		"reason": "By policy, python -c commands are not allowed. For scripts, place them in a directory and run with python. To test new functionality: add test cases and run with `pytest`. Quick verification scripts are discouraged - use the existing test framework instead.",
 	}
 }
 
@@ -37,7 +37,7 @@ decisions[decision] if {
 	input.parsed.options["-m"] == "pytest"
 	decision := {
 		"action": "deny",
-		"reason": "By policy, `python -m pytest` have been disallowed.\nUse `pytest` directly.",
+		"reason": "By policy, `python -m pytest` have been disallowed. Use `pytest` directly.",
 	}
 }
 
@@ -49,6 +49,6 @@ decisions[decision] if {
 	endswith(input.parsed.arguments[0], ".py")
 	decision := {
 		"action": "deny",
-		"reason": "By policy, direct execution of test files is not allowed.\nUse `pytest` to run tests.",
+		"reason": "By policy, direct execution of test files is not allowed. Use `pytest` to run tests.",
 	}
 }

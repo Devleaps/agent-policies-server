@@ -1,5 +1,7 @@
 package python_uv
 
+import data.helpers
+
 # UV package manager policies
 
 # Direct pip usage denied
@@ -7,7 +9,7 @@ decisions[decision] if {
 	input.parsed.executable == "pip"
 	decision := {
 		"action": "deny",
-		"reason": "Direct `pip` usage is not allowed.\\nTo add dependencies: use `uv add package-name` (has integrated whitelist).\\nTo sync existing dependencies: use `uv sync`.\\nExample: `uv add requests`",
+		"reason": "Direct `pip` usage is not allowed. To add dependencies: use `uv add package-name` (has integrated whitelist). To sync existing dependencies: use `uv sync`. Example: `uv add requests`",
 	}
 }
 
@@ -19,7 +21,7 @@ decisions[decision] if {
 	input.parsed.arguments[0] == "pip"
 	decision := {
 		"action": "deny",
-		"reason": "Arbitrary `pip` installation not allowed via `uv run`.\\nTo add dependencies: use `uv add package-name` (has integrated whitelist).\\nTo sync existing dependencies: use `uv sync`.\\nExample: `uv add requests`",
+		"reason": "Arbitrary `pip` installation not allowed via `uv run`. To add dependencies: use `uv add package-name` (has integrated whitelist). To sync existing dependencies: use `uv sync`. Example: `uv add requests`",
 	}
 }
 
@@ -31,7 +33,7 @@ decisions[decision] if {
 	input.parsed.arguments[0] == "install"
 	decision := {
 		"action": "deny",
-		"reason": "`uv pip install` is not allowed. Use `uv add` instead for better dependency management.\\nExample: `uv add package-name`",
+		"reason": "`uv pip install` is not allowed. Use `uv add` instead for better dependency management. Example: `uv add package-name`",
 	}
 }
 
@@ -53,7 +55,7 @@ decisions[decision] if {
 	input.parsed.options["-c"]
 	decision := {
 		"action": "deny",
-		"reason": "Arbitrary code execution via `uv run python -c` is not allowed for security reasons.\\nPlace code in a script file or use the existing test framework instead.",
+		"reason": "Arbitrary code execution via `uv run python -c` is not allowed for security reasons. Place code in a script file or use the existing test framework instead.",
 	}
 }
 
@@ -66,7 +68,7 @@ decisions[decision] if {
 	input.parsed.options["-m"]
 	decision := {
 		"action": "deny",
-		"reason": "`uv run python -m` is redundant. Use `uv run` directly with the module.\\nExample: `uv run python -m pytest` → `uv run pytest`",
+		"reason": "`uv run python -m` is redundant. Use `uv run` directly with the module. Example: `uv run python -m pytest` → `uv run pytest`",
 	}
 }
 
@@ -80,7 +82,7 @@ decisions[decision] if {
 	not input.parsed.options["-m"]
 	decision := {
 		"action": "deny",
-		"reason": "`uv run python` is redundant. Use `uv run` directly with the script.\\nExample: `uv run python script.py` → `uv run script.py`",
+		"reason": "`uv run python` is redundant. Use `uv run` directly with the script. Example: `uv run python script.py` → `uv run script.py`",
 	}
 }
 
@@ -90,7 +92,7 @@ decisions[decision] if {
 	input.parsed.options["-m"] == "venv"
 	decision := {
 		"action": "deny",
-		"reason": "Direct venv creation not allowed.\\nUV manages environments automatically - use 'uv sync' instead.",
+		"reason": "Direct venv creation not allowed. UV manages environments automatically - use 'uv sync' instead.",
 	}
 }
 
@@ -101,7 +103,7 @@ decisions[decision] if {
 	input.parsed.options["-m"] != "venv"
 	decision := {
 		"action": "deny",
-		"reason": "Direct python execution not allowed. Use `uv run` instead.\\nExample: `python -m pytest` → `uv run pytest`",
+		"reason": "Direct python execution not allowed. Use `uv run` instead. Example: `python -m pytest` → `uv run pytest`",
 	}
 }
 
@@ -112,7 +114,7 @@ decisions[decision] if {
 	not contains(input.event.command, "scripts/")
 	decision := {
 		"action": "deny",
-		"reason": "Direct python execution not allowed. Use `uv run` instead.\\nExample: `python script.py` → `uv run script.py`\\nOr move scripts to `scripts/` folder for user review.",
+		"reason": "Direct python execution not allowed. Use `uv run` instead. Example: `python script.py` → `uv run script.py` Or move scripts to `scripts/` folder for user review.",
 	}
 }
 
@@ -156,7 +158,7 @@ decisions[decision] if {
 	endswith(arg, ".py")
 	decision := {
 		"action": "deny",
-		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+		"reason": "Direct execution of test files is not allowed. Use `uv run pytest` to run tests with proper test discovery and fixtures. Example: `uv run pytest tests/`",
 	}
 }
 
@@ -169,7 +171,7 @@ decisions[decision] if {
 	endswith(arg, ".py")
 	decision := {
 		"action": "deny",
-		"reason": "Direct execution of test files is not allowed.\\nUse `uv run pytest` to run tests with proper test discovery and fixtures.\\nExample: `uv run pytest tests/`",
+		"reason": "Direct execution of test files is not allowed. Use `uv run pytest` to run tests with proper test discovery and fixtures. Example: `uv run pytest tests/`",
 	}
 }
 
@@ -180,8 +182,29 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
+# Allow uv remove
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "remove"
+	decision := {"action": "allow"}
+}
+
 # Whitelisted tools allowed
 uv_run_allowed_tools := ["black", "ruff", "mypy", "pytest"]
+
+# Deny uv run pytest with unsafe paths
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "run"
+	count(input.parsed.arguments) > 1
+	input.parsed.arguments[0] == "pytest"
+	some arg in input.parsed.arguments
+	not helpers.is_safe_path(arg)
+	decision := {
+		"action": "deny",
+		"reason": "pytest with unsafe paths is not allowed. Use workspace-relative paths only (no absolute paths, no ../, no /tmp).",
+	}
+}
 
 # Allow whitelisted uv run tools
 decisions[decision] if {
