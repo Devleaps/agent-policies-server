@@ -8,7 +8,7 @@ Covers all four skill pairs from agent-skills:
 """
 
 import pytest
-from src.server.models import PolicyDecision, PolicyGuidance
+from src.server.models import PolicyGuidance
 from src.server.session import get_flag, clear_flags, initialize_flags_storage
 from src.server.executor import execute_handlers_generic
 
