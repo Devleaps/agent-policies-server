@@ -10,11 +10,9 @@ guidances[g] if {
     fastapi_executables[input.parsed.executable]
     not flags.is_set("skill_python_fastapi_activated")
     g := {
-        "content": "Detected work on FastAPI. Agents with skill support are requested to activate skill python-fastapi-common and python-fastapi-devleaps.",
+        "content": "Detected work on FastAPI. Skill python-fastapi-common and python-fastapi-devleaps MUST be activated.",
         "flags": [{
-            "name": "skill_python_fastapi_activated",
-            "expires_after": 200,
-            "expires_unit": "invocations"
+            "name": "skill_python_fastapi_activated"
         }]
     }
 }
@@ -27,11 +25,9 @@ guidances[g] if {
     fastapi_executables[input.parsed.arguments[0]]
     not flags.is_set("skill_python_fastapi_activated")
     g := {
-        "content": "Detected work on FastAPI. Agents with skill support are requested to activate skill python-fastapi-common and python-fastapi-devleaps.",
+        "content": "Detected work on FastAPI. Skill python-fastapi-common and python-fastapi-devleaps MUST be activated.",
         "flags": [{
-            "name": "skill_python_fastapi_activated",
-            "expires_after": 200,
-            "expires_unit": "invocations"
+            "name": "skill_python_fastapi_activated"
         }]
     }
 }

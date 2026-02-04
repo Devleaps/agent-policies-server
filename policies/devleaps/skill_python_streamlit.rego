@@ -7,11 +7,9 @@ guidances[g] if {
     input.parsed.executable == "streamlit"
     not flags.is_set("skill_python_streamlit_activated")
     g := {
-        "content": "Detected work on Streamlit. Agents with skill support are requested to activate skill python-streamlit-common and python-streamlit-devleaps.",
+        "content": "Detected work on Streamlit. Skill python-streamlit-common and python-streamlit-devleaps MUST be activated.",
         "flags": [{
-            "name": "skill_python_streamlit_activated",
-            "expires_after": 200,
-            "expires_unit": "invocations"
+            "name": "skill_python_streamlit_activated"
         }]
     }
 }
@@ -24,11 +22,9 @@ guidances[g] if {
     input.parsed.arguments[0] == "streamlit"
     not flags.is_set("skill_python_streamlit_activated")
     g := {
-        "content": "Detected work on Streamlit. Agents with skill support are requested to activate skill python-streamlit-common and python-streamlit-devleaps.",
+        "content": "Detected work on Streamlit. Skill python-streamlit-common and python-streamlit-devleaps MUST be activated.",
         "flags": [{
-            "name": "skill_python_streamlit_activated",
-            "expires_after": 200,
-            "expires_unit": "invocations"
+            "name": "skill_python_streamlit_activated"
         }]
     }
 }
