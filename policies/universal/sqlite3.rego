@@ -23,11 +23,6 @@ has_select if {
 	contains(command_upper, "SELECT")
 }
 
-# Check for read-only PRAGMA
-has_readonly_pragma if {
-	contains(command_upper, "PRAGMA")
-}
-
 # Check for EXPLAIN query
 has_explain if {
 	contains(command_upper, "EXPLAIN")
@@ -57,14 +52,6 @@ decisions[decision] if {
 	input.parsed.executable == "sqlite3"
 	not has_write_operation
 	has_select
-	decision := {"action": "allow"}
-}
-
-# Allow read-only PRAGMA
-decisions[decision] if {
-	input.parsed.executable == "sqlite3"
-	not has_write_operation
-	has_readonly_pragma
 	decision := {"action": "allow"}
 }
 

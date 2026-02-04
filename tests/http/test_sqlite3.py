@@ -42,11 +42,6 @@ def test_sqlite3_select_multiline(client, base_event):
     check_policy(client, base_event, "sqlite3 db.sqlite 'SELECT id, name FROM users LIMIT 10'", "allow")
 
 
-def test_sqlite3_pragma_readonly(client, base_event):
-    """PRAGMA read-only queries should be allowed"""
-    check_policy(client, base_event, "sqlite3 db.sqlite 'PRAGMA table_info(users)'", "allow")
-
-
 def test_sqlite3_explain_query(client, base_event):
     """EXPLAIN queries should be allowed"""
     check_policy(client, base_event, "sqlite3 db.sqlite 'EXPLAIN SELECT * FROM users'", "allow")
