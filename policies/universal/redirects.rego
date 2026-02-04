@@ -1,30 +1,30 @@
 package universal
 
+import data.helpers
+
 # Redirect path validation
+# Special case: /dev/null is allowed
+# Everything else must be workspace-relative
 
-# Helper to check if redirect path is unsafe
-is_unsafe_redirect(path) if {
-	startswith(path, "/tmp/")
-}
-
-is_unsafe_redirect(path) if {
-	startswith(path, "/home/")
-}
-
-is_unsafe_redirect(path) if {
-	startswith(path, "/etc/")
+# Helper to check if redirect is to /dev/null
+is_dev_null(path) if {
+	path == "/dev/null"
 }
 
 # Deny commands with unsafe redirects
 decisions[decision] if {
 	count(input.parsed.redirects) > 0
 	some redirect in input.parsed.redirects
-
-	# redirect is a dict with "op" and "path" fields
 	path := redirect.path
-	is_unsafe_redirect(path)
+
+	# Allow /dev/null
+	not is_dev_null(path)
+
+	# Everything else must be workspace-relative
+	not helpers.is_safe_path(path)
+
 	decision := {
 		"action": "deny",
-		"reason": "Writing to `/tmp/`, `/home/`, or `/etc/` is not allowed.\nUse workspace-relative paths instead.",
+		"reason": "Redirects must use workspace-relative paths (no absolute paths, no ../, no /tmp). Exception: /dev/null is allowed.",
 	}
 }

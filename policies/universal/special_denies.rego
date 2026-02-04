@@ -7,7 +7,7 @@ decisions[decision] if {
 	startswith(input.parsed.original, "/")
 	decision := {
 		"action": "deny",
-		"reason": "Absolute path executables are not allowed.\nUse command names directly (e.g., `pytest`) or relative paths (e.g., `./scripts/run.sh`).",
+		"reason": "Absolute path executables are not allowed. Use command names directly (e.g., `pytest`) or relative paths (e.g., `./scripts/run.sh`).",
 	}
 }
 
@@ -16,6 +16,6 @@ decisions[decision] if {
 	startswith(input.parsed.original, ".venv/bin/")
 	decision := {
 		"action": "deny",
-		"reason": "Direct execution from `.venv/bin/` is not allowed.\nUse `uv run` to execute tools (e.g., `uv run pytest`).",
+		"reason": "Direct execution from `.venv/bin/` is not allowed. Use `uv run` to execute tools (e.g., `uv run pytest`).",
 	}
 }

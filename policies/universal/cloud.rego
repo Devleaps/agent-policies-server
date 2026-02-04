@@ -3,12 +3,19 @@ package universal
 import data.helpers
 
 # Cloud CLI tool policies
-# - docker: Allow build with safe paths
+# - docker: Allow ps, build with safe paths
 # - gh: Allow api with GET only
 # - terraform: Allow fmt and plan only
 # - terragrunt: Allow plan only
 # - az: Allow list and show only
 # - kubectl/k: Allow read-only operations
+
+# docker ps - allow (read-only)
+decisions[decision] if {
+	input.parsed.executable == "docker"
+	input.parsed.subcommand == "ps"
+	decision := {"action": "allow"}
+}
 
 # docker build with safe paths - allow
 decisions[decision] if {
@@ -83,7 +90,7 @@ decisions[decision] if {
 	not input.parsed.options["--method"]
 	decision := {
 		"action": "deny",
-		"reason": "gh api requires explicit --method GET.\nOnly GET requests are allowed for safety.",
+		"reason": "gh api requires explicit --method GET. Only GET requests are allowed for safety.",
 	}
 }
 
@@ -95,7 +102,7 @@ decisions[decision] if {
 	input.parsed.options["--method"] != "GET"
 	decision := {
 		"action": "deny",
-		"reason": "Only GET method is allowed for gh api.\nPOST, PUT, DELETE, and PATCH are not permitted.",
+		"reason": "Only GET method is allowed for gh api. POST, PUT, DELETE, and PATCH are not permitted.",
 	}
 }
 
@@ -120,7 +127,7 @@ decisions[decision] if {
 	input.parsed.subcommand != "plan"
 	decision := {
 		"action": "deny",
-		"reason": "Only `terraform fmt` and `terraform plan` are allowed.\nDangerous operations like apply, destroy, or init are not permitted.",
+		"reason": "Only `terraform fmt` and `terraform plan` are allowed. Dangerous operations like apply, destroy, or init are not permitted.",
 	}
 }
 
@@ -137,7 +144,7 @@ decisions[decision] if {
 	input.parsed.subcommand != "plan"
 	decision := {
 		"action": "deny",
-		"reason": "Only `terragrunt plan` is allowed.\nDangerous operations like apply, destroy, or run-all are not permitted.",
+		"reason": "Only `terragrunt plan` is allowed. Dangerous operations like apply, destroy, or run-all are not permitted.",
 	}
 }
 
@@ -183,7 +190,7 @@ decisions[decision] if {
 	not az_has_show
 	decision := {
 		"action": "deny",
-		"reason": "Only Azure CLI read-only commands with 'list' or 'show' are allowed.\nDangerous operations like create, delete, update, or set are not permitted.",
+		"reason": "Only Azure CLI read-only commands with 'list' or 'show' are allowed. Dangerous operations like create, delete, update, or set are not permitted.",
 	}
 }
 

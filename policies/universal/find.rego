@@ -44,6 +44,6 @@ decisions[decision] if {
 	not all_find_args_safe(input.parsed.arguments)
 	decision := {
 		"action": "deny",
-		"reason": "By policy, find must use safe paths.\nUse relative paths only (e.g., `find . -name \"*.txt\"` or `find subdir -type f`).\nIf you need to search upward, first `cd` to the target directory.",
+		"reason": "By policy, find must use workspace-relative paths only (e.g., `find . -name \"*.txt\"` or `find subdir -type f`). If you need to search upward, first `cd` to the target directory.",
 	}
 }

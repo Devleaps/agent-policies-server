@@ -88,12 +88,10 @@ def file_edit_event():
 
         return PostFileEditEvent(
             session_id="test-session",
-            source_client="claude_code",
+            source_client=SourceClient.CLAUDE_CODE,
             file_path=file_path,
             operation=operation,
             structured_patch=[patch] if lines else None,
             enabled_bundles=bundles
         )
     return _create
-
-

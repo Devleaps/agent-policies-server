@@ -100,7 +100,7 @@ decisions[decision] if {
 	not all_args_safe(input.parsed.arguments)
 	decision := {
 		"action": "deny",
-		"reason": "chmod: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp).\nModifying permissions on system files or sensitive directories is not allowed.",
+		"reason": "chmod: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp). Modifying permissions on system files or sensitive directories is not allowed.",
 	}
 }
 
@@ -450,11 +450,27 @@ decisions[decision] if {
 	}
 }
 
+# tree - visualize directory structure (safe paths required)
+decisions[decision] if {
+	input.parsed.executable == "tree"
+	all_args_safe(input.parsed.arguments)
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "tree"
+	not all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "deny",
+		"reason": "tree: Only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp).",
+	}
+}
+
 # rm - always denied, use trash instead
 decisions[decision] if {
 	input.parsed.executable == "rm"
 	decision := {
 		"action": "deny",
-		"reason": "The `rm` command is not allowed.\nAlways use `trash` instead. The macOS `trash` command safely moves files to Trash.",
+		"reason": "The rm command is not allowed. Always use trash instead. The macOS trash command safely moves files to Trash.",
 	}
 }

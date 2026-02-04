@@ -44,6 +44,6 @@ decisions[decision] if {
 	not helpers.is_safe_path(path)
 	decision := {
 		"action": "deny",
-		"reason": "By policy, cd with unsafe path.\nUse relative paths only (e.g., `cd subdir` or `cd project/src`).\nIf you need to navigate upward, use paths like `cd ..` or `cd ../..`.",
+		"reason": "By policy, cd with unsafe path. Use workspace-relative paths only (e.g., cd subdir or cd project/src). If you need to navigate upward, use paths like cd .. or cd ../..",
 	}
 }

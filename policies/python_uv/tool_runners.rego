@@ -7,7 +7,7 @@ decisions[decision] if {
 	input.parsed.executable == "black"
 	decision := {
 		"action": "deny",
-		"reason": "Black must be run via uv.\nUse: uv run black .",
+		"reason": "Black must be run via uv. Use: uv run black .",
 	}
 }
 
@@ -16,7 +16,7 @@ decisions[decision] if {
 	input.parsed.executable == "ruff"
 	decision := {
 		"action": "deny",
-		"reason": "Ruff must be run via uv.\nUse: uv run ruff check . OR uv run ruff format .",
+		"reason": "Ruff must be run via uv. Use: uv run ruff check . OR uv run ruff format .",
 	}
 }
 
@@ -25,7 +25,7 @@ decisions[decision] if {
 	input.parsed.executable == "mypy"
 	decision := {
 		"action": "deny",
-		"reason": "Mypy must be run via uv.\nUse: uv run mypy .",
+		"reason": "Mypy must be run via uv. Use: uv run mypy .",
 	}
 }
 
@@ -34,6 +34,6 @@ decisions[decision] if {
 	input.parsed.executable == "pytest"
 	decision := {
 		"action": "deny",
-		"reason": "Pytest must be run via uv.\nUse: uv run pytest",
+		"reason": "Pytest must be run via uv. Use: uv run pytest",
 	}
 }
