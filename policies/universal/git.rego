@@ -293,3 +293,62 @@ decisions[decision] if {
 		"reason": "`git branch -D` is not allowed. Force-deleting branches can result in data loss.",
 	}
 }
+
+# git stash - allow all subcommands
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "stash"
+	decision := {"action": "allow"}
+}
+
+# Read-only git remote flags
+git_remote_read_flags := ["-v", "--verbose"]
+
+# git remote without arguments - allow (lists remotes)
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.arguments) == 0
+	count(input.parsed.options) == 0
+	decision := {"action": "allow"}
+}
+
+# git remote with read-only flags - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.flags) > 0
+	every flag in input.parsed.flags {
+		flag in git_remote_read_flags
+	}
+	decision := {"action": "allow"}
+}
+
+# git remote get-url - allow (read-only)
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "get-url"
+	decision := {"action": "allow"}
+}
+
+# git remote show - allow (read-only)
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "remote"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "show"
+	decision := {"action": "allow"}
+}
+
+# git with -C option and unsafe path - deny
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.options["-C"]
+	not helpers.is_safe_path(input.parsed.options["-C"])
+	decision := {
+		"action": "deny",
+		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}

@@ -196,3 +196,57 @@ def test_redirect_to_tmp_denied(client, base_event):
 def test_redirect_relative_allowed(client, base_event):
     """Redirect to relative path should be allowed"""
     check_policy(client, base_event, "echo test > output.txt", "allow")
+
+
+# ============================================================================
+# New Commands
+# ============================================================================
+
+def test_whoami_allowed(client, base_event):
+    """whoami should be allowed"""
+    check_policy(client, base_event, "whoami", "allow")
+
+
+def test_df_allowed(client, base_event):
+    """df should be allowed"""
+    check_policy(client, base_event, "df -h", "allow")
+
+
+def test_file_safe_path_allowed(client, base_event):
+    """file with safe path should be allowed"""
+    check_policy(client, base_event, "file ./README.md", "allow")
+
+
+def test_file_relative_path_allowed(client, base_event):
+    """file with relative path should be allowed"""
+    check_policy(client, base_event, "file src/main.py", "allow")
+
+
+def test_file_absolute_path_denied(client, base_event):
+    """file with absolute path should be denied"""
+    check_policy(client, base_event, "file /etc/passwd", "deny")
+
+
+def test_file_tmp_denied(client, base_event):
+    """file with /tmp path should be denied"""
+    check_policy(client, base_event, "file /tmp/test.txt", "deny")
+
+
+def test_grep_safe_path_allowed(client, base_event):
+    """grep with safe paths should be allowed"""
+    check_policy(client, base_event, 'grep -n "guidance_activations" policies/demo_flags/*.rego', "allow")
+
+
+def test_grep_relative_path_allowed(client, base_event):
+    """grep with relative path should be allowed"""
+    check_policy(client, base_event, "grep -r 'TODO' src/", "allow")
+
+
+def test_grep_absolute_path_denied(client, base_event):
+    """grep with absolute path should be denied"""
+    check_policy(client, base_event, "grep 'pattern' /etc/hosts", "deny")
+
+
+def test_grep_parent_path_denied(client, base_event):
+    """grep with parent path traversal should be denied"""
+    check_policy(client, base_event, "grep 'test' ../other-project/file.txt", "deny")
