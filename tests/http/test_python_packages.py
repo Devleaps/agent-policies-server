@@ -40,6 +40,12 @@ def test_uv_add_with_bundle_allowed(client, base_event):
     check_policy(client, base_event, "uv add fastapi", "allow")
 
 
+def test_uv_add_dev_with_bundle_allowed(client, base_event):
+    """uv add --dev with python_uv bundle should be allowed"""
+    base_event["bundles"] = ["universal", "python_uv"]
+    check_policy(client, base_event, "uv add --dev pytest-cov", "allow")
+
+
 def test_uv_remove_with_bundle_allowed(client, base_event):
     """uv remove with python_uv bundle should be allowed"""
     base_event["bundles"] = ["universal", "python_uv"]
