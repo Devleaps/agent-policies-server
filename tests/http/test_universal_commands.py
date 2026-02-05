@@ -198,10 +198,6 @@ def test_redirect_relative_allowed(client, base_event):
     check_policy(client, base_event, "echo test > output.txt", "allow")
 
 
-# ============================================================================
-# New Commands
-# ============================================================================
-
 def test_whoami_allowed(client, base_event):
     """whoami should be allowed"""
     check_policy(client, base_event, "whoami", "allow")
