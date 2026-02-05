@@ -105,6 +105,14 @@ def test_git_remote_show(client, base_event):
     check_policy(client, base_event, "git remote show origin", "allow")
 
 
+def test_git_remote_write_operations(client, base_event):
+    """git remote write operations should fall back to ask (not explicitly allowed)"""
+    check_policy(client, base_event, "git remote add upstream https://github.com/user/repo.git", "ask")
+    check_policy(client, base_event, "git remote remove origin", "ask")
+    check_policy(client, base_event, "git remote set-url origin https://github.com/new/repo.git", "ask")
+    check_policy(client, base_event, "git remote rename old new", "ask")
+
+
 def test_git_with_c_safe_path(client, base_event):
     check_policy(client, base_event, "git -C agent-skills status", "allow")
 
