@@ -8,7 +8,7 @@ Sets up policy enforcement handlers and starts the FastAPI server.
 import uvicorn
 
 from src.server.server import app, get_registry
-from src.server.models import ToolUseEvent, FileEditEvent, PostFileEditEvent, PostToolUseEvent
+from src.server.models import ToolUseEvent, PostFileEditEvent
 
 from src.evaluation import evaluate_bash_rules, evaluate_guidance
 

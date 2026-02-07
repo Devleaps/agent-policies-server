@@ -1,7 +1,7 @@
 """Tests for bashlex-based command parser."""
 
 import pytest
-from src.evaluation.parser import BashCommandParser, ParsedCommand, ParseError
+from src.evaluation.parser import BashCommandParser, ParseError
 
 
 def test_simple_command():
@@ -139,7 +139,7 @@ def test_uv_add_packages():
 
 
 def test_original_command_preserved():
-    original = "git commit -m \"test message\""
+    original = 'git commit -m "test message"'
     cmd = BashCommandParser.parse(original)
     assert cmd.original == original
 
@@ -153,7 +153,7 @@ def test_main_command_options():
 
 
 def test_main_command_options_with_flags():
-    cmd = BashCommandParser.parse("git -C src -c core.editor=vim commit -m \"msg\"")
+    cmd = BashCommandParser.parse('git -C src -c core.editor=vim commit -m "msg"')
     assert cmd.executable == "git"
     assert cmd.options.get("-C") == "src"
     assert cmd.options.get("-c") == "core.editor=vim"

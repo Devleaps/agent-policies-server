@@ -12,6 +12,7 @@ import bashlex
 
 class ParseError(Exception):
     """Raised when command parsing fails."""
+
     pass
 
 
@@ -31,21 +32,22 @@ class ParsedCommand:
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
     """
+
     executable: str
     subcommand: Optional[str] = None
     arguments: List[str] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
     options: Dict[str, str] = field(default_factory=dict)
     redirects: List[Tuple[str, str]] = field(default_factory=list)
-    pipes: List['ParsedCommand'] = field(default_factory=list)
-    chained: List['ParsedCommand'] = field(default_factory=list)
+    pipes: List["ParsedCommand"] = field(default_factory=list)
+    chained: List["ParsedCommand"] = field(default_factory=list)
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
     def get_command_text(self) -> str:
         """Extract this command's text from the original string using position info."""
         if self.pos and self.original:
-            return self.original[self.pos[0]:self.pos[1]].strip()
+            return self.original[self.pos[0] : self.pos[1]].strip()
         return self.original
 
 
@@ -95,16 +97,16 @@ class BashCommandParser:
     def _parse_node(cls, node, original: str) -> ParsedCommand:
         """Parse a bashlex AST node into ParsedCommand."""
 
-        if node.kind == 'compound':
+        if node.kind == "compound":
             raise ParseError("Compound commands (if/for/while) not supported")
 
-        if node.kind == 'commandsubstitution':
+        if node.kind == "commandsubstitution":
             raise ParseError("Command substitution not supported")
 
-        if node.kind == 'pipeline':
+        if node.kind == "pipeline":
             commands = []
             for part_node in node.parts:
-                if part_node.kind == 'command':
+                if part_node.kind == "command":
                     parsed = cls._parse_command_node(part_node, original)
                     parsed.pos = part_node.pos
                     commands.append(parsed)
@@ -115,13 +117,13 @@ class BashCommandParser:
                 return result
             raise ParseError("Empty pipeline")
 
-        if node.kind == 'list':
+        if node.kind == "list":
             if not node.parts:
                 raise ParseError("Empty list")
 
             commands = []
             for part_node in node.parts:
-                if part_node.kind in ('command', 'pipeline'):
+                if part_node.kind in ("command", "pipeline"):
                     parsed = cls._parse_node(part_node, original)
                     parsed.pos = part_node.pos
                     parsed.original = original
@@ -134,7 +136,7 @@ class BashCommandParser:
             result.chained = commands[1:]
             return result
 
-        if node.kind == 'command':
+        if node.kind == "command":
             return cls._parse_command_node(node, original)
 
         raise ParseError(f"Unsupported node kind: {node.kind}")
@@ -147,19 +149,19 @@ class BashCommandParser:
         redirects = []
 
         for part in node.parts:
-            if part.kind == 'word':
-                if hasattr(part, 'parts') and part.parts:
+            if part.kind == "word":
+                if hasattr(part, "parts") and part.parts:
                     for subpart in part.parts:
-                        if subpart.kind == 'commandsubstitution':
+                        if subpart.kind == "commandsubstitution":
                             raise ParseError("Command substitution not supported")
 
-                word_value = original[part.pos[0]:part.pos[1]]
+                word_value = original[part.pos[0] : part.pos[1]]
                 parts.append(word_value)
-            elif part.kind == 'redirect':
+            elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # Handle both word nodes (with .pos) and file descriptors (int)
-                if hasattr(part.output, 'pos'):
-                    redirect_target = original[part.output.pos[0]:part.output.pos[1]]
+                if hasattr(part.output, "pos"):
+                    redirect_target = original[part.output.pos[0] : part.output.pos[1]]
                     redirects.append((redirect_op, redirect_target))
                 # Else: heredoc or file descriptor - skip for now (TODO: extract heredoc content)
 
@@ -172,7 +174,7 @@ class BashCommandParser:
 
         # Determine subcommand, arguments, flags, options
         subcommand = None
-        arguments = []
+        arguments: list[str] = []
         flags = []
         options = {}
 
@@ -181,13 +183,13 @@ class BashCommandParser:
             part = remaining[i]
 
             # Check if it's a flag or option
-            if part.startswith('-'):
+            if part.startswith("-"):
                 # Check if it's an option with value (--key=value)
-                if '=' in part:
-                    key, value = part.split('=', 1)
+                if "=" in part:
+                    key, value = part.split("=", 1)
                     options[key] = value
                 # Check if next part is the value for this option
-                elif i + 1 < len(remaining) and not remaining[i + 1].startswith('-'):
+                elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
                     options[part] = remaining[i + 1]
                     i += 1  # Skip next part
                 else:
@@ -196,7 +198,11 @@ class BashCommandParser:
             else:
                 # It's a positional argument
                 # First non-flag argument might be subcommand for certain executables
-                if not subcommand and not arguments and cls._is_likely_subcommand(executable, part):
+                if (
+                    not subcommand
+                    and not arguments
+                    and cls._is_likely_subcommand(executable, part)
+                ):
                     subcommand = part
                 else:
                     arguments.append(part)
@@ -210,14 +216,14 @@ class BashCommandParser:
             flags=flags,
             options=options,
             redirects=redirects,
-            original=original
+            original=original,
         )
 
     @staticmethod
     def _get_redirect_operator(redirect_node) -> str:
         """Extract redirect operator from redirect node."""
         # Common operators: >, >>, <, 2>, &>, etc.
-        if hasattr(redirect_node, 'type'):
+        if hasattr(redirect_node, "type"):
             return redirect_node.type
         return ">"
 
@@ -229,15 +235,29 @@ class BashCommandParser:
         """
         # Commands known to use subcommands
         subcommand_executables = {
-            'git', 'docker', 'kubectl', 'terraform', 'terragrunt',
-            'gh', 'az', 'gcloud', 'aws', 'npm', 'pip', 'uv', 'cargo',
-            'ruff', 'mypy', 'black', 'pytest'
+            "git",
+            "docker",
+            "kubectl",
+            "terraform",
+            "terragrunt",
+            "gh",
+            "az",
+            "gcloud",
+            "aws",
+            "npm",
+            "pip",
+            "uv",
+            "cargo",
+            "ruff",
+            "mypy",
+            "black",
+            "pytest",
         }
 
         # If executable is known to use subcommands and word doesn't look like a path/file
         if executable in subcommand_executables:
             # Subcommands typically don't have path separators or extensions
-            if '/' not in word and '.' not in word:
+            if "/" not in word and "." not in word:
                 return True
 
         return False

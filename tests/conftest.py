@@ -1,10 +1,11 @@
 """Shared pytest fixtures for all policy tests."""
+
 import pytest
 from src.server.models import (
     ToolUseEvent,
     PostFileEditEvent,
     StructuredPatch,
-    PatchLine
+    PatchLine,
 )
 from src.server.enums import SourceClient
 from src.main import setup_all_policies
@@ -25,6 +26,7 @@ def bash_event():
         event = bash_event("rm -rf /", tool_is_bash=False)
         event = bash_event("pip install pkg", bundles=["universal", "python_pip"])
     """
+
     def _create(command: str, tool_is_bash: bool = True, bundles=None) -> ToolUseEvent:
         if bundles is None:
             bundles = ["universal"]
@@ -35,8 +37,9 @@ def bash_event():
             tool_is_bash=tool_is_bash,
             command=command,
             parameters={"command": command},
-            enabled_bundles=bundles
+            enabled_bundles=bundles,
         )
+
     return _create
 
 
@@ -58,7 +61,10 @@ def file_edit_event():
         # With specific bundles
         event = file_edit_event("pyproject.toml", lines, bundles=["universal", "python_uv"])
     """
-    def _create(file_path: str, lines, operation: str = "write", bundles=None) -> PostFileEditEvent:
+
+    def _create(
+        file_path: str, lines, operation: str = "write", bundles=None
+    ) -> PostFileEditEvent:
         if bundles is None:
             bundles = ["universal"]
         # Support two input formats:
@@ -67,15 +73,11 @@ def file_edit_event():
 
         if lines and isinstance(lines[0], str):
             # Format 1: simple string list
-            patch_lines = [
-                PatchLine(operation="added", content=line)
-                for line in lines
-            ]
+            patch_lines = [PatchLine(operation="added", content=line) for line in lines]
         else:
             # Format 2: tuple list with operations
             patch_lines = [
-                PatchLine(operation=op, content=content)
-                for op, content in lines
+                PatchLine(operation=op, content=content) for op, content in lines
             ]
 
         patch = StructuredPatch(
@@ -83,7 +85,7 @@ def file_edit_event():
             oldLines=0,
             newStart=1,
             newLines=len(patch_lines),
-            lines=patch_lines
+            lines=patch_lines,
         )
 
         return PostFileEditEvent(
@@ -92,6 +94,7 @@ def file_edit_event():
             file_path=file_path,
             operation=operation,
             structured_patch=[patch] if lines else None,
-            enabled_bundles=bundles
+            enabled_bundles=bundles,
         )
+
     return _create

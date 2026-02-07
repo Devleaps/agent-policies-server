@@ -10,7 +10,7 @@ from .models import POLICY_PRECEDENCE, PolicyDecision, PolicyGuidance
 
 
 def separate_results(
-    results: List[Union[PolicyDecision, PolicyGuidance]]
+    results: List[Union[PolicyDecision, PolicyGuidance]],
 ) -> Tuple[List[PolicyDecision], List[PolicyGuidance]]:
     """
     Separate results into decisions and guidances.
@@ -27,7 +27,7 @@ def separate_results(
 
 
 def find_highest_priority_decision(
-    decisions: List[PolicyDecision]
+    decisions: List[PolicyDecision],
 ) -> Optional[PolicyDecision]:
     """
     Find the highest priority decision based on POLICY_PRECEDENCE.

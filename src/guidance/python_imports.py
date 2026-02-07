@@ -23,19 +23,22 @@ def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
     - class Foo:
         from x import y
     """
-    import_pattern = re.compile(r'^\s+(import\s+\S+|from\s+\S+\s+import\s+)')
+    if not input_data.structured_patch:
+        return
+
+    import_pattern = re.compile(r"^\s+(import\s+\S+|from\s+\S+\s+import\s+)")
 
     for patch in input_data.structured_patch:
         for patch_line in patch.lines:
             line_content = patch_line.content
             stripped = line_content.strip()
 
-            if not stripped or stripped.startswith('#'):
+            if not stripped or stripped.startswith("#"):
                 continue
 
             if import_pattern.match(line_content):
-                yield PolicyGuidance(content=
-                    "Import statements should be at the top of the file, not nested inside "
+                yield PolicyGuidance(
+                    content="Import statements should be at the top of the file, not nested inside "
                     "functions, classes, or other blocks. Move imports to the module level "
                     "unless there's a specific reason for lazy importing (e.g., avoiding "
                     "circular dependencies or expensive imports)."

@@ -40,8 +40,8 @@ async def root():
                 "/policy/cursor/beforeReadFile",
                 "/policy/cursor/beforeSubmitPrompt",
                 "/policy/cursor/stop",
-            ]
-        }
+            ],
+        },
     }
 
 

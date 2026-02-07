@@ -18,7 +18,12 @@ def test_curl_127_0_0_1_allowed(client, base_event):
 
 
 def test_curl_localhost_with_flags_allowed(client, base_event):
-    check_policy(client, base_event, "curl -X POST http://localhost:8000/api -H 'Content-Type: application/json'", "allow")
+    check_policy(
+        client,
+        base_event,
+        "curl -X POST http://localhost:8000/api -H 'Content-Type: application/json'",
+        "allow",
+    )
 
 
 def test_curl_external_url_denied(client, base_event):

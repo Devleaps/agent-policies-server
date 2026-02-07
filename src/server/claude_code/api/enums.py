@@ -3,6 +3,7 @@ from enum import Enum
 
 class PermissionDecision(str, Enum):
     """Permission decisions for PreToolUse hooks."""
+
     ALLOW = "allow"
     DENY = "deny"
     ASK = "ask"
@@ -10,11 +11,13 @@ class PermissionDecision(str, Enum):
 
 class BlockDecision(str, Enum):
     """Block decisions for PostToolUse, UserPromptSubmit, Stop, and SubagentStop hooks."""
+
     BLOCK = "block"
 
 
 class ToolName(str, Enum):
     """Claude Code tool names based on official documentation."""
+
     # Core Claude Code tools
     TASK = "Task"
     BASH = "Bash"

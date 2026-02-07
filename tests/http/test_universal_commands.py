@@ -7,10 +7,10 @@ through the FastAPI HTTP endpoint using real Claude Code event payloads.
 
 from tests.http.conftest import check_policy
 
-
 # ============================================================================
 # Always Allowed Commands
 # ============================================================================
+
 
 def test_pwd_allowed(client, base_event):
     """pwd should be allowed"""
@@ -96,6 +96,7 @@ def test_bracket_command_allowed(client, base_event):
 # File Operations
 # ============================================================================
 
+
 def test_mkdir_relative_allowed(client, base_event):
     """mkdir with relative path should be allowed"""
     check_policy(client, base_event, "mkdir new-dir", "allow")
@@ -140,6 +141,7 @@ def test_du_allowed(client, base_event):
 # Path Traversal - DENY
 # ============================================================================
 
+
 def test_ls_absolute_path_denied(client, base_event):
     """ls with absolute path should be denied"""
     check_policy(client, base_event, "ls /etc", "deny")
@@ -174,6 +176,7 @@ def test_trash_absolute_path_denied(client, base_event):
 # Dangerous Commands - DENY
 # ============================================================================
 
+
 def test_rm_rf_denied(client, base_event):
     """rm -rf should be denied"""
     check_policy(client, base_event, "rm -rf directory/", "deny")
@@ -187,6 +190,7 @@ def test_sudo_denied(client, base_event):
 # ============================================================================
 # Redirects
 # ============================================================================
+
 
 def test_redirect_to_tmp_denied(client, base_event):
     """Redirect to /tmp should be denied"""
@@ -230,7 +234,12 @@ def test_file_tmp_denied(client, base_event):
 
 def test_grep_safe_path_allowed(client, base_event):
     """grep with safe paths should be allowed"""
-    check_policy(client, base_event, 'grep -n "guidance_activations" policies/demo_flags/*.rego', "allow")
+    check_policy(
+        client,
+        base_event,
+        'grep -n "guidance_activations" policies/demo_flags/*.rego',
+        "allow",
+    )
 
 
 def test_grep_relative_path_allowed(client, base_event):

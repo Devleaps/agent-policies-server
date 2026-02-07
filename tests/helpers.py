@@ -1,7 +1,5 @@
 """Helper functions for evaluating rules and asserting results."""
 
-from src.evaluation.parser import BashCommandParser, ParseError
-
 
 def eval_rule(rule_func, event):
     """Evaluate a bundle or rule function with an event and return decisions only.
@@ -10,7 +8,7 @@ def eval_rule(rule_func, event):
         results = eval_rule(bash_rules_bundle_universal, bash_event("kill 1234"))
     """
     results = list(rule_func(event))
-    return [r for r in results if hasattr(r, 'action')]
+    return [r for r in results if hasattr(r, "action")]
 
 
 def assert_allow(rule_func, event):
@@ -23,7 +21,9 @@ def assert_allow(rule_func, event):
     assert len(results) >= 1, f"Expected at least 1 decision, got {len(results)}"
 
     actions = [r.action for r in results]
-    assert all(action == "allow" for action in actions), f"Expected only 'allow', got {actions}"
+    assert all(
+        action == "allow" for action in actions
+    ), f"Expected only 'allow', got {actions}"
 
 
 def assert_deny(rule_func, event):
@@ -48,7 +48,9 @@ def assert_deny_count(rule_func, event, count):
     results = eval_rule(rule_func, event)
     assert len(results) == count, f"Expected {count} denies, got {len(results)}"
     for i, result in enumerate(results):
-        assert result.action == "deny", f"Decision {i} expected 'deny', got '{result.action}'"
+        assert (
+            result.action == "deny"
+        ), f"Decision {i} expected 'deny', got '{result.action}'"
 
 
 def assert_ask(rule_func, event):

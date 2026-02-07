@@ -10,15 +10,19 @@ from .enums import SourceClient
 @dataclass
 class BaseEvent:
     """Base class for all hook events."""
+
     session_id: str
     source_client: SourceClient
     workspace_roots: Optional[List[str]] = None
     source_event: Any = None  # Original hook input data object
-    enabled_bundles: List[str] = field(default_factory=lambda: ['universal'])  # Rego policy bundles to evaluate
+    enabled_bundles: List[str] = field(
+        default_factory=lambda: ["universal"]
+    )  # Rego policy bundles to evaluate
 
 
 class PolicyAction(str, Enum):
     """Generic policy decision actions"""
+
     ALLOW = "allow"
     DENY = "deny"
     ASK = "ask"
@@ -29,29 +33,30 @@ class PolicyAction(str, Enum):
 POLICY_PRECEDENCE: List[PolicyAction] = [
     PolicyAction.DENY,
     PolicyAction.ASK,
-    PolicyAction.ALLOW
+    PolicyAction.ALLOW,
 ]
 
 
 @dataclass
 class PolicyDecision:
     """A decision about whether to allow/deny/ask about an action"""
+
     action: PolicyAction
     reason: Optional[str] = None
     flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
     @staticmethod
-    def deny(reason: str) -> 'PolicyDecision':
+    def deny(reason: str) -> "PolicyDecision":
         """Create a DENY decision with the given reason."""
         return PolicyDecision(action=PolicyAction.DENY, reason=reason)
 
     @staticmethod
-    def allow(reason: str = None) -> 'PolicyDecision':
+    def allow(reason: Optional[str] = None) -> "PolicyDecision":
         """Create an ALLOW decision with an optional reason."""
         return PolicyDecision(action=PolicyAction.ALLOW, reason=reason)
 
     @staticmethod
-    def ask(reason: str = None) -> 'PolicyDecision':
+    def ask(reason: Optional[str] = None) -> "PolicyDecision":
         """Create an ASK decision (prompt user) with an optional reason."""
         return PolicyDecision(action=PolicyAction.ASK, reason=reason)
 
@@ -59,6 +64,7 @@ class PolicyDecision:
 @dataclass
 class PolicyGuidance:
     """Guidance/context without making a decision - always shown to both user and agent"""
+
     content: str
     metadata: Optional[Dict[str, Any]] = None
     flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
@@ -66,12 +72,16 @@ class PolicyGuidance:
 
 class PatchLine(BaseModel):
     """Represents a single line in a patch with operation type and content separated"""
-    operation: Literal["added", "removed", "unchanged"]  # Whether line was added, removed, or unchanged
+
+    operation: Literal[
+        "added", "removed", "unchanged"
+    ]  # Whether line was added, removed, or unchanged
     content: str  # The actual line content (without the +/- prefix)
 
 
 class StructuredPatch(BaseModel):
     """Represents a single patch in a structured diff"""
+
     oldStart: int  # Line number where old content starts
     oldLines: int  # Number of lines in old content
     newStart: int  # Line number where new content starts
@@ -87,6 +97,7 @@ class ToolUseEvent(BaseEvent):
     - Claude Code: PreToolUse (Bash, WebFetch, MCP tools)
     - Cursor: beforeShellExecution, beforeMCPExecution
     """
+
     tool_name: str = ""  # "bash", "mcp__*", etc.
     tool_is_bash: bool = False
     tool_is_mcp: bool = False
@@ -102,6 +113,7 @@ class PromptSubmitEvent(BaseEvent):
     - Claude Code: UserPromptSubmit
     - Cursor: beforeSubmitPrompt
     """
+
     prompt: Optional[str] = None
 
 
@@ -114,6 +126,7 @@ class FileEditEvent(BaseEvent):
 
     Policies can ALLOW or DENY file edits before they are executed.
     """
+
     file_path: Optional[str] = None
     operation: Optional[str] = None  # "edit", "write", etc.
 
@@ -126,6 +139,7 @@ class StopEvent(BaseEvent):
     - Claude Code: Stop, SubagentStop
     - Cursor: stop
     """
+
     stop_type: Optional[str] = None  # "stop", "subagent_stop", etc.
 
 
@@ -138,6 +152,7 @@ class PostFileEditEvent(BaseEvent):
 
     Policies can yield guidance or additional context after file edits complete.
     """
+
     file_path: Optional[str] = None
     operation: Optional[str] = None  # "edit", "write", etc.
     content: Optional[str] = None  # The full file content after the edit
@@ -153,6 +168,7 @@ class PostToolUseEvent(BaseEvent):
 
     Policies can yield guidance or additional context after tool execution completes.
     """
+
     tool_name: str = ""  # "bash", "mcp__*", etc.
     tool_is_bash: bool = False
     tool_is_mcp: bool = False
@@ -169,4 +185,5 @@ class HookEvent(BaseEvent):
     - Cursor: beforeReadFile
     - Any future hooks for that matter
     """
+
     hook_type: str = ""  # "session_start", "session_end", "notification", etc.

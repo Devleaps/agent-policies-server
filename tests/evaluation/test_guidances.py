@@ -23,6 +23,7 @@ def setup_session():
 
 # --- Python skill (python-common + python-devleaps) ---
 
+
 def test_uv_triggers_python_skill(bash_event):
     """Test that uv triggers python skill activation."""
     event = bash_event("uv sync", bundles=["universal", "python_uv", "devleaps"])
@@ -70,6 +71,7 @@ def test_python_skill_cooldown(bash_event):
 
 # --- FastAPI skill (python-fastapi-common + python-fastapi-devleaps) ---
 
+
 def test_uvicorn_triggers_fastapi_skill(bash_event):
     """Test that uvicorn triggers FastAPI skill activation."""
     event = bash_event("uvicorn main:app", bundles=["universal", "devleaps"])
@@ -82,7 +84,9 @@ def test_uvicorn_triggers_fastapi_skill(bash_event):
 
 def test_uv_run_uvicorn_triggers_fastapi_skill(bash_event):
     """Test that uv run uvicorn triggers FastAPI skill activation."""
-    event = bash_event("uv run uvicorn main:app", bundles=["universal", "python_uv", "devleaps"])
+    event = bash_event(
+        "uv run uvicorn main:app", bundles=["universal", "python_uv", "devleaps"]
+    )
     results = list(execute_handlers_generic(event))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
@@ -92,7 +96,9 @@ def test_uv_run_uvicorn_triggers_fastapi_skill(bash_event):
 
 def test_uv_run_fastapi_triggers_fastapi_skill(bash_event):
     """Test that uv run fastapi triggers FastAPI skill activation."""
-    event = bash_event("uv run fastapi dev", bundles=["universal", "python_uv", "devleaps"])
+    event = bash_event(
+        "uv run fastapi dev", bundles=["universal", "python_uv", "devleaps"]
+    )
     results = list(execute_handlers_generic(event))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
@@ -131,23 +137,30 @@ def test_uvicorn_triggers_only_fastapi_not_python_skill(bash_event):
 
 # --- Streamlit skill (python-streamlit-common + python-streamlit-devleaps) ---
 
+
 def test_streamlit_triggers_streamlit_skill(bash_event):
     """Test that streamlit triggers Streamlit skill activation."""
     event = bash_event("streamlit run app.py", bundles=["universal", "devleaps"])
     results = list(execute_handlers_generic(event))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
-    streamlit_guidances = [g for g in guidances if "python-streamlit-common" in g.content]
+    streamlit_guidances = [
+        g for g in guidances if "python-streamlit-common" in g.content
+    ]
     assert len(streamlit_guidances) == 1
 
 
 def test_uv_run_streamlit_triggers_streamlit_skill(bash_event):
     """Test that uv run streamlit triggers Streamlit skill activation."""
-    event = bash_event("uv run streamlit run app.py", bundles=["universal", "python_uv", "devleaps"])
+    event = bash_event(
+        "uv run streamlit run app.py", bundles=["universal", "python_uv", "devleaps"]
+    )
     results = list(execute_handlers_generic(event))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
-    streamlit_guidances = [g for g in guidances if "python-streamlit-common" in g.content]
+    streamlit_guidances = [
+        g for g in guidances if "python-streamlit-common" in g.content
+    ]
     assert len(streamlit_guidances) == 1
 
 
@@ -161,11 +174,14 @@ def test_streamlit_skill_cooldown(bash_event):
     results = list(execute_handlers_generic(event2))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
-    streamlit_guidances = [g for g in guidances if "python-streamlit-common" in g.content]
+    streamlit_guidances = [
+        g for g in guidances if "python-streamlit-common" in g.content
+    ]
     assert len(streamlit_guidances) == 0
 
 
 # --- README skill (readme-common + readme-devleaps) ---
+
 
 def test_readme_edit_yields_guidance(file_edit_event):
     """Test that a PostFileEditEvent for README.md yields a guidance."""
@@ -187,10 +203,14 @@ def test_readme_guidance_sets_cooldown_flag(file_edit_event):
 
 def test_readme_guidance_suppressed_after_cooldown(file_edit_event):
     """Test that README guidance is not emitted on second evaluation."""
-    event1 = file_edit_event("README.md", ["# Title"], bundles=["universal", "devleaps"])
+    event1 = file_edit_event(
+        "README.md", ["# Title"], bundles=["universal", "devleaps"]
+    )
     list(execute_handlers_generic(event1))
 
-    event2 = file_edit_event("README.md", ["# Updated title"], bundles=["universal", "devleaps"])
+    event2 = file_edit_event(
+        "README.md", ["# Updated title"], bundles=["universal", "devleaps"]
+    )
     results = list(execute_handlers_generic(event2))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]
@@ -199,6 +219,7 @@ def test_readme_guidance_suppressed_after_cooldown(file_edit_event):
 
 
 # --- Negative cases ---
+
 
 def test_non_python_command_yields_no_guidances(bash_event):
     """Test that non-Python commands don't trigger any devleaps guidances."""
@@ -211,7 +232,9 @@ def test_non_python_command_yields_no_guidances(bash_event):
 
 def test_non_readme_edit_yields_no_readme_guidance(file_edit_event):
     """Test that non-README file edits don't trigger README guidance."""
-    event = file_edit_event("test.txt", ["some content"], bundles=["universal", "devleaps"])
+    event = file_edit_event(
+        "test.txt", ["some content"], bundles=["universal", "devleaps"]
+    )
     results = list(execute_handlers_generic(event))
 
     guidances = [r for r in results if isinstance(r, PolicyGuidance)]

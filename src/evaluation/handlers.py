@@ -3,7 +3,12 @@
 import re
 import logging
 from typing import Generator, Callable, Dict, Union
-from src.server.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyGuidance
+from src.server.models import (
+    ToolUseEvent,
+    PostFileEditEvent,
+    PolicyDecision,
+    PolicyGuidance,
+)
 from src.evaluation.rego import RegoEvaluator
 from src.evaluation.parser import BashCommandParser, ParseError
 
@@ -22,7 +27,9 @@ logger = logging.getLogger(__name__)
 rego_evaluator = RegoEvaluator(policy_dir="policies")
 
 # Guidance implementation registry - maps check names (from Rego) to Python implementations
-GuidanceImplementation = Callable[[PostFileEditEvent], Generator[PolicyGuidance, None, None]]
+GuidanceImplementation = Callable[
+    [PostFileEditEvent], Generator[PolicyGuidance, None, None]
+]
 
 GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
     "comment_ratio": comment_ratio_guidance_rule,
@@ -35,7 +42,9 @@ GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
 }
 
 
-def evaluate_bash_rules(event: ToolUseEvent) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
+def evaluate_bash_rules(
+    event: ToolUseEvent,
+) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
     """Evaluate bash rules against the event using Rego policies.
 
     Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
@@ -45,7 +54,7 @@ def evaluate_bash_rules(event: ToolUseEvent) -> Generator[Union[PolicyDecision, 
         return
 
     # Check for quoted heredoc delimiters (not supported by bashlex)
-    if re.search(r'<<\s*["\'][^"\']+["\']', event.command):
+    if event.command and re.search(r'<<\s*["\'][^"\']+["\']', event.command):
         yield PolicyDecision.deny(
             "Quoted heredoc delimiters (<< 'EOF' or << \"EOF\") are not allowed.\n"
             "Use unquoted delimiters instead (e.g., << EOF)."
@@ -53,21 +62,28 @@ def evaluate_bash_rules(event: ToolUseEvent) -> Generator[Union[PolicyDecision, 
         return
 
     try:
-        parsed = BashCommandParser.parse(event.command)
-        decisions = rego_evaluator.evaluate(event, parsed, bundles=event.enabled_bundles)
+        command = event.command or ""
+        parsed = BashCommandParser.parse(command)
+        decisions = rego_evaluator.evaluate(
+            event, parsed, bundles=event.enabled_bundles
+        )
         if decisions:
             yield from decisions
         else:
             yield PolicyDecision.ask()
 
         # Also yield Rego guidances for bash commands
-        guidances = rego_evaluator.evaluate_guidances(event, parsed, bundles=event.enabled_bundles)
+        guidances = rego_evaluator.evaluate_guidances(
+            event, parsed, bundles=event.enabled_bundles
+        )
         yield from guidances
     except ParseError:
         return
 
 
-def evaluate_guidance(event: PostFileEditEvent) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
+def evaluate_guidance(
+    event: PostFileEditEvent,
+) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
     """Evaluate guidance checks and file-edit decisions using Rego rules.
 
     Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
@@ -76,18 +92,24 @@ def evaluate_guidance(event: PostFileEditEvent) -> Generator[Union[PolicyDecisio
     (for guidance checks). The executor processes flags from PolicyDecision objects.
     """
     # Evaluate file-edit decisions (e.g., flag-setting rules like invalidating ran_tests)
-    file_edit_decisions = rego_evaluator.evaluate_file_edit_decisions(event, bundles=event.enabled_bundles)
+    file_edit_decisions = rego_evaluator.evaluate_file_edit_decisions(
+        event, bundles=event.enabled_bundles
+    )
     if file_edit_decisions:
         yield from file_edit_decisions
 
     # Evaluate Rego guidances for file edits (may trigger on file_path alone, no structured_patch needed)
-    rego_guidances = rego_evaluator.evaluate_file_edit_guidances(event, bundles=event.enabled_bundles)
+    rego_guidances = rego_evaluator.evaluate_file_edit_guidances(
+        event, bundles=event.enabled_bundles
+    )
     yield from rego_guidances
 
     if not event.structured_patch:
         return
 
-    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=event.enabled_bundles)
+    activated_checks = rego_evaluator.evaluate_guidance_activations(
+        event, bundles=event.enabled_bundles
+    )
 
     logger.debug(f"Activated guidance checks: {activated_checks}")
 
@@ -96,6 +118,8 @@ def evaluate_guidance(event: PostFileEditEvent) -> Generator[Union[PolicyDecisio
             guidance_impl = GUIDANCE_REGISTRY[check_name]
             yield from guidance_impl(event)
         except KeyError:
-            logger.error(f"Unknown guidance check '{check_name}' - not registered in GUIDANCE_REGISTRY")
+            logger.error(
+                f"Unknown guidance check '{check_name}' - not registered in GUIDANCE_REGISTRY"
+            )
         except Exception as e:
             logger.error(f"Error running guidance check '{check_name}': {e}")

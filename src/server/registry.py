@@ -1,14 +1,16 @@
 import logging
-from typing import Callable, Dict, Generator, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Callable, Dict, Generator, List, Type, TypeVar, Union
 
 from .models import PolicyDecision, PolicyGuidance
 
 logger = logging.getLogger(__name__)
 
-InputType = TypeVar('InputType')
-OutputType = TypeVar('OutputType', PolicyDecision, PolicyGuidance)
+InputType = TypeVar("InputType")
+OutputType = TypeVar("OutputType", PolicyDecision, PolicyGuidance)
 
-HandlerFunction = Callable[[InputType], Generator[Union[PolicyDecision, PolicyGuidance], None, None]]
+HandlerFunction = Callable[
+    [InputType], Generator[Union[PolicyDecision, PolicyGuidance], None, None]
+]
 
 
 class HookRegistry:
@@ -29,13 +31,12 @@ class HookRegistry:
             extra={
                 "input_class": input_class.__name__,
                 "handler": handler.__name__,
-            }
+            },
         )
 
     def get_handlers(self, input_class: Type[InputType]) -> List[HandlerFunction]:
         """Get all handlers for input class."""
         return self.handlers.get(input_class, [])
-
 
 
 registry: HookRegistry = HookRegistry()

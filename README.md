@@ -1,10 +1,10 @@
-# Agent Internal Policies
+# Agent internal policies
 
 AI Agent Policy Server that enforces security and safety policies for AI agent tool use.
 
 Built on the `devleaps-agent-policies` framework, this FastAPI-based server intercepts and validates tool use commands (primarily bash commands) before execution using **Rego** policies.
 
-## Quick Start
+## Quick start
 
 Start the policy server:
 ```bash
@@ -15,16 +15,16 @@ The server runs on `http://localhost:8338`.
 
 ## Architecture
 
-### Rego-Based Policy System
+### Rego-based policy system
 
-All policies are written in **Rego** and evaluated using regopy (embedded Rego interpreter):
+All policies are written in **Rego** and evaluated using regopy, an embedded Rego interpreter:
 
 - **Policies**: Located in `policies/` directory, organized by bundle
 - **Parser**: Python-based bash command parser (bashlex)
 - **Evaluator**: Rego policy evaluator (regopy)
 - **Bundles**: Universal (always enforced), python-pip, python-uv (opt-in)
 
-### Project Structure
+### Project structure
 
 ```
 src/
@@ -61,9 +61,9 @@ tests/
 └── test_rego_helpers.py       # Helper function tests
 ```
 
-## Policy Examples
+## Policy examples
 
-### Rego Policy Structure
+### Rego policy structure
 
 ```rego
 package universal
@@ -84,7 +84,7 @@ decisions[decision] if {
 }
 ```
 
-### Input Document Structure
+### Input document structure
 
 Rego policies receive this input:
 
@@ -113,7 +113,7 @@ pytest tests/bundles/        # Run bundle tests only
 pytest -k "test_git"         # Run specific tests
 ```
 
-## Policy Bundles
+## Policy bundles
 
 - **Universal**: File operations, git, dangerous commands, cloud CLIs
 - **Python-pip**: Pip install whitelist, Python quality tools

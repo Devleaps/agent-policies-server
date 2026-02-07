@@ -5,19 +5,20 @@ These hooks have minimal I/O requirements. Complex hooks (PreToolUse, PostToolUs
 remain in their own modules.
 """
 
-from typing import Callable, Literal, Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 
 from .output_base import BaseHookOutput, BaseBlockingHookOutput
 
-
 # ============================================================================
 # Notification
 # ============================================================================
 
+
 class NotificationInput(BaseModel):
     """Input for Notification hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     cwd: str
@@ -27,6 +28,7 @@ class NotificationInput(BaseModel):
 
 class NotificationOutput(BaseHookOutput):
     """Output for Notification hook based on Claude Code documentation."""
+
     pass
 
 
@@ -34,8 +36,10 @@ class NotificationOutput(BaseHookOutput):
 # PreCompact
 # ============================================================================
 
+
 class PreCompactInput(BaseModel):
     """Input for PreCompact hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     hook_event_name: Literal["PreCompact"]
@@ -45,6 +49,7 @@ class PreCompactInput(BaseModel):
 
 class PreCompactOutput(BaseHookOutput):
     """Output for PreCompact hook based on Claude Code documentation."""
+
     pass
 
 
@@ -52,8 +57,10 @@ class PreCompactOutput(BaseHookOutput):
 # SessionEnd
 # ============================================================================
 
+
 class SessionEndInput(BaseModel):
     """Input for SessionEnd hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     cwd: str
@@ -63,6 +70,7 @@ class SessionEndInput(BaseModel):
 
 class SessionEndOutput(BaseHookOutput):
     """Output for SessionEnd hook based on Claude Code documentation."""
+
     pass
 
 
@@ -70,8 +78,10 @@ class SessionEndOutput(BaseHookOutput):
 # SessionStart
 # ============================================================================
 
+
 class SessionStartInput(BaseModel):
     """Input for SessionStart hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     hook_event_name: Literal["SessionStart"]
@@ -80,12 +90,14 @@ class SessionStartInput(BaseModel):
 
 class SessionStartHookSpecificOutput(BaseModel):
     """Hook-specific output for SessionStart hook."""
+
     hookEventName: str = "SessionStart"
     additionalContext: Optional[str] = None
 
 
 class SessionStartOutput(BaseHookOutput):
     """Output for SessionStart hook based on Claude Code documentation."""
+
     hookSpecificOutput: Optional[SessionStartHookSpecificOutput] = None
 
 
@@ -93,8 +105,10 @@ class SessionStartOutput(BaseHookOutput):
 # Stop / SubagentStop
 # ============================================================================
 
+
 class StopInput(BaseModel):
     """Input for Stop hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     hook_event_name: Literal["Stop"]
@@ -103,6 +117,7 @@ class StopInput(BaseModel):
 
 class SubagentStopInput(BaseModel):
     """Input for SubagentStop hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     hook_event_name: Literal["SubagentStop"]
@@ -111,11 +126,13 @@ class SubagentStopInput(BaseModel):
 
 class StopOutput(BaseBlockingHookOutput):
     """Output for Stop hook based on Claude Code documentation."""
+
     pass
 
 
 class SubagentStopOutput(BaseBlockingHookOutput):
     """Output for SubagentStop hook based on Claude Code documentation."""
+
     pass
 
 
@@ -123,8 +140,10 @@ class SubagentStopOutput(BaseBlockingHookOutput):
 # UserPromptSubmit
 # ============================================================================
 
+
 class UserPromptSubmitInput(BaseModel):
     """Input for UserPromptSubmit hook based on Claude Code documentation."""
+
     session_id: str
     transcript_path: str
     cwd: str
@@ -134,10 +153,12 @@ class UserPromptSubmitInput(BaseModel):
 
 class UserPromptSubmitHookSpecificOutput(BaseModel):
     """Hook-specific output for UserPromptSubmit hook."""
+
     hookEventName: str = "UserPromptSubmit"
     additionalContext: Optional[str] = None
 
 
 class UserPromptSubmitOutput(BaseBlockingHookOutput):
     """Output for UserPromptSubmit hook based on Claude Code documentation."""
+
     hookSpecificOutput: Optional[UserPromptSubmitHookSpecificOutput] = None

@@ -1,7 +1,8 @@
 """
 Mappers to convert Claude Code hook inputs/outputs to/from generic models.
 """
-from typing import List, TypeVar, Union
+
+from typing import List, Literal, TypeVar, Union
 
 from ..enums import SourceClient
 from .api.request_wrapper import RequestWrapper
@@ -26,22 +27,20 @@ from ..models import (
 from .api.enums import PermissionDecision, ToolName
 from .api.hooks import (
     NotificationInput,
-    NotificationOutput,
     PreCompactInput,
-    PreCompactOutput,
     SessionEndInput,
-    SessionEndOutput,
     SessionStartHookSpecificOutput,
     SessionStartInput,
     SessionStartOutput,
     StopInput,
-    StopOutput,
     SubagentStopInput,
-    SubagentStopOutput,
     UserPromptSubmitInput,
-    UserPromptSubmitOutput,
 )
-from .api.post_tool_use import PostToolUseInput, PostToolUseOutput, PostToolUseHookSpecificOutput
+from .api.post_tool_use import (
+    PostToolUseInput,
+    PostToolUseOutput,
+    PostToolUseHookSpecificOutput,
+)
 from .api.pre_tool_use import (
     PreToolUseHookSpecificOutput,
     PreToolUseInput,
@@ -51,6 +50,7 @@ from .api.pre_tool_use import (
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
 
 def _parse_patch_lines(raw_lines: List[str]) -> List[PatchLine]:
     """
@@ -69,15 +69,16 @@ def _parse_patch_lines(raw_lines: List[str]) -> List[PatchLine]:
             continue
 
         # Check first character for operation type
-        if line[0] == '+':
+        operation: Literal["added", "removed", "unchanged"]
+        if line[0] == "+":
             operation = "added"
             content = line[1:]
-        elif line[0] == '-':
+        elif line[0] == "-":
             operation = "removed"
             content = line[1:]
         else:  # space or anything else
             operation = "unchanged"
-            content = line[1:] if len(line) > 0 and line[0] == ' ' else line
+            content = line[1:] if len(line) > 0 and line[0] == " " else line
 
         parsed_lines.append(PatchLine(operation=operation, content=content))
 
@@ -88,13 +89,22 @@ def _parse_patch_lines(raw_lines: List[str]) -> List[PatchLine]:
 # INPUT MAPPERS: Claude Code → Generic
 # ============================================================================
 
-def map_pre_tool_use_input(wrapper: RequestWrapper, input_data: PreToolUseInput) -> Union[ToolUseEvent, FileEditEvent]:
+
+def map_pre_tool_use_input(
+    wrapper: RequestWrapper, input_data: PreToolUseInput
+) -> Union[ToolUseEvent, FileEditEvent]:
     """Map PreToolUse to appropriate event type"""
-    tool_name_str = input_data.tool_name.value if isinstance(input_data.tool_name, ToolName) else str(input_data.tool_name)
+    tool_name_str = (
+        input_data.tool_name.value
+        if isinstance(input_data.tool_name, ToolName)
+        else str(input_data.tool_name)
+    )
 
     if input_data.tool_name in [ToolName.EDIT, ToolName.WRITE]:
         tool_input = input_data.tool_input or {}
-        file_path = tool_input.get('file_path') if isinstance(tool_input, dict) else None
+        file_path = (
+            tool_input.get("file_path") if isinstance(tool_input, dict) else None
+        )
 
         return FileEditEvent(
             session_id=input_data.session_id,
@@ -103,7 +113,7 @@ def map_pre_tool_use_input(wrapper: RequestWrapper, input_data: PreToolUseInput)
             operation=tool_name_str,
             workspace_roots=None,
             source_event=input_data,
-            enabled_bundles=wrapper.bundles
+            enabled_bundles=wrapper.bundles,
         )
 
     command = None
@@ -112,10 +122,10 @@ def map_pre_tool_use_input(wrapper: RequestWrapper, input_data: PreToolUseInput)
     tool_is_bash = input_data.tool_name == ToolName.BASH
     tool_is_mcp = tool_name_str.startswith("mcp__")
 
-    if tool_is_bash and hasattr(input_data, 'command'):
+    if tool_is_bash and hasattr(input_data, "command"):
         command = input_data.command
     else:
-        parameters = input_data.model_dump(exclude={'session_id', 'tool_name'})
+        parameters = input_data.model_dump(exclude={"session_id", "tool_name"})
 
     return ToolUseEvent(
         session_id=input_data.session_id,
@@ -127,39 +137,53 @@ def map_pre_tool_use_input(wrapper: RequestWrapper, input_data: PreToolUseInput)
         source_event=input_data,
         tool_is_bash=tool_is_bash,
         tool_is_mcp=tool_is_mcp,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_post_tool_use_input(wrapper: RequestWrapper, input_data: PostToolUseInput) -> Union[PostFileEditEvent, PostToolUseEvent]:
+def map_post_tool_use_input(
+    wrapper: RequestWrapper, input_data: PostToolUseInput
+) -> Union[PostFileEditEvent, PostToolUseEvent]:
     """Map PostToolUse to appropriate post-event type"""
-    tool_name_str = input_data.tool_name.value if isinstance(input_data.tool_name, ToolName) else str(input_data.tool_name)
+    tool_name_str = (
+        input_data.tool_name.value
+        if isinstance(input_data.tool_name, ToolName)
+        else str(input_data.tool_name)
+    )
 
     # File edit/write operations map to PostFileEditEvent
     if input_data.tool_name in [ToolName.EDIT, ToolName.WRITE]:
         tool_input = input_data.tool_input or {}
         tool_response = input_data.tool_response or {}
 
-        file_path = tool_input.get('file_path') if isinstance(tool_input, dict) else None
-        content = tool_response.get('content') if isinstance(tool_response, dict) else None
+        file_path = (
+            tool_input.get("file_path") if isinstance(tool_input, dict) else None
+        )
+        content = (
+            tool_response.get("content") if isinstance(tool_response, dict) else None
+        )
 
         # Convert raw patch dicts to StructuredPatch objects with parsed lines
-        raw_patches = tool_response.get('structuredPatch') if isinstance(tool_response, dict) else None
+        raw_patches = (
+            tool_response.get("structuredPatch")
+            if isinstance(tool_response, dict)
+            else None
+        )
         structured_patch = None
         if raw_patches:
             structured_patch = []
             for patch in raw_patches:
                 # Parse the raw lines into PatchLine objects
-                raw_lines = patch.get('lines', [])
+                raw_lines = patch.get("lines", [])
                 parsed_lines = _parse_patch_lines(raw_lines)
 
                 # Create StructuredPatch with parsed lines
                 parsed_patch = StructuredPatch(
-                    oldStart=patch.get('oldStart', 0),
-                    oldLines=patch.get('oldLines', 0),
-                    newStart=patch.get('newStart', 0),
-                    newLines=patch.get('newLines', 0),
-                    lines=parsed_lines
+                    oldStart=patch.get("oldStart", 0),
+                    oldLines=patch.get("oldLines", 0),
+                    newStart=patch.get("newStart", 0),
+                    newLines=patch.get("newLines", 0),
+                    lines=parsed_lines,
                 )
                 structured_patch.append(parsed_patch)
 
@@ -172,7 +196,7 @@ def map_post_tool_use_input(wrapper: RequestWrapper, input_data: PostToolUseInpu
             structured_patch=structured_patch,
             workspace_roots=None,
             source_event=input_data,
-            enabled_bundles=wrapper.bundles
+            enabled_bundles=wrapper.bundles,
         )
 
     # All other tools map to PostToolUseEvent
@@ -182,10 +206,10 @@ def map_post_tool_use_input(wrapper: RequestWrapper, input_data: PostToolUseInpu
     tool_is_bash = input_data.tool_name == ToolName.BASH
     tool_is_mcp = tool_name_str.startswith("mcp__")
 
-    if tool_is_bash and hasattr(input_data, 'command'):
+    if tool_is_bash and hasattr(input_data, "command"):
         command = input_data.command
     else:
-        parameters = input_data.model_dump(exclude={'session_id', 'tool_name'})
+        parameters = input_data.model_dump(exclude={"session_id", "tool_name"})
 
     return PostToolUseEvent(
         session_id=input_data.session_id,
@@ -197,19 +221,21 @@ def map_post_tool_use_input(wrapper: RequestWrapper, input_data: PostToolUseInpu
         source_event=input_data,
         tool_is_bash=tool_is_bash,
         tool_is_mcp=tool_is_mcp,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_user_prompt_submit_input(wrapper: RequestWrapper, input_data: UserPromptSubmitInput) -> PromptSubmitEvent:
+def map_user_prompt_submit_input(
+    wrapper: RequestWrapper, input_data: UserPromptSubmitInput
+) -> PromptSubmitEvent:
     """Map UserPromptSubmit to PromptSubmitEvent"""
     return PromptSubmitEvent(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
-        prompt=getattr(input_data, 'prompt', None),
+        prompt=getattr(input_data, "prompt", None),
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
@@ -221,11 +247,13 @@ def map_stop_input(wrapper: RequestWrapper, input_data: StopInput) -> StopEvent:
         stop_type="stop",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_subagent_stop_input(wrapper: RequestWrapper, input_data: SubagentStopInput) -> StopEvent:
+def map_subagent_stop_input(
+    wrapper: RequestWrapper, input_data: SubagentStopInput
+) -> StopEvent:
     """Map SubagentStop to StopEvent"""
     return StopEvent(
         session_id=input_data.session_id,
@@ -233,11 +261,13 @@ def map_subagent_stop_input(wrapper: RequestWrapper, input_data: SubagentStopInp
         stop_type="subagent_stop",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_notification_input(wrapper: RequestWrapper, input_data: NotificationInput) -> HookEvent:
+def map_notification_input(
+    wrapper: RequestWrapper, input_data: NotificationInput
+) -> HookEvent:
     """Map Notification to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
@@ -245,11 +275,13 @@ def map_notification_input(wrapper: RequestWrapper, input_data: NotificationInpu
         hook_type="notification",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_pre_compact_input(wrapper: RequestWrapper, input_data: PreCompactInput) -> HookEvent:
+def map_pre_compact_input(
+    wrapper: RequestWrapper, input_data: PreCompactInput
+) -> HookEvent:
     """Map PreCompact to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
@@ -257,11 +289,13 @@ def map_pre_compact_input(wrapper: RequestWrapper, input_data: PreCompactInput) 
         hook_type="pre_compact",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_session_start_input(wrapper: RequestWrapper, input_data: SessionStartInput) -> HookEvent:
+def map_session_start_input(
+    wrapper: RequestWrapper, input_data: SessionStartInput
+) -> HookEvent:
     """Map SessionStart to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
@@ -269,11 +303,13 @@ def map_session_start_input(wrapper: RequestWrapper, input_data: SessionStartInp
         hook_type="session_start",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
-def map_session_end_input(wrapper: RequestWrapper, input_data: SessionEndInput) -> HookEvent:
+def map_session_end_input(
+    wrapper: RequestWrapper, input_data: SessionEndInput
+) -> HookEvent:
     """Map SessionEnd to HookEvent"""
     return HookEvent(
         session_id=input_data.session_id,
@@ -281,7 +317,7 @@ def map_session_end_input(wrapper: RequestWrapper, input_data: SessionEndInput) 
         hook_type="session_end",
         workspace_roots=None,
         source_event=input_data,
-        enabled_bundles=wrapper.bundles
+        enabled_bundles=wrapper.bundles,
     )
 
 
@@ -289,12 +325,12 @@ def map_session_end_input(wrapper: RequestWrapper, input_data: SessionEndInput) 
 # OUTPUT MAPPERS: Generic → Claude Code
 # ============================================================================
 
-OutputType = TypeVar('OutputType')
+OutputType = TypeVar("OutputType")
 
 
 def map_to_pre_tool_use_output(
     results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: PreToolUseOutput
+    default_output: PreToolUseOutput,
 ) -> PreToolUseOutput:
     """Map generic results to PreToolUseOutput"""
     decisions, guidances = separate_results(results)
@@ -310,27 +346,38 @@ def map_to_pre_tool_use_output(
         PolicyAction.ASK: PermissionDecision.ASK,
     }
 
-    reasons = [d.reason for d in decisions if d.action == final_decision.action and d.reason] if final_decision else []
+    reasons = (
+        [d.reason for d in decisions if d.action == final_decision.action and d.reason]
+        if final_decision
+        else []
+    )
     guidance_texts = [g.content for g in guidances]
 
     all_messages = reasons + guidance_texts
     combined_reason = "\n".join(all_messages) if all_messages else None
 
-    permission = permission_map[final_decision.action] if final_decision else default_output.hookSpecificOutput.permissionDecision
+    permission = (
+        permission_map[final_decision.action]
+        if final_decision
+        else (
+            default_output.hookSpecificOutput.permissionDecision
+            if default_output.hookSpecificOutput
+            else None
+        )
+    )
 
     return PreToolUseOutput(
         continue_=True,
         systemMessage=combined_reason,
         hookSpecificOutput=PreToolUseHookSpecificOutput(
-            permissionDecision=permission,
-            permissionDecisionReason=combined_reason
-        )
+            permissionDecision=permission, permissionDecisionReason=combined_reason
+        ),
     )
 
 
 def map_to_post_tool_use_output(
     results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: PostToolUseOutput
+    default_output: PostToolUseOutput,
 ) -> PostToolUseOutput:
     """Map generic results to PostToolUseOutput"""
     decisions, guidances = separate_results(results)
@@ -344,12 +391,16 @@ def map_to_post_tool_use_output(
     all_messages = reasons + guidance_texts
     additional_context = "\n".join(all_messages) if all_messages else None
 
-    return PostToolUseOutput(
-        continue_=True,
-        hookSpecificOutput=PostToolUseHookSpecificOutput(
-            additionalContext=additional_context
+    return (
+        PostToolUseOutput(
+            continue_=True,
+            hookSpecificOutput=PostToolUseHookSpecificOutput(
+                additionalContext=additional_context
+            ),
         )
-    ) if additional_context else default_output
+        if additional_context
+        else default_output
+    )
 
 
 def map_to_default_output(results, default_output):
@@ -359,7 +410,7 @@ def map_to_default_output(results, default_output):
 
 def map_to_session_start_output(
     results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output: SessionStartOutput
+    default_output: SessionStartOutput,
 ) -> SessionStartOutput:
     """Map generic results to SessionStartOutput"""
     _, guidances = separate_results(results)
@@ -368,8 +419,8 @@ def map_to_session_start_output(
         return SessionStartOutput(
             continue_=True,
             hookSpecificOutput=SessionStartHookSpecificOutput(
-                sessionInstructions=instructions
-            )
+                additionalContext=instructions
+            ),
         )
 
     return default_output
