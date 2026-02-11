@@ -123,6 +123,10 @@ class RegoEvaluator:
             piped_decisions = self.evaluate(event, piped_cmd, bundles)
             all_decisions.extend(piped_decisions)
 
+        for proc_subst in parsed.process_substitutions:
+            proc_subst_decisions = self.evaluate(event, proc_subst, bundles)
+            all_decisions.extend(proc_subst_decisions)
+
         return all_decisions
 
     def evaluate_file_edit_decisions(

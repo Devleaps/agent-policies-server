@@ -98,9 +98,69 @@ def test_empty_command_raises_error():
         BashCommandParser.parse("")
 
 
+def test_process_substitution_simple():
+    cmd = BashCommandParser.parse("diff <(cat file1.txt) <(cat file2.txt)")
+    assert cmd.executable == "diff"
+    assert len(cmd.process_substitutions) == 2
+    assert cmd.process_substitutions[0].executable == "cat"
+    assert cmd.process_substitutions[0].arguments == ["file1.txt"]
+    assert cmd.process_substitutions[1].executable == "cat"
+    assert cmd.process_substitutions[1].arguments == ["file2.txt"]
+
+
+def test_process_substitution_with_pipeline():
+    cmd = BashCommandParser.parse("diff <(ls | grep pattern | sort)")
+    assert cmd.executable == "diff"
+    assert len(cmd.process_substitutions) == 1
+    ps = cmd.process_substitutions[0]
+    assert ps.executable == "ls"
+    assert len(ps.pipes) == 2
+    assert ps.pipes[0].executable == "grep"
+    assert ps.pipes[1].executable == "sort"
+
+
+def test_process_substitution_with_chained_commands():
+    cmd = BashCommandParser.parse('diff <(ls) file.txt && echo "done"')
+    assert cmd.executable == "diff"
+    assert len(cmd.process_substitutions) == 1
+    assert cmd.process_substitutions[0].executable == "ls"
+    assert len(cmd.chained) == 1
+    assert cmd.chained[0].executable == "echo"
+
+
 def test_command_substitution_blocked():
     with pytest.raises(ParseError, match="Command substitution"):
         BashCommandParser.parse("echo $(ls)")
+
+
+def test_process_substitution_with_and_operator_fails():
+    with pytest.raises(ParseError):
+        BashCommandParser.parse("diff <(cmd1 && cmd2)")
+
+
+def test_process_substitution_with_or_operator_fails():
+    with pytest.raises(ParseError):
+        BashCommandParser.parse("diff <(cmd1 || cmd2)")
+
+
+def test_process_substitution_with_semicolon_works():
+    cmd = BashCommandParser.parse("diff <(cmd1 ; cmd2)")
+    assert len(cmd.process_substitutions) == 1
+    ps = cmd.process_substitutions[0]
+    assert ps.executable == "cmd1"
+    assert len(ps.chained) == 1
+    assert ps.chained[0].executable == "cmd2"
+
+
+def test_process_substitution_multiple_works():
+    cmd = BashCommandParser.parse("diff <(cat file1) <(cat file2) <(cat file3)")
+    assert len(cmd.process_substitutions) == 3
+
+
+def test_process_substitution_nested_pipes_works():
+    cmd = BashCommandParser.parse("diff <(cat file | grep a | sort | uniq)")
+    assert len(cmd.process_substitutions) == 1
+    assert len(cmd.process_substitutions[0].pipes) == 3
 
 
 def test_compound_command_blocked():
