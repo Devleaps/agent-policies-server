@@ -100,18 +100,30 @@ class RegoEvaluator:
         input_doc = self._build_input_document(event, parsed)
         self._enrich_input(input_doc, parsed)
 
+        current_command_decisions = []
         for bundle in bundles:
             try:
                 bundle_decisions = self._evaluate_bundle(bundle, input_doc)
-                all_decisions.extend(bundle_decisions)
+                current_command_decisions.extend(bundle_decisions)
             except Exception as e:
                 logger.error(f"Error evaluating bundle '{bundle}': {e}")
-                all_decisions.append(
+                current_command_decisions.append(
                     PolicyDecision(
                         action=PolicyAction.ASK,
                         reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
                     )
                 )
+
+        # If no policies matched this specific command, require user approval
+        if not current_command_decisions:
+            current_command_decisions.append(
+                PolicyDecision(
+                    action=PolicyAction.ASK,
+                    reason=f"No policy defined for command: {parsed.executable}",
+                )
+            )
+
+        all_decisions.extend(current_command_decisions)
 
         # Recursively evaluate all chained commands (&&, ||, ;)
         for chained_cmd in parsed.chained:
