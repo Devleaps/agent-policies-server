@@ -1,8 +1,6 @@
-# Agent internal policies
+# Agent Policies Server
 
-AI Agent Policy Server that enforces security and safety policies for AI agent tool use.
-
-Built on the `devleaps-agent-policies` framework, this FastAPI-based server intercepts and validates tool use commands (primarily bash commands) before execution using **Rego** policies.
+This repository serves both as a reference implementation and also the public Devleaps policy server source code. This repository is used alongside [agent-policies-client](https://github.com/Devleaps/agent-policies-client) to enable automated decisionmaking and guidance for AI assistants in software development, like Claude Code, Cursor, GitHub Copilot and Gemini CLI.
 
 ## Quick start
 
@@ -124,4 +122,3 @@ Clients enable bundles via `--bundle` flags when connecting to the server.
 ## Documentation
 
 - `docs/writing-rego-policies.md` - Complete guide to writing Rego policies
-- `CLAUDE.md` - AI assistant guidance for working with this codebase
