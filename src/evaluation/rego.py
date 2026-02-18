@@ -258,18 +258,43 @@ class RegoEvaluator:
         """
         # PyPI package metadata enrichment
         if parsed.executable == "uv" and parsed.subcommand == "add":
+            package_name = None
+
+            # Try to find package name in arguments first
             if parsed.arguments:
-                package_name = parsed.arguments[0]
+                # Find first non-flag argument (package name)
+                package_name = next(
+                    (arg for arg in parsed.arguments if not arg.startswith("-")),
+                    None
+                )
+
+            # If not in arguments, check common flags that take package name as value
+            if not package_name and parsed.options:
+                # Check --dev, --group, --optional flags which may contain the package name
+                for flag in ["--dev", "-d", "--group", "--optional"]:
+                    if flag in parsed.options:
+                        potential_pkg = parsed.options[flag]
+                        # Make sure it's a package name, not another flag
+                        if potential_pkg and not potential_pkg.startswith("-"):
+                            package_name = potential_pkg
+                            break
+
+            if package_name:
                 metadata = self._fetch_pypi_metadata(package_name)
                 if metadata:
                     input_doc["pypi_metadata"] = metadata
 
         elif parsed.executable == "pip" and parsed.subcommand == "install":
             if parsed.arguments:
-                package_name = parsed.arguments[0]
-                metadata = self._fetch_pypi_metadata(package_name)
-                if metadata:
-                    input_doc["pypi_metadata"] = metadata
+                # Find first non-flag argument (package name)
+                package_name = next(
+                    (arg for arg in parsed.arguments if not arg.startswith("-")),
+                    None
+                )
+                if package_name:
+                    metadata = self._fetch_pypi_metadata(package_name)
+                    if metadata:
+                        input_doc["pypi_metadata"] = metadata
 
     def _fetch_pypi_metadata(self, package_name: str) -> Optional[Dict[str, Any]]:
         """Fetch package metadata from PyPI.

@@ -65,5 +65,9 @@ def test_gh_pr_view_allowed(client, base_event):
     check_policy(client, base_event, "gh pr view 123", "allow")
 
 
+def test_gh_pr_diff_allowed(client, base_event):
+    check_policy(client, base_event, "gh pr diff 30", "allow")
+
+
 def test_gh_pr_create_ask(client, base_event):
     check_policy(client, base_event, "gh pr create --title 'Test'", "ask")

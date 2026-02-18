@@ -274,10 +274,20 @@ decisions[decision] if {
 	}
 }
 
-# Always allow commands (no path arguments required)
+# grep - allow with safe paths, deny with unsafe paths
 decisions[decision] if {
 	input.parsed.executable == "grep"
+	all_args_safe(input.parsed.arguments)
 	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "grep"
+	not all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "deny",
+		"reason": "grep: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
 }
 
 decisions[decision] if {
@@ -330,6 +340,16 @@ decisions[decision] if {
 
 decisions[decision] if {
 	input.parsed.executable == "which"
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "whoami"
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "df"
 	decision := {"action": "allow"}
 }
 
@@ -463,6 +483,22 @@ decisions[decision] if {
 	decision := {
 		"action": "deny",
 		"reason": "tree: Only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp).",
+	}
+}
+
+# file - identify file type (safe paths required)
+decisions[decision] if {
+	input.parsed.executable == "file"
+	all_args_safe(input.parsed.arguments)
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "file"
+	not all_args_safe(input.parsed.arguments)
+	decision := {
+		"action": "deny",
+		"reason": "file: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
 	}
 }
 

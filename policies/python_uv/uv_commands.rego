@@ -118,10 +118,26 @@ decisions[decision] if {
 	}
 }
 
+# Allowed uv add flags (don't affect package validation)
+uv_add_safe_flags := ["--dev", "-d", "--optional", "--group"]
+
+# Check if all flags are safe for uv add
+uv_add_has_only_safe_flags if {
+	count(input.parsed.flags) == 0
+}
+
+uv_add_has_only_safe_flags if {
+	count(input.parsed.flags) > 0
+	every flag in input.parsed.flags {
+		flag in uv_add_safe_flags
+	}
+}
+
 # Check PyPI package age for uv add
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
+	uv_add_has_only_safe_flags
 	input.pypi_metadata.age_days < 365
 	decision := {
 		"action": "deny",
@@ -133,6 +149,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
+	uv_add_has_only_safe_flags
 	input.pypi_metadata.age_days >= 365
 	decision := {"action": "allow"}
 }
@@ -141,10 +158,22 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
+	uv_add_has_only_safe_flags
 	not input.pypi_metadata
 	decision := {
 		"action": "deny",
 		"reason": "Package not found on PyPI. Cannot verify package age for security policy.",
+	}
+}
+
+# Deny uv add with unsafe flags
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "add"
+	not uv_add_has_only_safe_flags
+	decision := {
+		"action": "deny",
+		"reason": "uv add: unsupported flags detected. Only --dev, -d, --optional, and --group flags are allowed.",
 	}
 }
 

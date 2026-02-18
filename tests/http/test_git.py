@@ -71,3 +71,59 @@ def test_git_push_force_with_lease_allowed(client, base_event):
 
 def test_git_init_outside_workspace_denied(client, base_event):
     check_policy(client, base_event, "git init /tmp/new-repo", "deny")
+
+
+def test_git_stash(client, base_event):
+    check_policy(client, base_event, "git stash", "allow")
+
+
+def test_git_stash_pop(client, base_event):
+    check_policy(client, base_event, "git stash pop", "allow")
+
+
+def test_git_stash_list(client, base_event):
+    check_policy(client, base_event, "git stash list", "allow")
+
+
+def test_git_remote(client, base_event):
+    check_policy(client, base_event, "git remote", "allow")
+
+
+def test_git_remote_verbose(client, base_event):
+    check_policy(client, base_event, "git remote -v", "allow")
+
+
+def test_git_remote_verbose_piped(client, base_event):
+    check_policy(client, base_event, "git remote -v 2>/dev/null | head -5", "allow")
+
+
+def test_git_remote_get_url(client, base_event):
+    check_policy(client, base_event, "git remote get-url origin", "allow")
+
+
+def test_git_remote_show(client, base_event):
+    check_policy(client, base_event, "git remote show origin", "allow")
+
+
+def test_git_remote_write_operations(client, base_event):
+    """git remote write operations should fall back to ask (not explicitly allowed)"""
+    check_policy(client, base_event, "git remote add upstream https://github.com/user/repo.git", "ask")
+    check_policy(client, base_event, "git remote remove origin", "ask")
+    check_policy(client, base_event, "git remote set-url origin https://github.com/new/repo.git", "ask")
+    check_policy(client, base_event, "git remote rename old new", "ask")
+
+
+def test_git_with_c_safe_path(client, base_event):
+    check_policy(client, base_event, "git -C agent-skills status", "allow")
+
+
+def test_git_with_c_relative_safe_path(client, base_event):
+    check_policy(client, base_event, "git -C ./subdir remote -v", "allow")
+
+
+def test_git_with_c_unsafe_path_denied(client, base_event):
+    check_policy(client, base_event, "git -C /tmp/agent-skills status", "deny")
+
+
+def test_git_with_c_parent_path_denied(client, base_event):
+    check_policy(client, base_event, "git -C ../other-repo status", "deny")
