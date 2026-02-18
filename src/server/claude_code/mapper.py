@@ -122,8 +122,11 @@ def map_pre_tool_use_input(
     tool_is_bash = input_data.tool_name == ToolName.BASH
     tool_is_mcp = tool_name_str.startswith("mcp__")
 
-    if tool_is_bash and hasattr(input_data, "command"):
-        command = input_data.command
+    if tool_is_bash:
+        # Extract command from tool_input dictionary for Bash
+        tool_input = input_data.tool_input or {}
+        if isinstance(tool_input, dict) and "command" in tool_input:
+            command = tool_input["command"]
     else:
         parameters = input_data.model_dump(exclude={"session_id", "tool_name"})
 

@@ -29,6 +29,7 @@ class ParsedCommand:
         redirects: List of redirect operations (e.g., [(">>", "output.log")])
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
+        process_substitutions: List of commands from <(...) or >(...) substitutions
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
     """
@@ -41,6 +42,7 @@ class ParsedCommand:
     redirects: List[Tuple[str, str]] = field(default_factory=list)
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
+    process_substitutions: List["ParsedCommand"] = field(default_factory=list)
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -147,6 +149,7 @@ class BashCommandParser:
 
         parts = []
         redirects = []
+        process_substitutions = []
 
         for part in node.parts:
             if part.kind == "word":
@@ -154,6 +157,12 @@ class BashCommandParser:
                     for subpart in part.parts:
                         if subpart.kind == "commandsubstitution":
                             raise ParseError("Command substitution not supported")
+                        elif subpart.kind == "processsubstitution":
+                            if hasattr(subpart, "command"):
+                                parsed_subst = cls._parse_node(
+                                    subpart.command, original
+                                )
+                                process_substitutions.append(parsed_subst)
 
                 word_value = original[part.pos[0] : part.pos[1]]
                 parts.append(word_value)
@@ -216,6 +225,7 @@ class BashCommandParser:
             flags=flags,
             options=options,
             redirects=redirects,
+            process_substitutions=process_substitutions,
             original=original,
         )
 
@@ -252,6 +262,7 @@ class BashCommandParser:
             "mypy",
             "black",
             "pytest",
+            "vale",
         }
 
         # If executable is known to use subcommands and word doesn't look like a path/file

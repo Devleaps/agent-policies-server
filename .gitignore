@@ -40,3 +40,4 @@ coverage.json
 mutants/
 htmlcov/
 .mypy_cache/
+styles/
