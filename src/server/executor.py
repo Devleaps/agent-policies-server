@@ -3,11 +3,7 @@ from typing import List, Union
 
 from .models import PolicyDecision, PolicyGuidance, BaseEvent
 from .registry import registry
-from .session import (
-    cleanup_expired_flags,
-    decrement_invocation_flags,
-    set_flag
-)
+from .session import cleanup_expired_flags, decrement_invocation_flags, set_flag
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +42,7 @@ def execute_handlers_generic(input_data) -> List[Union[PolicyDecision, PolicyGui
                 extra={
                     "handler": handler.__name__,
                     "result_count": len(yielded_results),
-                }
+                },
             )
         except Exception as e:
             logger.error(
@@ -55,26 +51,26 @@ def execute_handlers_generic(input_data) -> List[Union[PolicyDecision, PolicyGui
                     "handler": handler.__name__,
                     "error": str(e),
                 },
-                exc_info=True
+                exc_info=True,
             )
             continue
 
     # Process flags from policy decisions
     if isinstance(input_data, BaseEvent):
         for result in all_results:
-            if hasattr(result, 'flags') and result.flags:
+            if hasattr(result, "flags") and result.flags:
                 for flag_spec in result.flags:
                     try:
                         set_flag(input_data.session_id, flag_spec)
                         logger.debug(
                             f"Set flag '{flag_spec.get('name')}' for session {input_data.session_id}",
-                            extra={"flag": flag_spec}
+                            extra={"flag": flag_spec},
                         )
                     except Exception as e:
                         logger.error(
                             f"Error setting flag: {e}",
                             extra={"flag": flag_spec, "error": str(e)},
-                            exc_info=True
+                            exc_info=True,
                         )
 
     return all_results

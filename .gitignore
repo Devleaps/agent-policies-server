@@ -34,3 +34,9 @@ FEATURES.md
 # OS
 .DS_Store
 Thumbs.db
+
+.coverage
+coverage.json
+mutants/
+htmlcov/
+.mypy_cache/

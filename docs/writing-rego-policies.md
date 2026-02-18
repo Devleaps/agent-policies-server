@@ -1,10 +1,10 @@
-# Writing Rego Policies for AI Agent Policy Server
+# Writing Rego policies for AI agent policy server
 
 ## Overview
 
 This guide explains how to write Rego policies for the AI Agent Policy Server using regopy (embedded Rego interpreter).
 
-## Basic Structure
+## Basic structure
 
 Every policy file follows this pattern:
 
@@ -24,7 +24,7 @@ decisions[decision] if {
 }
 ```
 
-## Policy Actions
+## Policy actions
 
 Policies can return four actions (in order of precedence):
 
@@ -33,7 +33,7 @@ Policies can return four actions (in order of precedence):
 3. **ASK**: Prompt user for approval
 4. **ALLOW**: Permit the command (lowest priority)
 
-## Input Document Structure
+## Input document structure
 
 Policies receive this input:
 
@@ -63,9 +63,9 @@ Policies receive this input:
 }
 ```
 
-## Common Patterns
+## Common patterns
 
-### 1. Simple Allow Rule
+### 1. Simple allow rule
 
 ```rego
 # Allow git status
@@ -76,7 +76,7 @@ decisions[decision] if {
 }
 ```
 
-### 2. Simple Deny Rule
+### 2. Simple deny rule
 
 ```rego
 # Deny sudo commands
@@ -89,7 +89,7 @@ decisions[decision] if {
 }
 ```
 
-### 3. Path Validation
+### 3. Path validation
 
 ```rego
 import data.helpers
@@ -123,7 +123,7 @@ all_args_safe if {
 }
 ```
 
-### 4. Flag Checking
+### 4. Flag checking
 
 ```rego
 # Deny git push --force
@@ -147,7 +147,7 @@ has_force_flag if {
 }
 ```
 
-### 5. Option Checking
+### 5. Option checking
 
 Options are key-value pairs like `-m "message"` or `-l file.txt`.
 
@@ -169,7 +169,7 @@ has_message if {
 }
 ```
 
-### 6. Enriched Data Access
+### 6. Enriched data access
 
 Use enriched external data (like PyPI metadata):
 
@@ -187,11 +187,11 @@ decisions[decision] if {
 }
 ```
 
-### 7. Session Flags - Stateful Policies
+### 7. Session flags - stateful policies
 
 Session flags enable stateful policy workflows that persist across multiple commands. Flags can expire based on invocation count or time.
 
-#### Basic Flag Usage
+#### Basic flag usage
 
 ```rego
 import data.helpers.flags
@@ -209,7 +209,7 @@ decisions[decision] if {
 }
 ```
 
-#### Setting Flags
+#### Setting flags
 
 Policies can set flags by including them in decisions:
 
@@ -248,7 +248,7 @@ decisions[decision] if {
 }
 ```
 
-#### Pattern 1: Test Tracking
+#### Pattern 1: Test tracking
 
 Require tests before commits:
 
@@ -313,7 +313,7 @@ decisions[decision] if {
 # During cooldown, the deny rule doesn't match, so command is allowed
 ```
 
-#### Pattern 3: Multi-Step Workflow
+#### Pattern 3: Multi-step workflow
 
 Enforce ordered workflow steps (lint → test → deploy):
 
@@ -369,7 +369,7 @@ decisions[decision] if {
 }
 ```
 
-#### Pattern 4: Immediate Expiration
+#### Pattern 4: Immediate expiration
 
 Flags with `expires_after: 0` expire immediately and are only visible in the same policy evaluation:
 
@@ -398,7 +398,7 @@ decisions[decision] if {
 }
 ```
 
-#### Invalidating Flags
+#### Invalidating flags
 
 Set a flag to `false` to invalidate it:
 
@@ -418,7 +418,7 @@ decisions[decision] if {
 }
 ```
 
-#### Flag Input Structure
+#### Flag input structure
 
 Session flags are available in `input.session_flags`:
 
@@ -432,11 +432,11 @@ Session flags are available in `input.session_flags`:
 }
 ```
 
-## Helper Functions
+## Helper functions
 
-### Available Helpers (`data.helpers`)
+### Available helpers (`data.helpers`)
 
-#### is_safe_path(path)
+#### `is_safe_path(path)`
 Validates that a path is workspace-relative and safe.
 
 **Blocks:**
@@ -457,7 +457,7 @@ decisions[decision] if {
 }
 ```
 
-#### is_localhost_url(url)
+#### `is_localhost_url(URL)`
 Validates that a URL is localhost.
 
 **Accepts:**
@@ -475,9 +475,9 @@ decisions[decision] if {
 }
 ```
 
-### Available Helpers (`data.helpers.flags`)
+### Available helpers (`data.helpers.flags`)
 
-#### flags.is_set(name)
+#### `flags.is_set(name)`
 Check if a session flag exists and has a truthy value.
 
 **Example:**
@@ -490,7 +490,7 @@ decisions[decision] if {
 }
 ```
 
-#### flags.equals(name, value)
+#### `flags.equals(name, value)`
 Check if a session flag exists and has a specific value.
 
 **Example:**
@@ -503,7 +503,7 @@ decisions[decision] if {
 }
 ```
 
-## Important Rego Limitations
+## Rego limitations
 
 ### 1. No `or` operator in comprehensions
 
@@ -534,9 +534,9 @@ has_dot_or_slash if { has_dot }
 has_dot_or_slash if { has_slash }
 ```
 
-### 2. Options vs Flags
+### 2. Options vs flags
 
-Commands are parsed differently:
+Commands parse differently:
 
 **Flags** (boolean): `--force`, `-A`
 - Stored in: `input.parsed.flags` (array)
@@ -559,7 +559,7 @@ Parsed as:
 }
 ```
 
-### 3. Arguments vs Subcommands
+### 3. Arguments vs subcommands
 
 Some commands use subcommands (git, kubectl), others use arguments (yarn).
 
@@ -587,34 +587,34 @@ yarn test
 }
 ```
 
-## Bundle Organization
+## Bundle organization
 
-Policies are organized into bundles:
+Policies organize into bundles:
 
-### Universal Bundle (`policies/universal/`)
+### Universal bundle (`policies/universal/`)
 Always enforced for all users.
 
 **Use for:**
 - Security policies (sudo, rm, dangerous commands)
 - File operation policies
 - Git policies
-- Cloud CLI policies
+- cloud command-line tool policies
 
-### Python UV Bundle (`policies/python_uv/`)
+### Python uv bundle (`policies/python_uv/`)
 Opt-in bundle for UV-based Python projects.
 
 **Use for:**
 - UV-specific policies
 - Force tool usage via `uv run`
 
-### Python Pip Bundle (`policies/python_pip/`)
+### Python pip bundle (`policies/python_pip/`)
 Opt-in bundle for pip-based Python projects.
 
 **Use for:**
 - Direct pip usage allowed
 - Direct tool usage allowed (black, pytest, etc.)
 
-## Testing Your Policies
+## Testing your policies
 
 Create tests in `tests/policies/`:
 
@@ -652,7 +652,7 @@ def test_my_policy(rego_evaluator, bash_event):
     assert any(d.action == PolicyAction.ALLOW for d in decisions)
 ```
 
-## Best Practices
+## Best practices
 
 1. **One policy file per command category**
    - Example: `git.rego`, `terraform.rego`, `file_operations.rego`
@@ -679,7 +679,7 @@ def test_my_policy(rego_evaluator, bash_event):
    reason := sprintf("Package %v is %v days old", [name, age])
    ```
 
-## Example: Complete Policy File
+## Example: Complete policy file
 
 ```rego
 package universal
@@ -712,7 +712,7 @@ decisions[decision] if {
 }
 ```
 
-## Debugging Tips
+## Debugging tips
 
 1. **Check policy compilation**
    - Errors appear in OPA evaluator logs

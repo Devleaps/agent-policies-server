@@ -16,3 +16,9 @@ dependencies = [
 dev = [
     "pytest==8.4.2",
 ]
+
+[tool.ruff]
+exclude = ["mutants"]
+
+[tool.mypy]
+exclude = ["mutants"]

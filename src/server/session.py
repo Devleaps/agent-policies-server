@@ -10,12 +10,11 @@ import threading
 from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
-
 # Thread lock for flag operations
 _flags_lock = threading.Lock()
 
 # Global flag storage (keyed by session_id)
-_session_flags: Dict[str, Dict[str, 'Flag']] = {}
+_session_flags: Dict[str, Dict[str, "Flag"]] = {}
 
 
 @dataclass
@@ -46,15 +45,22 @@ class Flag:
             return True
 
         if self.expires_unit == "seconds":
-            return (time.time() - self.created_at) >= self.expires_after
+            created_at = self.created_at if self.created_at is not None else 0.0
+            return (time.time() - created_at) >= self.expires_after
         elif self.expires_unit == "invocations":
-            return self.invocations_remaining is not None and self.invocations_remaining <= 0
+            return (
+                self.invocations_remaining is not None
+                and self.invocations_remaining <= 0
+            )
 
         return False
 
     def decrement_invocation(self):
         """Decrement invocation counter if applicable."""
-        if self.expires_unit == "invocations" and self.invocations_remaining is not None:
+        if (
+            self.expires_unit == "invocations"
+            and self.invocations_remaining is not None
+        ):
             self.invocations_remaining -= 1
 
 
@@ -84,7 +90,7 @@ def set_flag(session_id: str, flag_spec: Dict[str, Any]) -> None:
             name=flag_spec["name"],
             value=flag_spec.get("value", True),
             expires_after=flag_spec.get("expires_after"),
-            expires_unit=flag_spec.get("expires_unit")
+            expires_unit=flag_spec.get("expires_unit"),
         )
 
         _session_flags[session_id][flag_spec["name"]] = flag
@@ -128,7 +134,8 @@ def cleanup_expired_flags(session_id: str) -> None:
             return
 
         expired = [
-            name for name, flag in _session_flags[session_id].items()
+            name
+            for name, flag in _session_flags[session_id].items()
             if flag.is_expired()
         ]
 

@@ -1,6 +1,7 @@
 """
 Cursor hook routes.
 """
+
 import logging
 
 from fastapi import APIRouter
@@ -23,12 +24,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/policy/cursor")
 
 
-
-
-@router.post("/beforeShellExecution", response_model=BeforeShellExecutionOutput, response_model_exclude_none=True)
-async def before_shell_execution_hook(input_data: BeforeShellExecutionInput) -> BeforeShellExecutionOutput:
+@router.post(
+    "/beforeShellExecution",
+    response_model=BeforeShellExecutionOutput,
+    response_model_exclude_none=True,
+)
+async def before_shell_execution_hook(
+    input_data: BeforeShellExecutionInput,
+) -> BeforeShellExecutionOutput:
     """Handle beforeShellExecution hook events."""
-    logger.info(f"beforeShellExecution hook: '{input_data.command}' in conversation {input_data.conversation_id}")
+    logger.info(
+        f"beforeShellExecution hook: '{input_data.command}' in conversation {input_data.conversation_id}"
+    )
 
     generic_input = mapper.map_before_shell_execution_input(input_data)
 
@@ -41,10 +48,18 @@ async def before_shell_execution_hook(input_data: BeforeShellExecutionInput) -> 
     return result
 
 
-@router.post("/beforeMCPExecution", response_model=BeforeMCPExecutionOutput, response_model_exclude_none=True)
-async def before_mcp_execution_hook(input_data: BeforeMCPExecutionInput) -> BeforeMCPExecutionOutput:
+@router.post(
+    "/beforeMCPExecution",
+    response_model=BeforeMCPExecutionOutput,
+    response_model_exclude_none=True,
+)
+async def before_mcp_execution_hook(
+    input_data: BeforeMCPExecutionInput,
+) -> BeforeMCPExecutionOutput:
     """Handle beforeMCPExecution hook events."""
-    logger.info(f"beforeMCPExecution hook: {input_data.tool_name} in conversation {input_data.conversation_id}")
+    logger.info(
+        f"beforeMCPExecution hook: {input_data.tool_name} in conversation {input_data.conversation_id}"
+    )
 
     generic_input = mapper.map_before_mcp_execution_input(input_data)
 
@@ -57,10 +72,16 @@ async def before_mcp_execution_hook(input_data: BeforeMCPExecutionInput) -> Befo
     return result
 
 
-@router.post("/afterFileEdit", response_model=AfterFileEditOutput, response_model_exclude_none=True)
+@router.post(
+    "/afterFileEdit",
+    response_model=AfterFileEditOutput,
+    response_model_exclude_none=True,
+)
 async def after_file_edit_hook(input_data: AfterFileEditInput) -> AfterFileEditOutput:
     """Handle afterFileEdit hook events (observation only, cannot prevent)."""
-    logger.info(f"afterFileEdit hook: {input_data.file_path} in conversation {input_data.conversation_id}")
+    logger.info(
+        f"afterFileEdit hook: {input_data.file_path} in conversation {input_data.conversation_id}"
+    )
 
     generic_input = mapper.map_after_file_edit_input(input_data)
 
@@ -72,10 +93,18 @@ async def after_file_edit_hook(input_data: AfterFileEditInput) -> AfterFileEditO
     return result
 
 
-@router.post("/beforeReadFile", response_model=BeforeReadFileOutput, response_model_exclude_none=True)
-async def before_read_file_hook(input_data: BeforeReadFileInput) -> BeforeReadFileOutput:
+@router.post(
+    "/beforeReadFile",
+    response_model=BeforeReadFileOutput,
+    response_model_exclude_none=True,
+)
+async def before_read_file_hook(
+    input_data: BeforeReadFileInput,
+) -> BeforeReadFileOutput:
     """Handle beforeReadFile hook events."""
-    logger.info(f"beforeReadFile hook: {input_data.file_path} in conversation {input_data.conversation_id}")
+    logger.info(
+        f"beforeReadFile hook: {input_data.file_path} in conversation {input_data.conversation_id}"
+    )
 
     generic_input = mapper.map_before_read_file_input(input_data)
 
@@ -88,8 +117,14 @@ async def before_read_file_hook(input_data: BeforeReadFileInput) -> BeforeReadFi
     return result
 
 
-@router.post("/beforeSubmitPrompt", response_model=BeforeSubmitPromptOutput, response_model_exclude_none=True)
-async def before_submit_prompt_hook(input_data: BeforeSubmitPromptInput) -> BeforeSubmitPromptOutput:
+@router.post(
+    "/beforeSubmitPrompt",
+    response_model=BeforeSubmitPromptOutput,
+    response_model_exclude_none=True,
+)
+async def before_submit_prompt_hook(
+    input_data: BeforeSubmitPromptInput,
+) -> BeforeSubmitPromptOutput:
     """Handle beforeSubmitPrompt hook events."""
     logger.info(f"beforeSubmitPrompt hook in conversation {input_data.conversation_id}")
 

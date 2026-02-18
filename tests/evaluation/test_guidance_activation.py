@@ -1,4 +1,5 @@
 """Test the Rego-based guidance activation system."""
+
 import pytest
 from src.evaluation.rego import RegoEvaluator
 from src.server.models import PostFileEditEvent, PatchLine, StructuredPatch
@@ -15,26 +16,31 @@ def rego_evaluator():
 @pytest.fixture
 def create_file_edit_event():
     """Factory for creating PostFileEditEvent instances."""
+
     def _create(file_path: str, patch_content: str = "", bundles=None):
         """Create a PostFileEditEvent with structured patch."""
         if bundles is None:
             bundles = ["universal"]
 
         lines = []
-        for line in patch_content.strip().split('\n') if patch_content.strip() else []:
-            if line.startswith('+'):
+        for line in patch_content.strip().split("\n") if patch_content.strip() else []:
+            if line.startswith("+"):
                 lines.append(PatchLine(operation="added", content=line[1:]))
-            elif line.startswith('-'):
+            elif line.startswith("-"):
                 lines.append(PatchLine(operation="removed", content=line[1:]))
             else:
                 lines.append(PatchLine(operation="unchanged", content=line))
 
         patch = StructuredPatch(
             oldStart=1,
-            oldLines=len([l for l in lines if l.operation in ["removed", "unchanged"]]),
+            oldLines=len(
+                [line for line in lines if line.operation in ["removed", "unchanged"]]
+            ),
             newStart=1,
-            newLines=len([l for l in lines if l.operation in ["added", "unchanged"]]),
-            lines=lines
+            newLines=len(
+                [line for line in lines if line.operation in ["added", "unchanged"]]
+            ),
+            lines=lines,
         )
 
         return PostFileEditEvent(
@@ -42,16 +48,21 @@ def create_file_edit_event():
             source_client=SourceClient.CLAUDE_CODE,
             file_path=file_path,
             structured_patch=[patch] if lines else None,
-            enabled_bundles=bundles
+            enabled_bundles=bundles,
         )
+
     return _create
 
 
-def test_rego_evaluator_activates_python_file_guidance(rego_evaluator, create_file_edit_event):
+def test_rego_evaluator_activates_python_file_guidance(
+    rego_evaluator, create_file_edit_event
+):
     """Test that Rego evaluator correctly activates guidance checks for Python files."""
     event = create_file_edit_event("test.py")
 
-    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=["universal"])
+    activated_checks = rego_evaluator.evaluate_guidance_activations(
+        event, bundles=["universal"]
+    )
 
     assert "comment_ratio" in activated_checks
     assert "comment_overlap" in activated_checks
@@ -61,30 +72,42 @@ def test_rego_evaluator_activates_python_file_guidance(rego_evaluator, create_fi
     assert "license" not in activated_checks
 
 
-def test_rego_evaluator_activates_readme_guidance(rego_evaluator, create_file_edit_event):
+def test_rego_evaluator_activates_readme_guidance(
+    rego_evaluator, create_file_edit_event
+):
     """Test that Rego evaluator correctly activates guidance checks for README.md."""
     event = create_file_edit_event("README.md")
 
-    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=["universal"])
+    activated_checks = rego_evaluator.evaluate_guidance_activations(
+        event, bundles=["universal"]
+    )
 
     assert "license" in activated_checks
     assert "comment_ratio" not in activated_checks
 
 
-def test_rego_evaluator_no_activations_for_non_matching_file(rego_evaluator, create_file_edit_event):
+def test_rego_evaluator_no_activations_for_non_matching_file(
+    rego_evaluator, create_file_edit_event
+):
     """Test that Rego evaluator returns no activations for non-matching files."""
     event = create_file_edit_event("test.txt")
 
-    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=["universal"])
+    activated_checks = rego_evaluator.evaluate_guidance_activations(
+        event, bundles=["universal"]
+    )
 
     assert len(activated_checks) == 0
 
 
-def test_python_uv_bundle_activates_uv_specific_guidance(rego_evaluator, create_file_edit_event):
+def test_python_uv_bundle_activates_uv_specific_guidance(
+    rego_evaluator, create_file_edit_event
+):
     """Test that python_uv bundle activates UV-specific guidance."""
     event = create_file_edit_event("pyproject.toml")
 
-    activated_checks = rego_evaluator.evaluate_guidance_activations(event, bundles=["universal", "python_uv"])
+    activated_checks = rego_evaluator.evaluate_guidance_activations(
+        event, bundles=["universal", "python_uv"]
+    )
 
     assert "uv_pyproject" in activated_checks
 
@@ -120,7 +143,9 @@ def test_guidance_bundle_handles_pyproject_toml(create_file_edit_event):
 +[project]
 +name = "test"
 """
-    event = create_file_edit_event("pyproject.toml", patch_content, bundles=["universal", "python_uv"])
+    event = create_file_edit_event(
+        "pyproject.toml", patch_content, bundles=["universal", "python_uv"]
+    )
 
     results = list(evaluate_guidance(event))
 

@@ -1,7 +1,8 @@
 """
 Mappers to convert Cursor hook inputs/outputs to/from generic models.
 """
-from typing import List, Union
+
+from typing import List, TypeVar, Union, cast
 
 from ..enums import SourceClient
 from ..mapper_utils import separate_results, find_highest_priority_decision
@@ -12,7 +13,7 @@ from ..models import (
     PolicyGuidance,
     PromptSubmitEvent,
     StopEvent,
-    ToolUseEvent
+    ToolUseEvent,
 )
 from .api.after_file_edit import AfterFileEditInput, AfterFileEditOutput
 from .api.before_mcp_execution import BeforeMCPExecutionInput, BeforeMCPExecutionOutput
@@ -29,7 +30,10 @@ from .api.stop import StopInput, StopOutput
 # INPUT MAPPERS: Cursor → Generic
 # ============================================================================
 
-def map_before_shell_execution_input(input_data: BeforeShellExecutionInput) -> ToolUseEvent:
+
+def map_before_shell_execution_input(
+    input_data: BeforeShellExecutionInput,
+) -> ToolUseEvent:
     """Map beforeShellExecution to ToolUseEvent"""
     return ToolUseEvent(
         session_id=input_data.conversation_id,
@@ -39,7 +43,7 @@ def map_before_shell_execution_input(input_data: BeforeShellExecutionInput) -> T
         tool_is_mcp=False,
         command=input_data.command,
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
@@ -56,7 +60,7 @@ def map_before_mcp_execution_input(input_data: BeforeMCPExecutionInput) -> ToolU
         command=input_data.command,
         parameters=input_data.tool_input,
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
@@ -67,7 +71,7 @@ def map_after_file_edit_input(input_data: AfterFileEditInput) -> HookEvent:
         source_client=SourceClient.CURSOR,
         hook_type="after_file_edit",
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
@@ -78,18 +82,20 @@ def map_before_read_file_input(input_data: BeforeReadFileInput) -> HookEvent:
         source_client=SourceClient.CURSOR,
         hook_type="before_read_file",
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
-def map_before_submit_prompt_input(input_data: BeforeSubmitPromptInput) -> PromptSubmitEvent:
+def map_before_submit_prompt_input(
+    input_data: BeforeSubmitPromptInput,
+) -> PromptSubmitEvent:
     """Map beforeSubmitPrompt to PromptSubmitEvent"""
     return PromptSubmitEvent(
         session_id=input_data.conversation_id,
         source_client=SourceClient.CURSOR,
         prompt=input_data.prompt,
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
@@ -100,7 +106,7 @@ def map_stop_input(input_data: StopInput) -> StopEvent:
         source_client=SourceClient.CURSOR,
         stop_type="stop",
         workspace_roots=input_data.workspace_roots,
-        source_event=input_data
+        source_event=input_data,
     )
 
 
@@ -108,10 +114,22 @@ def map_stop_input(input_data: StopInput) -> StopEvent:
 # OUTPUT MAPPERS: Generic → Cursor
 # ============================================================================
 
+
+CursorOutputType = TypeVar(
+    "CursorOutputType",
+    BeforeShellExecutionOutput,
+    BeforeMCPExecutionOutput,
+    BeforeReadFileOutput,
+    BeforeSubmitPromptOutput,
+    StopOutput,
+    AfterFileEditOutput,
+)
+
+
 def map_to_cursor_output(
     results: List[Union[PolicyDecision, PolicyGuidance]],
-    default_output
-) -> Union[BeforeShellExecutionOutput, BeforeMCPExecutionOutput, BeforeReadFileOutput, BeforeSubmitPromptOutput, StopOutput, AfterFileEditOutput]:
+    default_output: CursorOutputType,
+) -> CursorOutputType:
     """Map generic results to Cursor output"""
     decisions, guidances = separate_results(results)
 
@@ -130,7 +148,11 @@ def map_to_cursor_output(
     agent_messages = []
 
     if final_decision:
-        reasons = [d.reason for d in decisions if d.action == final_decision.action and d.reason]
+        reasons = [
+            d.reason
+            for d in decisions
+            if d.action == final_decision.action and d.reason
+        ]
         user_messages.extend(reasons)
 
     for guidance in guidances:
@@ -138,8 +160,13 @@ def map_to_cursor_output(
         agent_messages.append(guidance.content)
 
     output_type = type(default_output)
-    return output_type(
-        permission=permission_map.get(final_decision.action) if final_decision else None,
-        userMessage="\n".join(user_messages) if user_messages else None,
-        agentMessage="\n".join(agent_messages) if agent_messages else None
+    return cast(
+        CursorOutputType,
+        output_type(
+            permission=(
+                permission_map.get(final_decision.action) if final_decision else None
+            ),
+            userMessage="\n".join(user_messages) if user_messages else None,
+            agentMessage="\n".join(agent_messages) if agent_messages else None,
+        ),
     )

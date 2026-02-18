@@ -1,6 +1,6 @@
-from typing import Any, Callable, List, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from .enums import PermissionDecision, ToolName
 from .output_base import BaseHookOutput
@@ -8,16 +8,18 @@ from .output_base import BaseHookOutput
 
 class PreToolUseInput(BaseModel):
     """Input for PreToolUse hook based on Claude Code documentation."""
+
     model_config = ConfigDict(
-        validate_assignment=True,
-        extra='allow'  # Allow extra fields from Claude Code
+        validate_assignment=True, extra="allow"  # Allow extra fields from Claude Code
     )
 
     session_id: str
     transcript_path: str
     cwd: str
     hook_event_name: Literal["PreToolUse"]
-    tool_name: Union[ToolName, str]  # ToolName enum for standard tools, str for MCP tools
+    tool_name: Union[
+        ToolName, str
+    ]  # ToolName enum for standard tools, str for MCP tools
     tool_input: Any  # Tool-specific object that varies by tool
 
     _command_cache: Optional[str] = None  # Internal cache for command
@@ -47,6 +49,7 @@ class PreToolUseInput(BaseModel):
 
 class PreToolUseHookSpecificOutput(BaseModel):
     """Hook-specific output for PreToolUse hook."""
+
     hookEventName: str = "PreToolUse"
     permissionDecision: Optional[PermissionDecision] = None
     permissionDecisionReason: Optional[str] = None
@@ -54,6 +57,7 @@ class PreToolUseHookSpecificOutput(BaseModel):
 
 class PreToolUseOutput(BaseHookOutput):
     """Output for PreToolUse hook based on Claude Code documentation."""
+
     hookSpecificOutput: Optional[PreToolUseHookSpecificOutput] = None
 
 

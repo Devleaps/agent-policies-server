@@ -1,6 +1,5 @@
 """Tests for session flag management."""
 
-import time
 import pytest
 from unittest.mock import patch
 from src.server.session import (
@@ -10,7 +9,7 @@ from src.server.session import (
     decrement_invocation_flags,
     clear_flags,
     get_all_flags,
-    initialize_flags_storage
+    initialize_flags_storage,
 )
 
 
@@ -67,12 +66,15 @@ def test_invocation_based_expiration():
     session_id = "test-session-5"
 
     # Set flag that expires after 3 invocations
-    set_flag(session_id, {
-        "name": "invocation_flag",
-        "value": True,
-        "expires_after": 3,
-        "expires_unit": "invocations"
-    })
+    set_flag(
+        session_id,
+        {
+            "name": "invocation_flag",
+            "value": True,
+            "expires_after": 3,
+            "expires_unit": "invocations",
+        },
+    )
 
     # Flag should exist initially
     assert get_flag(session_id, "invocation_flag") is True
@@ -92,15 +94,18 @@ def test_time_based_expiration():
     """Test flag expiration by time."""
     session_id = "test-session-6"
 
-    with patch('src.server.session.time.time') as mock_time:
+    with patch("src.server.session.time.time") as mock_time:
         mock_time.return_value = 1000.0
 
-        set_flag(session_id, {
-            "name": "time_flag",
-            "value": True,
-            "expires_after": 1,
-            "expires_unit": "seconds"
-        })
+        set_flag(
+            session_id,
+            {
+                "name": "time_flag",
+                "value": True,
+                "expires_after": 1,
+                "expires_unit": "seconds",
+            },
+        )
 
         assert get_flag(session_id, "time_flag") is True
 
@@ -114,11 +119,10 @@ def test_immediate_expiration():
     """Test flag with expires_after=0 expires immediately."""
     session_id = "test-session-7"
 
-    set_flag(session_id, {
-        "name": "immediate",
-        "expires_after": 0,
-        "expires_unit": "invocations"
-    })
+    set_flag(
+        session_id,
+        {"name": "immediate", "expires_after": 0, "expires_unit": "invocations"},
+    )
 
     # Should be expired immediately
     assert get_flag(session_id, "immediate") is False
@@ -129,11 +133,10 @@ def test_cleanup_expired_flags():
     session_id = "test-session-8"
 
     # Set two flags: one expired, one active
-    set_flag(session_id, {
-        "name": "expired",
-        "expires_after": 0,
-        "expires_unit": "invocations"
-    })
+    set_flag(
+        session_id,
+        {"name": "expired", "expires_after": 0, "expires_unit": "invocations"},
+    )
     set_flag(session_id, {"name": "active", "value": True})
 
     cleanup_expired_flags(session_id)

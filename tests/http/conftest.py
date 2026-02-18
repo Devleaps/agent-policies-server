@@ -25,9 +25,9 @@ def base_event():
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
             "tool_input": {"command": ""},
-            "tool_use_id": "toolu_test"
+            "tool_use_id": "toolu_test",
         },
-        "bundles": ["universal"]
+        "bundles": ["universal"],
     }
 
 

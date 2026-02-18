@@ -16,7 +16,13 @@ from typing import List, Dict, Any, Optional
 
 import httpx
 from regopy import Interpreter, NodeKind
-from src.server.models import ToolUseEvent, PostFileEditEvent, PolicyDecision, PolicyGuidance, PolicyAction
+from src.server.models import (
+    ToolUseEvent,
+    PostFileEditEvent,
+    PolicyDecision,
+    PolicyGuidance,
+    PolicyAction,
+)
 from src.server.session import get_all_flags
 
 from src.evaluation.parser import ParsedCommand
@@ -40,7 +46,9 @@ class RegoEvaluator:
         self.interpreter = Interpreter()
 
         if not self.policy_dir.exists():
-            logger.warning(f"Policy directory {self.policy_dir} does not exist, creating it")
+            logger.warning(
+                f"Policy directory {self.policy_dir} does not exist, creating it"
+            )
             self.policy_dir.mkdir(parents=True, exist_ok=True)
             return
 
@@ -70,10 +78,7 @@ class RegoEvaluator:
                 raise
 
     def evaluate(
-        self,
-        event: ToolUseEvent,
-        parsed: ParsedCommand,
-        bundles: List[str]
+        self, event: ToolUseEvent, parsed: ParsedCommand, bundles: List[str]
     ) -> List[PolicyDecision]:
         """Evaluate policies against an event.
 
@@ -101,10 +106,12 @@ class RegoEvaluator:
                 all_decisions.extend(bundle_decisions)
             except Exception as e:
                 logger.error(f"Error evaluating bundle '{bundle}': {e}")
-                all_decisions.append(PolicyDecision(
-                    action=PolicyAction.ASK,
-                    reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}"
-                ))
+                all_decisions.append(
+                    PolicyDecision(
+                        action=PolicyAction.ASK,
+                        reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
+                    )
+                )
 
         # Recursively evaluate all chained commands (&&, ||, ;)
         for chained_cmd in parsed.chained:
@@ -119,9 +126,7 @@ class RegoEvaluator:
         return all_decisions
 
     def evaluate_file_edit_decisions(
-        self,
-        event: PostFileEditEvent,
-        bundles: List[str]
+        self, event: PostFileEditEvent, bundles: List[str]
     ) -> List[PolicyDecision]:
         """Evaluate decisions rules for a file edit event.
 
@@ -143,14 +148,14 @@ class RegoEvaluator:
                 bundle_decisions = self._evaluate_bundle(bundle, input_doc)
                 all_decisions.extend(bundle_decisions)
             except Exception as e:
-                logger.error(f"Error evaluating file edit decisions for bundle '{bundle}': {e}")
+                logger.error(
+                    f"Error evaluating file edit decisions for bundle '{bundle}': {e}"
+                )
 
         return all_decisions
 
     def evaluate_guidance_activations(
-        self,
-        event: PostFileEditEvent,
-        bundles: List[str]
+        self, event: PostFileEditEvent, bundles: List[str]
     ) -> List[str]:
         """Evaluate which guidance checks should be activated for a file edit.
 
@@ -168,14 +173,20 @@ class RegoEvaluator:
 
         for bundle in bundles:
             try:
-                bundle_activations = self._evaluate_guidance_activations_bundle(bundle, input_doc)
+                bundle_activations = self._evaluate_guidance_activations_bundle(
+                    bundle, input_doc
+                )
                 all_activations.extend(bundle_activations)
             except Exception as e:
-                logger.error(f"Error evaluating guidance activations for bundle '{bundle}': {e}")
+                logger.error(
+                    f"Error evaluating guidance activations for bundle '{bundle}': {e}"
+                )
 
         return list(set(all_activations))
 
-    def _build_input_document(self, event: ToolUseEvent, parsed: ParsedCommand) -> Dict[str, Any]:
+    def _build_input_document(
+        self, event: ToolUseEvent, parsed: ParsedCommand
+    ) -> Dict[str, Any]:
         """Convert ToolUseEvent and ParsedCommand to Rego input.
 
         Args:
@@ -210,7 +221,9 @@ class RegoEvaluator:
 
         return input_doc
 
-    def _build_file_edit_input_document(self, event: PostFileEditEvent) -> Dict[str, Any]:
+    def _build_file_edit_input_document(
+        self, event: PostFileEditEvent
+    ) -> Dict[str, Any]:
         """Convert PostFileEditEvent to Rego input.
 
         Args:
@@ -232,12 +245,9 @@ class RegoEvaluator:
                     "new_start": patch.newStart,
                     "new_lines": patch.newLines,
                     "lines": [
-                        {
-                            "operation": line.operation,
-                            "content": line.content
-                        }
+                        {"operation": line.operation, "content": line.content}
                         for line in patch.lines
-                    ]
+                    ],
                 }
                 for patch in (event.structured_patch or [])
             ],
@@ -264,8 +274,7 @@ class RegoEvaluator:
             if parsed.arguments:
                 # Find first non-flag argument (package name)
                 package_name = next(
-                    (arg for arg in parsed.arguments if not arg.startswith("-")),
-                    None
+                    (arg for arg in parsed.arguments if not arg.startswith("-")), None
                 )
 
             # If not in arguments, check common flags that take package name as value
@@ -288,8 +297,7 @@ class RegoEvaluator:
             if parsed.arguments:
                 # Find first non-flag argument (package name)
                 package_name = next(
-                    (arg for arg in parsed.arguments if not arg.startswith("-")),
-                    None
+                    (arg for arg in parsed.arguments if not arg.startswith("-")), None
                 )
                 if package_name:
                     metadata = self._fetch_pypi_metadata(package_name)
@@ -309,7 +317,7 @@ class RegoEvaluator:
             response = httpx.get(
                 f"https://pypi.org/pypi/{package_name}/json",
                 timeout=5.0,
-                follow_redirects=True
+                follow_redirects=True,
             )
             response.raise_for_status()
             data = response.json()
@@ -323,7 +331,9 @@ class RegoEvaluator:
                 if files:
                     upload_date_str = files[0].get("upload_time_iso_8601")
                     if upload_date_str:
-                        upload_date = datetime.fromisoformat(upload_date_str.replace("Z", "+00:00"))
+                        upload_date = datetime.fromisoformat(
+                            upload_date_str.replace("Z", "+00:00")
+                        )
                         if oldest_date is None or upload_date < oldest_date:
                             oldest_date = upload_date
                             first_version = version
@@ -334,20 +344,24 @@ class RegoEvaluator:
                     "name": package_name,
                     "age_days": age_days,
                     "first_version": first_version,
-                    "first_upload_date": oldest_date.isoformat()
+                    "first_upload_date": oldest_date.isoformat(),
                 }
 
             logger.warning(f"No release data found for package: {package_name}")
             return None
 
         except httpx.HTTPStatusError as e:
-            logger.warning(f"PyPI package not found: {package_name} (status {e.response.status_code})")
+            logger.warning(
+                f"PyPI package not found: {package_name} (status {e.response.status_code})"
+            )
             return None
         except Exception as e:
             logger.error(f"Error fetching PyPI metadata for {package_name}: {e}")
             return None
 
-    def _evaluate_bundle(self, bundle: str, input_doc: Dict[str, Any]) -> List[PolicyDecision]:
+    def _evaluate_bundle(
+        self, bundle: str, input_doc: Dict[str, Any]
+    ) -> List[PolicyDecision]:
         """Evaluate a specific bundle's policies.
 
         Args:
@@ -389,7 +403,9 @@ class RegoEvaluator:
             logger.error(f"Rego query failed for bundle '{bundle}': {e}")
             raise
 
-    def _evaluate_guidance_activations_bundle(self, bundle: str, input_doc: Dict[str, Any]) -> List[str]:
+    def _evaluate_guidance_activations_bundle(
+        self, bundle: str, input_doc: Dict[str, Any]
+    ) -> List[str]:
         """Evaluate a specific bundle's guidance activation rules.
 
         Args:
@@ -424,7 +440,9 @@ class RegoEvaluator:
             return self._convert_rego_guidance_activations(activations)
 
         except Exception as e:
-            logger.error(f"Rego query failed for guidance activations in bundle '{bundle}': {e}")
+            logger.error(
+                f"Rego query failed for guidance activations in bundle '{bundle}': {e}"
+            )
             raise
 
     def _node_to_python(self, node) -> Any:
@@ -458,7 +476,7 @@ class RegoEvaluator:
                     item = node.index(index)
                     result.append(self._node_to_python(item))
                     index += 1
-                except:
+                except (IndexError, Exception):
                     break
             return result
         elif kind == NodeKind.Object:
@@ -471,7 +489,9 @@ class RegoEvaluator:
         else:
             return json.loads(node.json())
 
-    def _convert_rego_output(self, rego_decisions: List[Dict[str, Any]]) -> List[PolicyDecision]:
+    def _convert_rego_output(
+        self, rego_decisions: List[Dict[str, Any]]
+    ) -> List[PolicyDecision]:
         """Convert Rego decision results to PolicyDecision objects.
 
         Args:
@@ -513,13 +533,19 @@ class RegoEvaluator:
                                 # Flag-only decisions (no action) default to ALLOW
                                 action = PolicyAction.ALLOW
                             else:
-                                logger.warning(f"Unknown action '{action_str}' in decision, skipping")
+                                logger.warning(
+                                    f"Unknown action '{action_str}' in decision, skipping"
+                                )
                                 continue
 
-                        decisions.append(PolicyDecision(action=action, reason=reason, flags=flags))
+                        decisions.append(
+                            PolicyDecision(action=action, reason=reason, flags=flags)
+                        )
 
                     except Exception as e:
-                        logger.error(f"Failed to convert decision to PolicyDecision: {e}")
+                        logger.error(
+                            f"Failed to convert decision to PolicyDecision: {e}"
+                        )
                         logger.debug(f"Decision data: {decision_json_str}")
                         continue
 
@@ -530,7 +556,9 @@ class RegoEvaluator:
 
         return decisions
 
-    def _convert_rego_guidance_activations(self, rego_activations: List[Dict[str, Any]]) -> List[str]:
+    def _convert_rego_guidance_activations(
+        self, rego_activations: List[Dict[str, Any]]
+    ) -> List[str]:
         """Convert Rego guidance activation results to list of check names.
 
         Args:
@@ -546,14 +574,18 @@ class RegoEvaluator:
         for activation_set_item in rego_activations:
             try:
                 if not isinstance(activation_set_item, dict):
-                    logger.warning(f"Unexpected activation format: {activation_set_item}")
+                    logger.warning(
+                        f"Unexpected activation format: {activation_set_item}"
+                    )
                     continue
 
                 for check_name in activation_set_item.keys():
                     if isinstance(check_name, str):
                         check_names.append(check_name)
                     else:
-                        logger.warning(f"Unexpected check name type: {type(check_name)}, value: {check_name}")
+                        logger.warning(
+                            f"Unexpected check name type: {type(check_name)}, value: {check_name}"
+                        )
 
             except Exception as e:
                 logger.error(f"Failed to process guidance activation: {e}")
@@ -563,10 +595,7 @@ class RegoEvaluator:
         return check_names
 
     def evaluate_guidances(
-        self,
-        event: ToolUseEvent,
-        parsed: ParsedCommand,
-        bundles: List[str]
+        self, event: ToolUseEvent, parsed: ParsedCommand, bundles: List[str]
     ) -> List[PolicyGuidance]:
         """Evaluate guidances for bash commands.
 
@@ -605,9 +634,7 @@ class RegoEvaluator:
         return all_guidances
 
     def evaluate_file_edit_guidances(
-        self,
-        event: PostFileEditEvent,
-        bundles: List[str]
+        self, event: PostFileEditEvent, bundles: List[str]
     ) -> List[PolicyGuidance]:
         """Evaluate guidances for file edits.
 
@@ -626,11 +653,15 @@ class RegoEvaluator:
                 bundle_guidances = self._evaluate_guidances_bundle(bundle, input_doc)
                 all_guidances.extend(bundle_guidances)
             except Exception as e:
-                logger.error(f"Error evaluating file edit guidances for bundle '{bundle}': {e}")
+                logger.error(
+                    f"Error evaluating file edit guidances for bundle '{bundle}': {e}"
+                )
 
         return all_guidances
 
-    def _evaluate_guidances_bundle(self, bundle: str, input_doc: Dict[str, Any]) -> List[PolicyGuidance]:
+    def _evaluate_guidances_bundle(
+        self, bundle: str, input_doc: Dict[str, Any]
+    ) -> List[PolicyGuidance]:
         """Evaluate a specific bundle's guidances.
 
         Args:
@@ -668,7 +699,9 @@ class RegoEvaluator:
             logger.error(f"Rego query failed for guidances in bundle '{bundle}': {e}")
             raise
 
-    def _convert_rego_guidances(self, rego_guidances: List[Dict[str, Any]]) -> List[PolicyGuidance]:
+    def _convert_rego_guidances(
+        self, rego_guidances: List[Dict[str, Any]]
+    ) -> List[PolicyGuidance]:
         """Convert Rego guidance results to PolicyGuidance objects.
 
         Args:
@@ -701,7 +734,9 @@ class RegoEvaluator:
                         guidances.append(PolicyGuidance(content=content, flags=flags))
 
                     except Exception as e:
-                        logger.error(f"Failed to convert guidance to PolicyGuidance: {e}")
+                        logger.error(
+                            f"Failed to convert guidance to PolicyGuidance: {e}"
+                        )
                         logger.debug(f"Guidance data: {guidance_json_str}")
                         continue
 

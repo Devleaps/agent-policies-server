@@ -7,10 +7,10 @@ using real Claude Code event payloads.
 
 from tests.http.conftest import check_policy
 
-
 # ============================================================================
 # UV Commands (without python_uv bundle)
 # ============================================================================
+
 
 def test_uv_sync_without_bundle_ask(client, base_event):
     """uv sync without python_uv bundle should ask"""
@@ -27,6 +27,7 @@ def test_uv_add_without_bundle_ask(client, base_event):
 # ============================================================================
 # UV Commands (with python_uv bundle)
 # ============================================================================
+
 
 def test_uv_sync_with_bundle_allowed(client, base_event):
     """uv sync with python_uv bundle should be allowed"""
@@ -80,6 +81,7 @@ def test_uv_run_pytest_absolute_path_denied(client, base_event):
 # Pip Commands (with python_pip bundle)
 # ============================================================================
 
+
 def test_pip_install_requests_with_bundle_allowed(client, base_event):
     """pip install requests with python_pip bundle should be allowed"""
     base_event["bundles"] = ["universal", "python_pip"]
@@ -109,6 +111,7 @@ def test_pip_install_mature_package_allowed(client, base_event):
 # Python Quality Tools (with python_pip bundle)
 # ============================================================================
 
+
 def test_black_with_bundle_allowed(client, base_event):
     """black with python_pip bundle should be allowed"""
     base_event["bundles"] = ["universal", "python_pip"]
@@ -137,6 +140,7 @@ def test_pytest_with_pip_bundle_allowed(client, base_event):
 # Combined Bundles
 # ============================================================================
 
+
 def test_uv_pytest_with_both_bundles_allowed(client, base_event):
     """uv run pytest with both bundles should be allowed"""
     base_event["bundles"] = ["universal", "python_uv", "python_pip"]
@@ -146,6 +150,7 @@ def test_uv_pytest_with_both_bundles_allowed(client, base_event):
 # ============================================================================
 # Piped Commands
 # ============================================================================
+
 
 def test_pytest_piped_head_allowed(client, base_event):
     """pytest | head should be allowed"""
