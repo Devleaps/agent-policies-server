@@ -252,6 +252,7 @@ class BashCommandParser:
             "mypy",
             "black",
             "pytest",
+            "vale",
         }
 
         # If executable is known to use subcommands and word doesn't look like a path/file
