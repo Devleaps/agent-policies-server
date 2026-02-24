@@ -97,6 +97,14 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
+# podman inspect - inspect container or image details (read-only)
+decisions[decision] if {
+	is_podman
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] == "inspect"
+	decision := {"action": "allow"}
+}
+
 # Image inspection
 
 # podman images - list images (read-only)
