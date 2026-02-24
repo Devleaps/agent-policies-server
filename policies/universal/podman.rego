@@ -57,7 +57,7 @@ decisions[decision] if {
 	count(input.parsed.arguments) >= 2
 	input.parsed.arguments[0] == "machine"
 	input.parsed.arguments[1] == "ssh"
-	decision := {"action": "allow"}
+	decision := {"action": "ask"}
 }
 
 # podman machine init - initialize a new machine
