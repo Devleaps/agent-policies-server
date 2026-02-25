@@ -6,3 +6,4 @@ class SourceClient(str, Enum):
 
     CLAUDE_CODE = "claude-code"
     CURSOR = "cursor"
+    GEMINI = "gemini"
