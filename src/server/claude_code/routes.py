@@ -4,7 +4,6 @@ from fastapi import APIRouter
 
 from ..executor import execute_handlers_generic
 from . import mapper
-from .api.enums import PermissionDecision, ToolName
 from .api.hooks import (
     NotificationInput,
     NotificationOutput,
@@ -76,17 +75,9 @@ async def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
 
     results = execute_handlers_generic(generic_input)
 
-    # Default to ASK for Bash and WebFetch
-    if input_data.tool_name in [ToolName.BASH, ToolName.WEB_FETCH]:
-        default_decision = PermissionDecision.ASK
-    else:
-        default_decision = PermissionDecision.ALLOW
-
     default = PreToolUseOutput(
         continue_=True,
-        hookSpecificOutput=PreToolUseHookSpecificOutput(
-            permissionDecision=default_decision
-        ),
+        hookSpecificOutput=PreToolUseHookSpecificOutput(),
     )
 
     result = mapper.map_to_pre_tool_use_output(results, default)

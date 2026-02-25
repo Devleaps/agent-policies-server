@@ -32,10 +32,17 @@ def base_event():
 
 
 def check_policy(client, base_event, command, expected_decision):
-    """Helper to check policy decision for a Bash command"""
+    """Helper to check policy decision for a Bash command.
+
+    Pass expected_decision=None to assert that no permissionDecision is returned
+    (i.e. the server defers to the user's own permission system).
+    """
     base_event["event"]["tool_input"]["command"] = command
     response = client.post("/policy/claude-code/PreToolUse", json=base_event)
     assert response.status_code == 200
     data = response.json()
-    assert data["hookSpecificOutput"]["permissionDecision"] == expected_decision
+    if expected_decision is None:
+        assert "permissionDecision" not in data.get("hookSpecificOutput", {})
+    else:
+        assert data["hookSpecificOutput"]["permissionDecision"] == expected_decision
     return data

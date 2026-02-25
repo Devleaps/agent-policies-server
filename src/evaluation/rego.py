@@ -114,15 +114,6 @@ class RegoEvaluator:
                     )
                 )
 
-        # If no policies matched this specific command, require user approval
-        if not current_command_decisions:
-            current_command_decisions.append(
-                PolicyDecision(
-                    action=PolicyAction.ASK,
-                    reason=f"No policy defined for command: {parsed.executable}",
-                )
-            )
-
         all_decisions.extend(current_command_decisions)
 
         # Recursively evaluate all chained commands (&&, ||, ;)

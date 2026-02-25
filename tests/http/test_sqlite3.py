@@ -199,6 +199,6 @@ def test_sqlite3_with_flags(client, base_event):
     )
 
 
-def test_sqlite3_no_query_ask(client, base_event):
-    """sqlite3 without query should ask"""
-    check_policy(client, base_event, "sqlite3 db.sqlite", "ask")
+def test_sqlite3_no_query_defers_to_user(client, base_event):
+    """sqlite3 without query defers to user permissions"""
+    check_policy(client, base_event, "sqlite3 db.sqlite", None)
