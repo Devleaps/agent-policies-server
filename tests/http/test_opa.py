@@ -9,9 +9,9 @@ def test_opa_test_allowed(client, base_event):
     check_policy(client, base_event, "opa test .", "allow")
 
 
-def test_opa_eval_ask(client, base_event):
-    check_policy(client, base_event, "opa eval 'data.example.allow'", "ask")
+def test_opa_eval_defers_to_user(client, base_event):
+    check_policy(client, base_event, "opa eval 'data.example.allow'", None)
 
 
-def test_opa_run_ask(client, base_event):
-    check_policy(client, base_event, "opa run server", "ask")
+def test_opa_run_defers_to_user(client, base_event):
+    check_policy(client, base_event, "opa run server", None)

@@ -41,21 +41,21 @@ def test_terraform_apply_is_denied(client, base_event):
     check_policy(client, base_event, "terraform apply", "deny")
 
 
-def test_unknown_command_defaults_to_ask(client, base_event):
-    check_policy(client, base_event, "some-completely-unknown-command", "ask")
+def test_unknown_command_defers_to_user(client, base_event):
+    check_policy(client, base_event, "some-completely-unknown-command", None)
 
 
 def test_decision_precedence_deny_wins(client, base_event):
     check_policy(client, base_event, "sudo git status", "deny")
 
 
-def test_unknown_command_defaults_to_ask_not_allow(client, base_event):
-    check_policy(client, base_event, "some-random-unknown-tool", "ask")
+def test_unknown_command_defers_to_user_not_allow(client, base_event):
+    check_policy(client, base_event, "some-random-unknown-tool", None)
 
 
-def test_uv_sync_without_bundle_is_ask(client, base_event):
+def test_uv_sync_without_bundle_defers_to_user(client, base_event):
     base_event["bundles"] = ["universal"]
-    check_policy(client, base_event, "uv sync", "ask")
+    check_policy(client, base_event, "uv sync", None)
 
 
 def test_uv_sync_with_bundle_is_allowed(client, base_event):
@@ -63,16 +63,16 @@ def test_uv_sync_with_bundle_is_allowed(client, base_event):
     check_policy(client, base_event, "uv sync", "allow")
 
 
-def test_empty_command_is_ask(client, base_event):
-    check_policy(client, base_event, "", "ask")
+def test_empty_command_defers_to_user(client, base_event):
+    check_policy(client, base_event, "", None)
 
 
-def test_non_bash_tool_defaults_to_allow(client, base_event):
+def test_non_bash_tool_defers_to_user(client, base_event):
     base_event["event"]["tool_name"] = "Read"
     base_event["event"]["tool_input"] = {"file_path": "/some/file.txt"}
     response = client.post("/policy/claude-code/PreToolUse", json=base_event)
     assert response.status_code == 200
-    assert response.json()["hookSpecificOutput"]["permissionDecision"] == "allow"
+    assert "permissionDecision" not in response.json().get("hookSpecificOutput", {})
 
 
 def test_deny_includes_reason(client, base_event):
