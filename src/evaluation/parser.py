@@ -247,6 +247,7 @@ class BashCommandParser:
         subcommand_executables = {
             "git",
             "docker",
+            "podman",
             "kubectl",
             "terraform",
             "terragrunt",

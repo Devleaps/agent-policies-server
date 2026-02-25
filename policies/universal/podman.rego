@@ -1,165 +1,98 @@
 package universal
 
 # Podman policies
-# Machine management: init, start, stop, inspect, exists, ssh, list, ps
-# Container inspection: ps
-# Image inspection: images
-# Volume inspection: volume ls
-# Network inspection: network ls
-# System inspection: version, info, system df
+# - machine: read-only ops (list, ps, inspect, exists) allowed; ssh asks; init/start/stop allowed
+# - container inspection (ps, inspect): allowed
+# - image inspection (images): allowed
+# - volume inspection (volume ls): allowed
+# - network inspection (network ls): allowed
+# - system inspection (version, info, system df): allowed
 
-# Helper to check if executable is podman
-is_podman if {
+# podman machine list/ps/inspect/exists - read-only, allow
+decisions[decision] if {
 	input.parsed.executable == "podman"
-}
-
-# Machine management commands
-
-# podman machine list - show available machines (read-only)
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "list"
+	input.parsed.subcommand == "machine"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] in {"list", "ps", "inspect", "exists"}
 	decision := {"action": "allow"}
 }
 
-# podman machine ps - alternative to list (read-only)
+# podman machine ssh - ask
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "ps"
-	decision := {"action": "allow"}
-}
-
-# podman machine inspect - view machine configuration (read-only)
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "inspect"
-	decision := {"action": "allow"}
-}
-
-# podman machine exists - check if machine exists (read-only)
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "exists"
-	decision := {"action": "allow"}
-}
-
-# podman machine ssh - SSH into a machine (non-destructive access)
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "ssh"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "machine"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] == "ssh"
 	decision := {"action": "ask"}
 }
 
-# podman machine init - initialize a new machine
+# podman machine init/start/stop - allow
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "init"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "machine"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] in {"init", "start", "stop"}
 	decision := {"action": "allow"}
 }
-
-# podman machine start - start a machine
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "start"
-	decision := {"action": "allow"}
-}
-
-# podman machine stop - stop a machine
-decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "machine"
-	input.parsed.arguments[1] == "stop"
-	decision := {"action": "allow"}
-}
-
-# Container inspection
 
 # podman ps - list containers (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "ps"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "ps"
 	decision := {"action": "allow"}
 }
 
 # podman inspect - inspect container or image details (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "inspect"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "inspect"
 	decision := {"action": "allow"}
 }
-
-# Image inspection
 
 # podman images - list images (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "images"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "images"
 	decision := {"action": "allow"}
 }
-
-# Volume inspection
 
 # podman volume ls - list volumes (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "volume"
-	input.parsed.arguments[1] == "ls"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "volume"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] == "ls"
 	decision := {"action": "allow"}
 }
-
-# Network inspection
 
 # podman network ls - list networks (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "network"
-	input.parsed.arguments[1] == "ls"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "network"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] == "ls"
 	decision := {"action": "allow"}
 }
 
-# System inspection
-
 # podman version - show podman version (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "version"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "version"
 	decision := {"action": "allow"}
 }
 
 # podman info - show system information (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "info"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "info"
 	decision := {"action": "allow"}
 }
 
 # podman system df - show disk usage (read-only)
 decisions[decision] if {
-	is_podman
-	count(input.parsed.arguments) >= 2
-	input.parsed.arguments[0] == "system"
-	input.parsed.arguments[1] == "df"
+	input.parsed.executable == "podman"
+	input.parsed.subcommand == "system"
+	count(input.parsed.arguments) >= 1
+	input.parsed.arguments[0] == "df"
 	decision := {"action": "allow"}
 }

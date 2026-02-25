@@ -219,3 +219,24 @@ def test_main_command_options_with_flags():
     assert cmd.options.get("-c") == "core.editor=vim"
     assert cmd.subcommand == "commit"
     assert cmd.options.get("-m") == '"msg"'
+
+
+def test_podman_machine_subcommand():
+    cmd = BashCommandParser.parse("podman machine list")
+    assert cmd.executable == "podman"
+    assert cmd.subcommand == "machine"
+    assert cmd.arguments == ["list"]
+
+
+def test_podman_ps_subcommand():
+    cmd = BashCommandParser.parse("podman ps")
+    assert cmd.executable == "podman"
+    assert cmd.subcommand == "ps"
+    assert cmd.arguments == []
+
+
+def test_podman_volume_ls_subcommand():
+    cmd = BashCommandParser.parse("podman volume ls")
+    assert cmd.executable == "podman"
+    assert cmd.subcommand == "volume"
+    assert cmd.arguments == ["ls"]
