@@ -89,10 +89,26 @@ jobs:
 
   deploy:
     name: Deploy to ArgoCD
+    runs-on: ubuntu-24.04
     needs:
       - build-and-push
-    uses: Devleaps/workflows/.github/workflows/argocd-deploy.yaml@main
-    secrets: inherit
-    with:
-      application: agent-internal-policies
-      version: ${{ needs.build-and-push.outputs.version }}
+    steps:
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v1.11.5
+        id: app-token
+        with:
+          app-id: ${{ secrets.ARGOCD_RELEASER_APP_ID }}
+          private-key: ${{ secrets.ARGOCD_RELEASER_APP_PRIVATE_KEY }}
+          repositories: argocd
+
+      - name: Dispatch release
+        uses: peter-evans/repository-dispatch@v3.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: Devleaps/argocd
+          event-type: version-update
+          client-payload: |-
+            {
+              "application": "agent-internal-policies",
+              "version": "${{ needs.build-and-push.outputs.version }}"
+            }
