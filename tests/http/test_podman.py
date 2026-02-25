@@ -21,10 +21,6 @@ def test_podman_machine_exists_allowed(client, base_event):
     check_policy(client, base_event, "podman machine exists myvm", "allow")
 
 
-def test_podman_machine_ssh_ask(client, base_event):
-    check_policy(client, base_event, "podman machine ssh myvm", "ask")
-
-
 def test_podman_machine_init_allowed(client, base_event):
     check_policy(client, base_event, "podman machine init", "allow")
 

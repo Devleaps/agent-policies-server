@@ -1,7 +1,7 @@
 package universal
 
 # Podman policies
-# - machine: read-only ops (list, ps, inspect, exists) allowed; ssh asks; init/start/stop allowed
+# - machine: read-only ops (list, ps, inspect, exists) allowed; init/start/stop allowed
 # - container inspection (ps, inspect): allowed
 # - image inspection (images): allowed
 # - volume inspection (volume ls): allowed
@@ -15,15 +15,6 @@ decisions[decision] if {
 	count(input.parsed.arguments) >= 1
 	input.parsed.arguments[0] in {"list", "ps", "inspect", "exists"}
 	decision := {"action": "allow"}
-}
-
-# podman machine ssh - ask
-decisions[decision] if {
-	input.parsed.executable == "podman"
-	input.parsed.subcommand == "machine"
-	count(input.parsed.arguments) >= 1
-	input.parsed.arguments[0] == "ssh"
-	decision := {"action": "ask"}
 }
 
 # podman machine init/start/stop - allow
