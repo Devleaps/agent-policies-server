@@ -1,6 +1,10 @@
 # Agent Policies Server
 
-This repository serves both as a reference implementation and also the public Devleaps policy server source code. This repository is used alongside [agent-policies-client](https://github.com/Devleaps/agent-policies-client) to enable automated decisionmaking and guidance for AI assistants in software development, like Claude Code, Cursor, GitHub Copilot and Gemini CLI.
+This repository serves both as a reference implementation and also the public Devleaps policy server source code. This repository is used alongside clients to enable automated decisionmaking and guidance for AI assistants in software development, like Claude Code, Cursor, GitHub Copilot and Gemini CLI.
+
+Client Plugins:
+- https://github.com/Devleaps/agent-policies-claude-code
+- https://github.com/Devleaps/agent-policies-gemini-cli
 
 ## Quick start
 
