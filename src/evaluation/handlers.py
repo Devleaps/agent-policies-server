@@ -64,13 +64,9 @@ def evaluate_bash_rules(
     try:
         command = event.command or ""
         parsed = BashCommandParser.parse(command)
-        decisions = rego_evaluator.evaluate(
+        yield from rego_evaluator.evaluate(
             event, parsed, bundles=event.enabled_bundles
         )
-        if decisions:
-            yield from decisions
-        else:
-            yield PolicyDecision.ask()
 
         # Also yield Rego guidances for bash commands
         guidances = rego_evaluator.evaluate_guidances(

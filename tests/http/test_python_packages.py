@@ -12,16 +12,16 @@ from tests.http.conftest import check_policy
 # ============================================================================
 
 
-def test_uv_sync_without_bundle_ask(client, base_event):
-    """uv sync without python_uv bundle should ask"""
+def test_uv_sync_without_bundle_defers_to_user(client, base_event):
+    """uv sync without python_uv bundle defers to user permissions"""
     base_event["bundles"] = ["universal"]
-    check_policy(client, base_event, "uv sync", "ask")
+    check_policy(client, base_event, "uv sync", None)
 
 
-def test_uv_add_without_bundle_ask(client, base_event):
-    """uv add without python_uv bundle should ask"""
+def test_uv_add_without_bundle_defers_to_user(client, base_event):
+    """uv add without python_uv bundle defers to user permissions"""
     base_event["bundles"] = ["universal"]
-    check_policy(client, base_event, "uv add requests", "ask")
+    check_policy(client, base_event, "uv add requests", None)
 
 
 # ============================================================================
