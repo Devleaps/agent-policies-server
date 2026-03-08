@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from .claude_code import router as claude_code_router
 from .cursor import router as cursor_router
+from .gemini import router as gemini_router
 from .registry import registry
 
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="DevLeaps Policy Server", version="1.0.0")
 app.include_router(claude_code_router)
 app.include_router(cursor_router)
+app.include_router(gemini_router)
 
 
 @app.get("/")
@@ -20,7 +22,7 @@ async def root():
     return {
         "name": "AI Agent Policy Server by DevLeaps",
         "version": "1.0.0",
-        "editors": ["claude-code", "cursor"],
+        "editors": ["claude-code", "cursor", "gemini"],
         "endpoints": {
             "claude-code": [
                 "/policy/claude-code/PreToolUse",
@@ -40,6 +42,10 @@ async def root():
                 "/policy/cursor/beforeReadFile",
                 "/policy/cursor/beforeSubmitPrompt",
                 "/policy/cursor/stop",
+            ],
+            "gemini": [
+                "/policy/gemini/BeforeTool",
+                "/policy/gemini/AfterTool",
             ],
         },
     }
