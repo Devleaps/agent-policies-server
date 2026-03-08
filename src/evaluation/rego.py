@@ -221,6 +221,7 @@ class RegoEvaluator:
                 "tool_is_bash": event.tool_is_bash,
                 "command": event.command,
                 "parameters": event.parameters or {},
+                "enabled_bundles": event.enabled_bundles,
             },
             "parsed": parsed_dict,
             "session_flags": get_all_flags(event.session_id),
@@ -243,6 +244,7 @@ class RegoEvaluator:
             "event": {
                 "session_id": event.session_id,
                 "source_client": event.source_client,
+                "enabled_bundles": event.enabled_bundles,
             },
             "file_path": event.file_path,
             "structured_patch": [
