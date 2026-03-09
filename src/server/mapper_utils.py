@@ -13,7 +13,10 @@ def separate_results(
     results: List[Union[PolicyDecision, PolicyGuidance]],
 ) -> Tuple[List[PolicyDecision], List[PolicyGuidance]]:
     """
-    Separate results into decisions and guidances.
+    Separate results into decisions and guidances, removing duplicates.
+
+    Decisions are deduplicated by (action, reason) and guidances by content,
+    preserving first-occurrence order.
 
     Args:
         results: Mixed list of PolicyDecision and PolicyGuidance objects
@@ -21,8 +24,22 @@ def separate_results(
     Returns:
         Tuple of (decisions, guidances)
     """
-    decisions = [r for r in results if isinstance(r, PolicyDecision)]
-    guidances = [r for r in results if isinstance(r, PolicyGuidance)]
+    decisions: List[PolicyDecision] = []
+    seen_decisions: set[Tuple[str, Optional[str]]] = set()
+    guidances: List[PolicyGuidance] = []
+    seen_guidances: set[str] = set()
+
+    for r in results:
+        if isinstance(r, PolicyDecision):
+            key = (r.action, r.reason)
+            if key not in seen_decisions:
+                seen_decisions.add(key)
+                decisions.append(r)
+        elif isinstance(r, PolicyGuidance):
+            if r.content not in seen_guidances:
+                seen_guidances.add(r.content)
+                guidances.append(r)
+
     return decisions, guidances
 
 
