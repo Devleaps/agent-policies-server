@@ -42,6 +42,49 @@ GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
 }
 
 
+# Allowed domains for WebFetch
+WEBFETCH_ALLOWED_DOMAINS = [
+    "code.claude.com",
+    "docs.github.com",
+    "developers.googleblog.com",
+    "geminicli.com",
+    "google-gemini.github.io",
+    "developers.openai.com",
+]
+
+
+def evaluate_webfetch_rules(
+    event: ToolUseEvent,
+) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
+    """Evaluate WebFetch rules against the event.
+
+    Allows fetching from whitelisted documentation domains.
+    """
+    if event.tool_name != "WebFetch":
+        return
+
+    url = None
+    if event.parameters:
+        tool_input = event.parameters.get("tool_input")
+        if isinstance(tool_input, dict):
+            url = tool_input.get("url", "")
+        elif isinstance(tool_input, str):
+            url = tool_input
+
+    if not url:
+        return
+
+    for domain in WEBFETCH_ALLOWED_DOMAINS:
+        if domain in url:
+            yield PolicyDecision.allow()
+            return
+
+    yield PolicyDecision.deny(
+        f"WebFetch is only allowed for approved documentation domains. "
+        f"Allowed domains: {', '.join(WEBFETCH_ALLOWED_DOMAINS)}"
+    )
+
+
 def evaluate_bash_rules(
     event: ToolUseEvent,
 ) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
