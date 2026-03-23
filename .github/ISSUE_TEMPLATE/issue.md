@@ -1,13 +1,9 @@
 ---
 name: Issue
 about: All GitHub issues follow this template.
-title: ''
-labels: ''
-assignees: SkPhilipp
-
 ---
 
-# Concept
+# Intent
 
 __The intent of your change goes here__
 
@@ -15,5 +11,12 @@ __The intent of your change goes here__
 
 <details>
 <summary>__Plan summary in one line goes here__</summary>
-__Plan details go here__
+## Acceptance Criteria
+__Acceptance criteria go here__
+
+## Testing Strategy
+__Testing strategy, if any goes here__
+
+## Documentation
+__Relevant documentation changes, if any go here__
 </details>
