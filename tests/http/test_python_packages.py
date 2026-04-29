@@ -41,6 +41,18 @@ def test_uv_add_with_bundle_allowed(client, base_event):
     check_policy(client, base_event, "uv add fastapi", "allow")
 
 
+def test_uv_add_with_extras_allowed(client, base_event):
+    """uv add with extras should match base package name"""
+    base_event["bundles"] = ["universal", "python_uv"]
+    check_policy(client, base_event, "uv add uvicorn[standard]", "allow")
+
+
+def test_uv_add_dev_with_extras_allowed(client, base_event):
+    """uv add --dev with extras should match base package name"""
+    base_event["bundles"] = ["universal", "python_uv"]
+    check_policy(client, base_event, "uv add --dev fastapi[all]", "allow")
+
+
 def test_uv_add_dev_with_bundle_allowed(client, base_event):
     """uv add --dev with python_uv bundle should be allowed"""
     base_event["bundles"] = ["universal", "python_uv"]

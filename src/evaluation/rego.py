@@ -298,7 +298,9 @@ class RegoEvaluator:
                             break
 
             if package_name:
-                metadata = self._fetch_pypi_metadata(package_name)
+                # Strip extras (e.g., "uvicorn[standard]" → "uvicorn")
+                base_name = package_name.split("[")[0]
+                metadata = self._fetch_pypi_metadata(base_name)
                 if metadata:
                     input_doc["pypi_metadata"] = metadata
 
@@ -309,7 +311,9 @@ class RegoEvaluator:
                     (arg for arg in parsed.arguments if not arg.startswith("-")), None
                 )
                 if package_name:
-                    metadata = self._fetch_pypi_metadata(package_name)
+                    # Strip extras (e.g., "uvicorn[standard]" → "uvicorn")
+                    base_name = package_name.split("[")[0]
+                    metadata = self._fetch_pypi_metadata(base_name)
                     if metadata:
                         input_doc["pypi_metadata"] = metadata
 
