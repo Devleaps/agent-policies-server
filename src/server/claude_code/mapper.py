@@ -130,15 +130,13 @@ def map_pre_tool_use_input(
     else:
         parameters = input_data.model_dump(exclude={"session_id", "tool_name"})
 
-    raw_roots = getattr(input_data, 'workspace_roots', None)
-    workspace_root = raw_roots[0] if raw_roots else None
     return ToolUseEvent(
         session_id=input_data.session_id,
         tool_name=tool_name_str,
         source_client=SourceClient.CLAUDE_CODE,
         command=command,
         parameters=parameters,
-        workspace_root=workspace_root,
+        workspace_root=wrapper.workspace_root,
         cwd=input_data.cwd,
         source_event=input_data,
         tool_is_bash=tool_is_bash,
