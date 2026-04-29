@@ -26,7 +26,6 @@ async def before_tool_hook(wrapper: GeminiRequestWrapper) -> BeforeToolOutput:
     generic_input = mapper.map_before_tool_input(wrapper, input_data)
     results = execute_handlers_generic(generic_input)
 
-    # No decision in default output — Gemini will apply its own default_policy_behavior
     default = BeforeToolOutput()
     result = mapper.map_to_before_tool_output(results, default)
     logger.info(f"Gemini BeforeTool result: {result.decision}")

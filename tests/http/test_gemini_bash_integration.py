@@ -19,7 +19,6 @@ def gemini_base_event():
     """Base Gemini BeforeTool event structure for run_shell_command."""
     return {
         "bundles": ["universal"],
-        "default_policy_behavior": "ask",
         "event": {
             "session_id": "test-gemini-session",
             "hook_event_name": "BeforeTool",
@@ -88,7 +87,6 @@ def test_after_tool_returns_200(client):
     """AfterTool endpoint is reachable and returns a valid response."""
     event = {
         "bundles": ["universal"],
-        "default_policy_behavior": "ask",
         "event": {
             "session_id": "test-gemini-session",
             "hook_event_name": "AfterTool",
