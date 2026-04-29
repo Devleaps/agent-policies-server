@@ -69,9 +69,9 @@ def test_webfetch_developers_openai_allowed(client, webfetch_event):
     check_webfetch(client, webfetch_event, "https://developers.openai.com/docs/api", "allow")
 
 
-def test_webfetch_unknown_domain_denied(client, webfetch_event):
-    check_webfetch(client, webfetch_event, "https://evil.com/malware", "deny")
+def test_webfetch_unknown_domain_no_decision(client, webfetch_event):
+    check_webfetch(client, webfetch_event, "https://evil.com/malware", None)
 
 
-def test_webfetch_random_domain_denied(client, webfetch_event):
-    check_webfetch(client, webfetch_event, "https://example.com/page", "deny")
+def test_webfetch_random_domain_no_decision(client, webfetch_event):
+    check_webfetch(client, webfetch_event, "https://example.com/page", None)

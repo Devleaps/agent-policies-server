@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 rego_evaluator = RegoEvaluator(policy_dir="policies")
 
-# Guidance implementation registry - maps check names (from Rego) to Python implementations
 GuidanceImplementation = Callable[
     [PostFileEditEvent], Generator[PolicyGuidance, None, None]
 ]
@@ -42,14 +41,29 @@ GUIDANCE_REGISTRY: Dict[str, GuidanceImplementation] = {
 }
 
 
-# Allowed domains for WebFetch
 WEBFETCH_ALLOWED_DOMAINS = [
+    "aider.chat",
+    "block.github.io",
+    "blog.devleaps.nl",
     "code.claude.com",
-    "docs.github.com",
+    "deepwiki.com",
     "developers.googleblog.com",
-    "geminicli.com",
-    "google-gemini.github.io",
+    "docs.anthropic.com",
     "developers.openai.com",
+    "devleaps.nl",
+    "docs.docker.com",
+    "docs.github.com",
+    "geminicli.com",
+    "github.com",
+    "goose-docs.ai",
+    "google-gemini.github.io",
+    "huggingface.co",
+    "localhost",
+    "opencode.ai",
+    "prismml.com",
+    "pypi.org",
+    "raw.githubusercontent.com",
+    "www.kimi.com",
 ]
 
 
@@ -58,7 +72,8 @@ def evaluate_webfetch_rules(
 ) -> Generator[Union[PolicyDecision, PolicyGuidance], None, None]:
     """Evaluate WebFetch rules against the event.
 
-    Allows fetching from whitelisted documentation domains.
+    Allows fetching from whitelisted documentation domains; yields nothing otherwise
+    so other policies (or the default ASK) can handle the request.
     """
     if event.tool_name != "WebFetch":
         return
@@ -78,11 +93,6 @@ def evaluate_webfetch_rules(
         if domain in url:
             yield PolicyDecision.allow()
             return
-
-    yield PolicyDecision.deny(
-        f"WebFetch is only allowed for approved documentation domains. "
-        f"Allowed domains: {', '.join(WEBFETCH_ALLOWED_DOMAINS)}"
-    )
 
 
 def evaluate_bash_rules(
