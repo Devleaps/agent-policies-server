@@ -13,7 +13,7 @@ class BaseEvent:
 
     session_id: str
     source_client: SourceClient
-    workspace_roots: Optional[List[str]] = None
+    workspace_root: Optional[str] = None
     source_event: Any = None  # Original hook input data object
     enabled_bundles: List[str] = field(
         default_factory=lambda: ["universal"]
@@ -103,6 +103,7 @@ class ToolUseEvent(BaseEvent):
     tool_is_mcp: bool = False
     command: Optional[str] = None  # For bash-like tools
     parameters: Optional[Dict[str, Any]] = None  # For other tools
+    cwd: Optional[str] = None  # Shell working directory at hook invocation time
 
 
 @dataclass

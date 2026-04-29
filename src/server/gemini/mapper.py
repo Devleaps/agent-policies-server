@@ -36,6 +36,8 @@ def map_before_tool_input(
     else:
         parameters = input_data.tool_input if input_data.tool_input else None
 
+    raw_roots = getattr(input_data, 'workspace_roots', None)
+    workspace_root = raw_roots[0] if raw_roots else None
     return ToolUseEvent(
         session_id=input_data.session_id,
         tool_name=input_data.tool_name,
@@ -44,7 +46,8 @@ def map_before_tool_input(
         tool_is_mcp=False,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=workspace_root,
+        cwd=input_data.cwd,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -73,7 +76,7 @@ def map_after_tool_input(
         tool_is_mcp=False,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )

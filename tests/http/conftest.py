@@ -22,6 +22,7 @@ def base_event():
             "session_id": "test-session",
             "transcript_path": "/tmp/transcript.jsonl",
             "cwd": "/workspace",
+            "workspace_roots": ["/workspace"],  # client sends list; mapper takes [0]
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
             "tool_input": {"command": ""},
