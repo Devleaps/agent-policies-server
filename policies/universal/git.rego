@@ -70,6 +70,13 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
+# git ls-tree - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "ls-tree"
+	decision := {"action": "allow"}
+}
+
 # git reflog - allow
 decisions[decision] if {
 	input.parsed.executable == "git"
@@ -339,6 +346,14 @@ decisions[decision] if {
 	input.parsed.subcommand == "remote"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "show"
+	decision := {"action": "allow"}
+}
+
+# git --version - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	some flag in input.parsed.flags
+	flag == "--version"
 	decision := {"action": "allow"}
 }
 

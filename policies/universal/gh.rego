@@ -13,7 +13,7 @@ gh_pr_read_subcommands := ["view", "diff", "list", "checks", "status"]
 gh_issue_read_subcommands := ["view", "list", "status"]
 
 # Read-only gh repo subcommands
-gh_repo_read_subcommands := ["view", "list"]
+gh_repo_read_subcommands := ["view", "list", "clone"]
 
 # Read-only gh run subcommands (GitHub Actions)
 gh_run_read_subcommands := ["view", "list", "watch"]

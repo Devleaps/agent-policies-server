@@ -204,6 +204,15 @@ decisions[decision] if {
 	}
 }
 
+# Allow uv tool install
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "tool"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "install"
+	decision := {"action": "allow"}
+}
+
 # Allow uv sync
 decisions[decision] if {
 	input.parsed.executable == "uv"

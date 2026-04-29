@@ -7,7 +7,7 @@ This module provides the foundation for the Rego-based policy system:
 
 from src.evaluation.parser import BashCommandParser, ParsedCommand, ParseError
 from src.evaluation.rego import RegoEvaluator
-from src.evaluation.handlers import evaluate_bash_rules, evaluate_guidance
+from src.evaluation.handlers import evaluate_bash_rules, evaluate_webfetch_rules, evaluate_guidance
 
 __all__ = [
     "BashCommandParser",
@@ -15,5 +15,6 @@ __all__ = [
     "ParseError",
     "RegoEvaluator",
     "evaluate_bash_rules",
+    "evaluate_webfetch_rules",
     "evaluate_guidance",
 ]
