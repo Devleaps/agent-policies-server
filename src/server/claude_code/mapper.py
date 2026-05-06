@@ -111,7 +111,7 @@ def map_pre_tool_use_input(
             source_client=SourceClient.CLAUDE_CODE,
             file_path=file_path,
             operation=tool_name_str,
-            workspace_roots=None,
+            workspace_root=None,
             source_event=input_data,
             enabled_bundles=wrapper.bundles,
         )
@@ -136,7 +136,8 @@ def map_pre_tool_use_input(
         source_client=SourceClient.CLAUDE_CODE,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=wrapper.workspace_root,
+        cwd=input_data.cwd,
         source_event=input_data,
         tool_is_bash=tool_is_bash,
         tool_is_mcp=tool_is_mcp,
@@ -197,7 +198,7 @@ def map_post_tool_use_input(
             operation=tool_name_str,
             content=content,
             structured_patch=structured_patch,
-            workspace_roots=None,
+            workspace_root=None,
             source_event=input_data,
             enabled_bundles=wrapper.bundles,
         )
@@ -220,7 +221,7 @@ def map_post_tool_use_input(
         source_client=SourceClient.CLAUDE_CODE,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         tool_is_bash=tool_is_bash,
         tool_is_mcp=tool_is_mcp,
@@ -236,7 +237,7 @@ def map_user_prompt_submit_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         prompt=getattr(input_data, "prompt", None),
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -248,7 +249,7 @@ def map_stop_input(wrapper: RequestWrapper, input_data: StopInput) -> StopEvent:
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         stop_type="stop",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -262,7 +263,7 @@ def map_subagent_stop_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         stop_type="subagent_stop",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -276,7 +277,7 @@ def map_notification_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="notification",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -290,7 +291,7 @@ def map_pre_compact_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="pre_compact",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -304,7 +305,7 @@ def map_session_start_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="session_start",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -318,7 +319,7 @@ def map_session_end_input(
         session_id=input_data.session_id,
         source_client=SourceClient.CLAUDE_CODE,
         hook_type="session_end",
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )

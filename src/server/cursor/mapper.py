@@ -42,7 +42,7 @@ def map_before_shell_execution_input(
         tool_is_bash=True,
         tool_is_mcp=False,
         command=input_data.command,
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 
@@ -59,7 +59,7 @@ def map_before_mcp_execution_input(input_data: BeforeMCPExecutionInput) -> ToolU
         tool_is_mcp=tool_name_str.startswith("mcp__") or True,  # Assume MCP tools
         command=input_data.command,
         parameters=input_data.tool_input,
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 
@@ -70,7 +70,7 @@ def map_after_file_edit_input(input_data: AfterFileEditInput) -> HookEvent:
         session_id=input_data.conversation_id,
         source_client=SourceClient.CURSOR,
         hook_type="after_file_edit",
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 
@@ -81,7 +81,7 @@ def map_before_read_file_input(input_data: BeforeReadFileInput) -> HookEvent:
         session_id=input_data.conversation_id,
         source_client=SourceClient.CURSOR,
         hook_type="before_read_file",
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 
@@ -94,7 +94,7 @@ def map_before_submit_prompt_input(
         session_id=input_data.conversation_id,
         source_client=SourceClient.CURSOR,
         prompt=input_data.prompt,
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 
@@ -105,7 +105,7 @@ def map_stop_input(input_data: StopInput) -> StopEvent:
         session_id=input_data.conversation_id,
         source_client=SourceClient.CURSOR,
         stop_type="stop",
-        workspace_roots=input_data.workspace_roots,
+        workspace_root=input_data.workspace_roots[0] if input_data.workspace_roots else None,
         source_event=input_data,
     )
 

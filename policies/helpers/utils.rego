@@ -1,8 +1,22 @@
 package helpers
 
 # Path validation
-# Checks for unsafe paths: absolute paths, home directory, path traversal, /tmp
+# Checks for unsafe paths: absolute paths, home directory, path traversal, /tmp.
+# When a resolved (workspace-relative) form exists in input.resolved_paths, that is
+# checked instead of the original so that absolute workspace paths pass safely.
+
 is_safe_path(path) if {
+	resolved := input.resolved_paths[path]
+	not startswith(resolved, "/")
+	not startswith(resolved, "~")
+	not contains(resolved, "../")
+	not contains(resolved, "/..")
+	resolved != ".."
+	not startswith(resolved, "/tmp")
+}
+
+is_safe_path(path) if {
+	not input.resolved_paths[path]
 	not startswith(path, "/")
 	not startswith(path, "~")
 	not contains(path, "../")

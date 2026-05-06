@@ -12,7 +12,7 @@ class GeminiRequestWrapper(BaseModel):
     """Wrapper for Gemini hook requests that includes bundle filtering."""
 
     bundles: List[str]
-    default_policy_behavior: str = "ask"
+    workspace_root: Optional[str] = None
     event: Dict[str, Any]
 
 
