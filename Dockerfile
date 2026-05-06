@@ -22,6 +22,8 @@ COPY src ./src
 COPY policies ./policies
 RUN uv pip install --system --no-deps .
 
+ENV POLICY_SERVER_HOST=0.0.0.0
+
 EXPOSE 8338
 
 CMD ["python", "-m", "src.main"]
