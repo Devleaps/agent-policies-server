@@ -7,6 +7,7 @@ Sets up policy enforcement handlers and starts the FastAPI server.
 
 import uvicorn
 
+from src.config import settings
 from src.server.server import app, get_registry
 from src.server.models import ToolUseEvent, PostFileEditEvent
 
@@ -32,9 +33,9 @@ def main():
     setup_all_policies()
 
     print("Server ready with policy enforcement active!")
-    print("Starting server on http://localhost:8338")
+    print(f"Starting server on http://{settings.host}:{settings.port}")
 
-    uvicorn.run(app, host="0.0.0.0", port=8338, log_level="info")
+    uvicorn.run(app, host=settings.host, port=settings.port, log_level="info")
 
 
 if __name__ == "__main__":
