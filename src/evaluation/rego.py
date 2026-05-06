@@ -10,6 +10,7 @@ This module provides the bridge between Python and Rego policies:
 
 import json
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -191,6 +192,34 @@ class RegoEvaluator:
 
         return list(set(all_activations))
 
+    def _normalize_path(self, path: str, workspace_root: Optional[str], cwd: Optional[str] = None) -> str:
+        """Resolve path to workspace-relative form, or return it unchanged for Rego to block.
+
+        Skips non-path arguments (URLs, package names, etc.) — only acts on absolute
+        paths or relative paths containing '..'. Uses cwd as the base for relative
+        resolution so paths like ../../file.py from a subdirectory resolve correctly.
+        """
+        if not path or not workspace_root:
+            return path
+        if not os.path.isabs(path) and ".." not in path.split("/"):
+            return path
+
+        try:
+            if os.path.isabs(path):
+                resolved = os.path.normpath(path)
+            elif cwd:
+                resolved = os.path.normpath(os.path.join(cwd, path))
+            else:
+                return path
+
+            root = workspace_root.rstrip("/")
+            if resolved == root or resolved.startswith(root + "/"):
+                return os.path.relpath(resolved, root)
+        except Exception:
+            pass
+
+        return path
+
     def _build_input_document(
         self, event: ToolUseEvent, parsed: ParsedCommand
     ) -> Dict[str, Any]:
@@ -203,6 +232,16 @@ class RegoEvaluator:
         Returns:
             Dictionary suitable for Rego input
         """
+        workspace_root = event.workspace_root
+        cwd = event.cwd
+
+        paths = [a for a in parsed.arguments] + [path for _, path in parsed.redirects]
+        resolved_paths = {
+            p: r
+            for p in paths
+            if (r := self._normalize_path(p, workspace_root, cwd)) != p
+        }
+
         parsed_dict = {
             "executable": parsed.executable,
             "subcommand": parsed.subcommand,
@@ -222,8 +261,10 @@ class RegoEvaluator:
                 "command": event.command,
                 "parameters": event.parameters or {},
                 "enabled_bundles": event.enabled_bundles,
+                "workspace_root": workspace_root,
             },
             "parsed": parsed_dict,
+            "resolved_paths": resolved_paths,
             "session_flags": get_all_flags(event.session_id),
         }
 

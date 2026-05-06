@@ -255,3 +255,81 @@ def test_grep_absolute_path_denied(client, base_event):
 def test_grep_parent_path_denied(client, base_event):
     """grep with parent path traversal should be denied"""
     check_policy(client, base_event, "grep 'test' ../other-project/file.txt", "deny")
+
+
+# ============================================================================
+# Workspace-Relative Absolute Paths
+# The base_event fixture uses cwd=/workspace, so /workspace/... paths are allowed
+# when they resolve within the workspace. Paths that escape via .. are denied.
+# ============================================================================
+
+
+def test_cat_workspace_absolute_path_allowed(client, base_event):
+    """cat with absolute path inside workspace should be allowed"""
+    check_policy(client, base_event, "cat /workspace/src/main.py", "allow")
+
+
+def test_ls_workspace_absolute_path_allowed(client, base_event):
+    """ls with absolute path inside workspace should be allowed"""
+    check_policy(client, base_event, "ls /workspace/src/", "allow")
+
+
+def test_grep_workspace_absolute_path_allowed(client, base_event):
+    """grep with absolute path inside workspace should be allowed"""
+    check_policy(client, base_event, "grep 'TODO' /workspace/src/main.py", "allow")
+
+
+def test_cat_workspace_dotdot_resolves_within_allowed(client, base_event):
+    """cat with dotdot that resolves within workspace should be allowed"""
+    check_policy(client, base_event, "cat /workspace/src/../lib/file.py", "allow")
+
+
+def test_cat_relative_dotdot_resolves_within_allowed(client, base_event):
+    """cat with relative dotdot that resolves within workspace should be allowed"""
+    check_policy(client, base_event, "cat src/../lib/file.py", "allow")
+
+
+def test_cat_absolute_path_outside_workspace_denied(client, base_event):
+    """cat with absolute path outside workspace should be denied"""
+    check_policy(client, base_event, "cat /etc/passwd", "deny")
+
+
+def test_ls_workspace_prefix_false_match_denied(client, base_event):
+    """ls with path that only shares a string prefix (no slash boundary) should be denied"""
+    check_policy(client, base_event, "ls /workspacefoo/bar", "deny")
+
+
+def test_cat_workspace_traversal_escapes_denied(client, base_event):
+    """cat with workspace-rooted path that normalizes outside workspace should be denied"""
+    check_policy(client, base_event, "cat /workspace/src/../../etc/passwd", "deny")
+
+
+# ============================================================================
+# CWD-Relative Path Resolution
+# cwd is set 2 directories below the workspace root (/workspace/a/b).
+# Relative dotdot paths are resolved against cwd, not the workspace root.
+# ============================================================================
+
+
+def test_touch_dotdot_within_workspace_allowed(client, base_event):
+    """touch ../../file from cwd 2 dirs deep resolves to workspace level — allowed"""
+    base_event["event"]["cwd"] = "/workspace/a/b"
+    check_policy(client, base_event, "touch ../../demo.txt", "allow")
+
+
+def test_cat_dotdot_within_workspace_allowed(client, base_event):
+    """cat ../../file from cwd 2 dirs deep resolves within workspace — allowed"""
+    base_event["event"]["cwd"] = "/workspace/a/b"
+    check_policy(client, base_event, "cat ../../README.md", "allow")
+
+
+def test_touch_dotdot_escapes_workspace_denied(client, base_event):
+    """touch ../../../file from cwd 2 dirs deep resolves outside workspace — denied"""
+    base_event["event"]["cwd"] = "/workspace/a/b"
+    check_policy(client, base_event, "touch ../../../outside.txt", "deny")
+
+
+def test_cat_dotdot_escapes_to_system_path_denied(client, base_event):
+    """cat ../../../etc/passwd from cwd 2 dirs deep resolves outside workspace — denied"""
+    base_event["event"]["cwd"] = "/workspace/a/b"
+    check_policy(client, base_event, "cat ../../../etc/passwd", "deny")

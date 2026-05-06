@@ -18,6 +18,7 @@ def client():
 def base_event():
     """Base Claude Code PreToolUse event structure"""
     return {
+        "workspace_root": "/workspace",
         "event": {
             "session_id": "test-session",
             "transcript_path": "/tmp/transcript.jsonl",

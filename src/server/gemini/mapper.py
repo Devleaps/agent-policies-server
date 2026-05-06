@@ -44,7 +44,8 @@ def map_before_tool_input(
         tool_is_mcp=False,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=wrapper.workspace_root,
+        cwd=input_data.cwd,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
@@ -73,7 +74,7 @@ def map_after_tool_input(
         tool_is_mcp=False,
         command=command,
         parameters=parameters,
-        workspace_roots=None,
+        workspace_root=None,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
     )
