@@ -14,6 +14,7 @@ class BaseEvent:
     session_id: str
     source_client: SourceClient
     workspace_root: Optional[str] = None
+    home: Optional[str] = None  # Client's home directory, for resolving ~ paths
     source_event: Any = None  # Original hook input data object
     enabled_bundles: List[str] = field(
         default_factory=lambda: ["universal"]

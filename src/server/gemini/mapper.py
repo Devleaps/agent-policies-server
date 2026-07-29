@@ -45,6 +45,7 @@ def map_before_tool_input(
         command=command,
         parameters=parameters,
         workspace_root=wrapper.workspace_root,
+        home=wrapper.home,
         cwd=input_data.cwd,
         source_event=input_data,
         enabled_bundles=wrapper.bundles,
