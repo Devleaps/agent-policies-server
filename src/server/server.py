@@ -11,7 +11,10 @@ from .registry import registry
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="DevLeaps Policy Server", version="1.0.0")
+BUILD_VERSION = os.environ.get("VERSION", "unknown")
+BUILD_GIT_SHA = os.environ.get("GIT_SHA", "unknown")
+
+app = FastAPI(title="DevLeaps Policy Server", version=BUILD_VERSION)
 app.include_router(claude_code_router)
 app.include_router(cursor_router)
 app.include_router(gemini_router)
@@ -22,8 +25,8 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "AI Agent Policy Server by DevLeaps",
-        "version": os.environ.get("VERSION", "unknown"),
-        "git_sha": os.environ.get("GIT_SHA", "unknown"),
+        "version": BUILD_VERSION,
+        "git_sha": BUILD_GIT_SHA,
         "editors": ["claude-code", "cursor", "gemini"],
         "endpoints": {
             "claude-code": [
