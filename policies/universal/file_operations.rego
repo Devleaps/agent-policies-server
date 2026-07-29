@@ -19,26 +19,16 @@ all_args_safe(args) if {
 
 # Helper to check if all arguments and option values are safe paths
 # This handles commands like "wc -l file.txt" where file.txt is in options
+# Both arguments AND option values must be safe - a command with an unsafe
+# positional path must not be allowed just because its option values happen
+# to be safe (and vice versa).
 all_args_and_options_safe if {
-	# Check arguments
-	count(input.parsed.arguments) > 0
 	every arg in input.parsed.arguments {
 		helpers.is_safe_path(arg)
 	}
-}
-
-all_args_and_options_safe if {
-	# Check option values
-	count(input.parsed.options) > 0
 	every key, value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
-}
-
-all_args_and_options_safe if {
-	# Allow if both are empty (command with no file arguments)
-	count(input.parsed.arguments) == 0
-	count(input.parsed.options) == 0
 }
 
 # Helper for [ command - filters out closing ] bracket from arguments
@@ -46,28 +36,12 @@ bracket_args_and_options_safe if {
 	# Filter out ']' from arguments
 	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
 
-	# Check filtered arguments
-	count(filtered_args) > 0
 	every arg in filtered_args {
 		helpers.is_safe_path(arg)
 	}
-}
-
-bracket_args_and_options_safe if {
-	# Check option values (same as all_args_and_options_safe)
-	count(input.parsed.options) > 0
 	every key, value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
-}
-
-bracket_args_and_options_safe if {
-	# Filter out ']' from arguments
-	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
-
-	# Allow if both filtered args and options are empty
-	count(filtered_args) == 0
-	count(input.parsed.options) == 0
 }
 
 # Allow cat with safe paths

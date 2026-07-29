@@ -255,7 +255,11 @@ class RegoEvaluator:
         cwd = event.cwd
         home = event.home
 
-        paths = [a for a in parsed.arguments] + [path for _, path in parsed.redirects]
+        paths = (
+            [a for a in parsed.arguments]
+            + [path for _, path in parsed.redirects]
+            + list(parsed.options.values())
+        )
         resolved_paths = {
             p: r
             for p in paths

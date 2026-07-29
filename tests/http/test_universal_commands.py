@@ -42,6 +42,13 @@ def test_head_allowed(client, base_event):
     check_policy(client, base_event, "head -n 10 file.txt", "allow")
 
 
+def test_head_unsafe_argument_with_safe_option_denied(client, base_event):
+    """head with an unsafe positional path must be denied even when its
+    option values (e.g. -n 10) are safe on their own — all_args_and_options_safe
+    must require both sides to be safe, not just one."""
+    check_policy(client, base_event, "head -n 10 /tmp/secret", "deny")
+
+
 def test_tail_allowed(client, base_event):
     """tail should be allowed"""
     check_policy(client, base_event, "tail -f log.txt", "allow")
@@ -185,6 +192,20 @@ def test_ls_tilde_subdir_denied(client, base_event):
 def test_ls_tilde_flags_denied(client, base_event):
     """ls -la ~/.ssh/ should be denied"""
     check_policy(client, base_event, "ls -la ~/.ssh/", "deny")
+
+
+def test_ls_absolute_option_value_inside_workspace_allowed(client, base_event):
+    """ls -la /workspace/subdir should be allowed — the option value is an
+    absolute path, but it resolves to a workspace-relative path just like a
+    positional argument would, and must not be denied outright."""
+    check_policy(client, base_event, "ls -la /workspace/subdir", "allow")
+
+
+def test_ls_tilde_option_value_inside_workspace_allowed_with_client_home(client, base_event):
+    """ls -la ~/subdir should be allowed when the client-supplied home makes
+    the option value resolve inside the workspace root."""
+    base_event["home"] = "/workspace"
+    check_policy(client, base_event, "ls -la ~/subdir", "allow")
 
 
 def test_cat_tilde_path_denied(client, base_event):
