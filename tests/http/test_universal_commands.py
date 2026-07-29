@@ -42,6 +42,13 @@ def test_head_allowed(client, base_event):
     check_policy(client, base_event, "head -n 10 file.txt", "allow")
 
 
+def test_head_unsafe_argument_with_safe_option_denied(client, base_event):
+    """head with an unsafe positional path must be denied even when its
+    option values (e.g. -n 10) are safe on their own — all_args_and_options_safe
+    must require both sides to be safe, not just one."""
+    check_policy(client, base_event, "head -n 10 /tmp/secret", "deny")
+
+
 def test_tail_allowed(client, base_event):
     """tail should be allowed"""
     check_policy(client, base_event, "tail -f log.txt", "allow")
@@ -170,6 +177,86 @@ def test_touch_absolute_path_denied(client, base_event):
 def test_trash_absolute_path_denied(client, base_event):
     """trash with absolute path should be denied"""
     check_policy(client, base_event, "trash /home/user/file.txt", "deny")
+
+
+def test_ls_tilde_home_denied(client, base_event):
+    """ls with tilde home path should be denied when no client home is known"""
+    check_policy(client, base_event, "ls ~/", "deny")
+
+
+def test_ls_tilde_subdir_denied(client, base_event):
+    """ls ~/.ssh/ should be denied — tilde paths escape the workspace"""
+    check_policy(client, base_event, "ls ~/.ssh/", "deny")
+
+
+def test_ls_tilde_flags_denied(client, base_event):
+    """ls -la ~/.ssh/ should be denied"""
+    check_policy(client, base_event, "ls -la ~/.ssh/", "deny")
+
+
+def test_ls_absolute_option_value_inside_workspace_allowed(client, base_event):
+    """ls -la /workspace/subdir should be allowed — the option value is an
+    absolute path, but it resolves to a workspace-relative path just like a
+    positional argument would, and must not be denied outright."""
+    check_policy(client, base_event, "ls -la /workspace/subdir", "allow")
+
+
+def test_ls_tilde_option_value_inside_workspace_allowed_with_client_home(client, base_event):
+    """ls -la ~/subdir should be allowed when the client-supplied home makes
+    the option value resolve inside the workspace root."""
+    base_event["home"] = "/workspace"
+    check_policy(client, base_event, "ls -la ~/subdir", "allow")
+
+
+def test_cat_tilde_path_denied(client, base_event):
+    """cat with tilde path should be denied"""
+    check_policy(client, base_event, "cat ~/.bashrc", "deny")
+
+
+def test_cat_tilde_outside_workspace_denied_with_client_home(client, base_event):
+    """~ resolved against the client-supplied home should still be denied
+    when it points outside the workspace root."""
+    base_event["home"] = "/home/clientuser"
+    check_policy(client, base_event, "cat ~/.ssh/id_rsa", "deny")
+
+
+def test_cat_tilde_inside_workspace_allowed_with_client_home(client, base_event):
+    """~ resolved against the client-supplied home should be allowed
+    when it points inside the workspace root."""
+    base_event["home"] = "/workspace"
+    check_policy(client, base_event, "cat ~/README.md", "allow")
+
+
+def test_cat_tilde_does_not_resolve_against_server_home(client, base_event, monkeypatch):
+    """~ must never be resolved against the server process's own home directory.
+
+    Simulates a server whose own $HOME happens to sit under the workspace root
+    (e.g. a misconfigured or containerized deployment). Without a client-supplied
+    `home`, resolving ~ using the server's home would be a security bug — it must
+    stay unresolved and be denied by the raw tilde check instead.
+    """
+    monkeypatch.setenv("HOME", "/workspace")
+    base_event.pop("home", None)
+    check_policy(client, base_event, "cat ~/README.md", "deny")
+
+
+def test_cat_tilde_subdir_workspace_allowed_with_client_home(client, base_event):
+    """~ should resolve correctly when the workspace is a subfolder under home,
+    e.g. home=/home/user and workspace_root=/home/user/workspace/project."""
+    base_event["workspace_root"] = "/home/user/workspace/project"
+    base_event["event"]["cwd"] = "/home/user/workspace/project"
+    base_event["home"] = "/home/user"
+    check_policy(client, base_event, "cat ~/workspace/project/README.md", "allow")
+
+
+def test_cat_tilde_sibling_of_workspace_denied_with_client_home(client, base_event):
+    """~ should still be denied when home and workspace are siblings under the
+    same parent, e.g. home=/home/user and workspace_root=/home/workspace —
+    home is not a prefix of workspace_root, so escaping via ~ must not be allowed."""
+    base_event["workspace_root"] = "/home/workspace"
+    base_event["event"]["cwd"] = "/home/workspace"
+    base_event["home"] = "/home/user"
+    check_policy(client, base_event, "cat ~/secrets.txt", "deny")
 
 
 # ============================================================================

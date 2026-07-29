@@ -240,3 +240,22 @@ def test_podman_volume_ls_subcommand():
     assert cmd.executable == "podman"
     assert cmd.subcommand == "volume"
     assert cmd.arguments == ["ls"]
+
+
+def test_ls_tilde_home_argument():
+    cmd = BashCommandParser.parse("ls ~/")
+    assert cmd.executable == "ls"
+    assert cmd.arguments == ["~/"]
+
+
+def test_ls_tilde_subdir_argument():
+    cmd = BashCommandParser.parse("ls ~/.ssh/")
+    assert cmd.executable == "ls"
+    assert cmd.arguments == ["~/.ssh/"]
+
+
+def test_ls_tilde_flags_and_subdir():
+    # bashlex parses -la as an option key with ~/.ssh/ as its value
+    cmd = BashCommandParser.parse("ls -la ~/.ssh/")
+    assert cmd.executable == "ls"
+    assert cmd.options == {"-la": "~/.ssh/"}

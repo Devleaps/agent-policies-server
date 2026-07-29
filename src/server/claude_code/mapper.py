@@ -137,6 +137,7 @@ def map_pre_tool_use_input(
         command=command,
         parameters=parameters,
         workspace_root=wrapper.workspace_root,
+        home=wrapper.home,
         cwd=input_data.cwd,
         source_event=input_data,
         tool_is_bash=tool_is_bash,

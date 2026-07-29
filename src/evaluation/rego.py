@@ -192,15 +192,34 @@ class RegoEvaluator:
 
         return list(set(all_activations))
 
-    def _normalize_path(self, path: str, workspace_root: Optional[str], cwd: Optional[str] = None) -> str:
+    def _normalize_path(
+        self,
+        path: str,
+        workspace_root: Optional[str],
+        cwd: Optional[str] = None,
+        home: Optional[str] = None,
+    ) -> str:
         """Resolve path to workspace-relative form, or return it unchanged for Rego to block.
 
         Skips non-path arguments (URLs, package names, etc.) — only acts on absolute
-        paths or relative paths containing '..'. Uses cwd as the base for relative
-        resolution so paths like ../../file.py from a subdirectory resolve correctly.
+        paths, tilde paths, or relative paths containing '..'. Uses cwd as the base for
+        relative resolution so paths like ../../file.py from a subdirectory resolve correctly.
+
+        Tilde paths are resolved against the client-supplied `home` only. The server's own
+        home directory must never be used to expand `~` — it has no relation to the client
+        machine. If `home` is not provided, tilde paths are left unresolved (Rego's
+        is_safe_path denies raw "~"-prefixed paths as a safe default).
         """
         if not path or not workspace_root:
             return path
+        if path.startswith("~"):
+            if not home:
+                return path
+            if path == "~" or path.startswith("~/"):
+                path = home + path[1:]
+            else:
+                # "~otheruser/..." — no client-side info to resolve this; leave unresolved
+                return path
         if not os.path.isabs(path) and ".." not in path.split("/"):
             return path
 
@@ -234,12 +253,17 @@ class RegoEvaluator:
         """
         workspace_root = event.workspace_root
         cwd = event.cwd
+        home = event.home
 
-        paths = [a for a in parsed.arguments] + [path for _, path in parsed.redirects]
+        paths = (
+            [a for a in parsed.arguments]
+            + [path for _, path in parsed.redirects]
+            + list(parsed.options.values())
+        )
         resolved_paths = {
             p: r
             for p in paths
-            if (r := self._normalize_path(p, workspace_root, cwd)) != p
+            if (r := self._normalize_path(p, workspace_root, cwd, home)) != p
         }
 
         parsed_dict = {

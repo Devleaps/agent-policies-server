@@ -10,4 +10,5 @@ class RequestWrapper(BaseModel):
 
     bundles: List[str]
     workspace_root: Optional[str] = None
+    home: Optional[str] = None
     event: Dict[str, Any]
