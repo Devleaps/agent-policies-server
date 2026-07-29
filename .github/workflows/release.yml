@@ -68,6 +68,9 @@ jobs:
           context: .
           push: true
           tags: ${{ steps.tag-variable.outputs.DOCKER_TAG }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            VERSION=${{ steps.semver.outputs.next }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
