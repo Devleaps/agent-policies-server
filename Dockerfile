@@ -22,6 +22,10 @@ COPY src ./src
 COPY policies ./policies
 RUN uv pip install --system --no-deps .
 
+ARG GIT_SHA=unknown
+ARG VERSION=unknown
+ENV GIT_SHA=${GIT_SHA}
+ENV VERSION=${VERSION}
 ENV POLICY_SERVER_HOST=0.0.0.0
 
 EXPOSE 8338

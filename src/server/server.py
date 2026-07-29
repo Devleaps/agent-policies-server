@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import FastAPI
 
@@ -21,7 +22,8 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "AI Agent Policy Server by DevLeaps",
-        "version": "1.0.0",
+        "version": os.environ.get("VERSION", "unknown"),
+        "git_sha": os.environ.get("GIT_SHA", "unknown"),
         "editors": ["claude-code", "cursor", "gemini"],
         "endpoints": {
             "claude-code": [
