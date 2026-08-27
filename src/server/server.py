@@ -3,6 +3,8 @@ import os
 
 from fastapi import FastAPI
 
+from .bundles import KNOWN_BUNDLES
+from .bundles import router as bundles_router
 from .claude_code import router as claude_code_router
 from .cursor import router as cursor_router
 from .gemini import router as gemini_router
@@ -18,6 +20,7 @@ app = FastAPI(title="DevLeaps Policy Server", version=BUILD_VERSION)
 app.include_router(claude_code_router)
 app.include_router(cursor_router)
 app.include_router(gemini_router)
+app.include_router(bundles_router)
 
 
 @app.get("/")
@@ -52,6 +55,7 @@ async def root():
                 "/policy/gemini/BeforeTool",
                 "/policy/gemini/AfterTool",
             ],
+            "bundles": sorted(f"/bundles/{name}.tar.gz" for name in KNOWN_BUNDLES),
         },
     }
 
