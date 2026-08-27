@@ -1,0 +1,40 @@
+---
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  opa-check:
+    name: Verify policies compile under stock OPA
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: opa check
+        run: opa check policies
+
+  pytest:
+    name: Run pytest suite
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4.2.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        run: uv run pytest

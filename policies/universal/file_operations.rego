@@ -26,7 +26,7 @@ all_args_and_options_safe if {
 	every arg in input.parsed.arguments {
 		helpers.is_safe_path(arg)
 	}
-	every key, value in input.parsed.options {
+	every value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
 }
@@ -39,7 +39,7 @@ bracket_args_and_options_safe if {
 	every arg in filtered_args {
 		helpers.is_safe_path(arg)
 	}
-	every key, value in input.parsed.options {
+	every value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
 }

@@ -1,6 +1,7 @@
 package universal
 
 import rego.v1
+import data.helpers
 
 # Vale - A markup-aware linter for prose
 # https://vale.sh/docs/cli
