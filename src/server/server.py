@@ -6,8 +6,6 @@ from fastapi import FastAPI
 from .bundles import KNOWN_BUNDLES
 from .bundles import router as bundles_router
 from .claude_code import router as claude_code_router
-from .cursor import router as cursor_router
-from .gemini import router as gemini_router
 from .registry import registry
 
 logging.basicConfig(level=logging.INFO)
@@ -18,8 +16,6 @@ BUILD_GIT_SHA = os.environ.get("GIT_SHA", "unknown")
 
 app = FastAPI(title="DevLeaps Policy Server", version=BUILD_VERSION)
 app.include_router(claude_code_router)
-app.include_router(cursor_router)
-app.include_router(gemini_router)
 app.include_router(bundles_router)
 
 
@@ -30,7 +26,7 @@ async def root():
         "name": "AI Agent Policy Server by DevLeaps",
         "version": BUILD_VERSION,
         "git_sha": BUILD_GIT_SHA,
-        "editors": ["claude-code", "cursor", "gemini"],
+        "editors": ["claude-code"],
         "endpoints": {
             "claude-code": [
                 "/policy/claude-code/PreToolUse",
@@ -42,18 +38,6 @@ async def root():
                 "/policy/claude-code/PreCompact",
                 "/policy/claude-code/SessionStart",
                 "/policy/claude-code/SessionEnd",
-            ],
-            "cursor": [
-                "/policy/cursor/beforeShellExecution",
-                "/policy/cursor/beforeMCPExecution",
-                "/policy/cursor/afterFileEdit",
-                "/policy/cursor/beforeReadFile",
-                "/policy/cursor/beforeSubmitPrompt",
-                "/policy/cursor/stop",
-            ],
-            "gemini": [
-                "/policy/gemini/BeforeTool",
-                "/policy/gemini/AfterTool",
             ],
             "bundles": sorted(f"/bundles/{name}.tar.gz" for name in KNOWN_BUNDLES),
         },

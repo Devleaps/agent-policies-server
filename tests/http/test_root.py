@@ -11,10 +11,9 @@ def test_root_returns_expected_shape(client):
     assert data["name"] == "AI Agent Policy Server by DevLeaps"
     assert "version" in data
     assert "git_sha" in data
-    assert data["editors"] == ["claude-code", "cursor", "gemini"]
+    assert data["editors"] == ["claude-code"]
     assert "claude-code" in data["endpoints"]
-    assert "cursor" in data["endpoints"]
-    assert "gemini" in data["endpoints"]
+    assert "bundles" in data["endpoints"]
 
 
 def test_root_reflects_build_version_and_git_sha(monkeypatch):
