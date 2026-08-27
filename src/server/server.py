@@ -39,7 +39,9 @@ async def root():
                 "/policy/claude-code/SessionStart",
                 "/policy/claude-code/SessionEnd",
             ],
-            "bundles": sorted(f"/bundles/{name}.tar.gz" for name in KNOWN_BUNDLES),
+            "bundles": [
+                f"/bundles/composed?names=<comma-separated subset of {sorted(KNOWN_BUNDLES)}>"
+            ],
         },
     }
 
