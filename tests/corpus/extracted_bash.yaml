@@ -1,0 +1,1205 @@
+- name: "test_brew.py: brew info python"
+  bundles: [universal]
+  steps:
+    - bash: "brew info python"
+      expect: "allow"
+- name: "test_brew.py: brew uses --installed python"
+  bundles: [universal]
+  steps:
+    - bash: "brew uses --installed python"
+      expect: "allow"
+- name: "test_brew.py: brew cat python"
+  bundles: [universal]
+  steps:
+    - bash: "brew cat python"
+      expect: "allow"
+- name: "test_claude_code_bash_integration.py: pwd"
+  bundles: [universal]
+  steps:
+    - bash: "pwd"
+      expect: "allow"
+- name: "test_claude_code_bash_integration.py: git status"
+  bundles: [universal]
+  steps:
+    - bash: "git status"
+      expect: "allow"
+- name: "test_claude_code_bash_integration.py: ls src/"
+  bundles: [universal]
+  steps:
+    - bash: "ls src/"
+      expect: "allow"
+- name: "test_claude_code_bash_integration.py: sudo apt-get update"
+  bundles: [universal]
+  steps:
+    - bash: "sudo apt-get update"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: rm -rf /important/data"
+  bundles: [universal]
+  steps:
+    - bash: "rm -rf /important/data"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: killall python"
+  bundles: [universal]
+  steps:
+    - bash: "killall python"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: cat ../../etc/passwd"
+  bundles: [universal]
+  steps:
+    - bash: "cat ../../etc/passwd"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: git push --force"
+  bundles: [universal]
+  steps:
+    - bash: "git push --force"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: terraform apply"
+  bundles: [universal]
+  steps:
+    - bash: "terraform apply"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: some-completely-unknown-command"
+  bundles: [universal]
+  steps:
+    - bash: "some-completely-unknown-command"
+      expect: "pass"
+- name: "test_claude_code_bash_integration.py: sudo git status"
+  bundles: [universal]
+  steps:
+    - bash: "sudo git status"
+      expect: "deny"
+- name: "test_claude_code_bash_integration.py: some-random-unknown-tool"
+  bundles: [universal]
+  steps:
+    - bash: "some-random-unknown-tool"
+      expect: "pass"
+- name: "test_claude_code_bash_integration.py: uv sync"
+  bundles: [universal]
+  steps:
+    - bash: "uv sync"
+      expect: "pass"
+- name: "test_claude_code_bash_integration.py: uv sync"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv sync"
+      expect: "allow"
+- name: "test_claude_code_bash_integration.py: "
+  bundles: [universal]
+  steps:
+    - bash: ""
+      expect: "pass"
+- name: "test_claude_code_bash_integration.py: sudo rm -rf /"
+  bundles: [universal]
+  steps:
+    - bash: "sudo rm -rf /"
+      expect: "deny"
+- name: "test_cloud.py: docker ps"
+  bundles: [universal]
+  steps:
+    - bash: "docker ps"
+      expect: "allow"
+- name: "test_cloud.py: docker build -t myapp ."
+  bundles: [universal]
+  steps:
+    - bash: "docker build -t myapp ."
+      expect: "allow"
+- name: "test_cloud.py: terraform fmt"
+  bundles: [universal]
+  steps:
+    - bash: "terraform fmt"
+      expect: "allow"
+- name: "test_cloud.py: terraform plan"
+  bundles: [universal]
+  steps:
+    - bash: "terraform plan"
+      expect: "allow"
+- name: "test_cloud.py: terraform apply"
+  bundles: [universal]
+  steps:
+    - bash: "terraform apply"
+      expect: "deny"
+- name: "test_cloud.py: terraform destroy"
+  bundles: [universal]
+  steps:
+    - bash: "terraform destroy"
+      expect: "deny"
+- name: "test_cloud.py: terraform init"
+  bundles: [universal]
+  steps:
+    - bash: "terraform init"
+      expect: "deny"
+- name: "test_cloud.py: terragrunt plan"
+  bundles: [universal]
+  steps:
+    - bash: "terragrunt plan"
+      expect: "allow"
+- name: "test_cloud.py: terragrunt apply"
+  bundles: [universal]
+  steps:
+    - bash: "terragrunt apply"
+      expect: "deny"
+- name: "test_cloud.py: az group list"
+  bundles: [universal]
+  steps:
+    - bash: "az group list"
+      expect: "allow"
+- name: "test_cloud.py: az group create -n test"
+  bundles: [universal]
+  steps:
+    - bash: "az group create -n test"
+      expect: "deny"
+- name: "test_cloud.py: az group delete -n test"
+  bundles: [universal]
+  steps:
+    - bash: "az group delete -n test"
+      expect: "deny"
+- name: "test_cloud.py: kubectl get pods"
+  bundles: [universal]
+  steps:
+    - bash: "kubectl get pods"
+      expect: "allow"
+- name: "test_cloud.py: kubectl delete pod mypod"
+  bundles: [universal]
+  steps:
+    - bash: "kubectl delete pod mypod"
+      expect: "deny"
+- name: "test_cloud.py: gh pr view 123"
+  bundles: [universal]
+  steps:
+    - bash: "gh pr view 123"
+      expect: "allow"
+- name: "test_cloud.py: gh pr diff 30"
+  bundles: [universal]
+  steps:
+    - bash: "gh pr diff 30"
+      expect: "allow"
+- name: "test_cloud.py: gh pr create --title 'Test'"
+  bundles: [universal]
+  steps:
+    - bash: "gh pr create --title 'Test'"
+      expect: "pass"
+- name: "test_dangerous_commands.py: kill 1234"
+  bundles: [universal]
+  steps:
+    - bash: "kill 1234"
+      expect: "deny"
+- name: "test_dangerous_commands.py: killall python"
+  bundles: [universal]
+  steps:
+    - bash: "killall python"
+      expect: "deny"
+- name: "test_dangerous_commands.py: find . -name '*.tmp' | xargs rm"
+  bundles: [universal]
+  steps:
+    - bash: "find . -name '*.tmp' | xargs rm"
+      expect: "deny"
+- name: "test_dangerous_commands.py: perl -e 'print \"test\"'"
+  bundles: [universal]
+  steps:
+    - bash: "perl -e 'print \"test\"'"
+      expect: "deny"
+- name: "test_dangerous_commands.py: sudo apt-get install package"
+  bundles: [universal]
+  steps:
+    - bash: "sudo apt-get install package"
+      expect: "deny"
+- name: "test_dangerous_commands.py: rm -rf /important/data"
+  bundles: [universal]
+  steps:
+    - bash: "rm -rf /important/data"
+      expect: "deny"
+- name: "test_dangerous_commands.py: timeout --kill-after=5s 10s command"
+  bundles: [universal]
+  steps:
+    - bash: "timeout --kill-after=5s 10s command"
+      expect: "deny"
+- name: "test_deduplication.py: sudo ls | sudo cat"
+  bundles: [universal]
+  steps:
+    - bash: "sudo ls | sudo cat"
+      expect: "deny"
+- name: "test_deduplication.py: sudo ls && sudo cat"
+  bundles: [universal]
+  steps:
+    - bash: "sudo ls && sudo cat"
+      expect: "deny"
+- name: "test_deduplication.py: sudo ls | rm -rf /tmp"
+  bundles: [universal]
+  steps:
+    - bash: "sudo ls | rm -rf /tmp"
+      expect: "deny"
+- name: "test_demo_bundles.py: ls"
+  bundles: [universal, demo_bundles]
+  steps:
+    - bash: "ls"
+      expect: "deny"
+- name: "test_demo_bundles.py: ls"
+  bundles: [universal, demo_bundles, python_uv]
+  steps:
+    - bash: "ls"
+      expect: "allow"
+- name: "test_gh_repo_clone.py: gh repo clone user/repo"
+  bundles: [universal]
+  steps:
+    - bash: "gh repo clone user/repo"
+      expect: "allow"
+- name: "test_gh_repo_clone.py: gh repo clone user/repo my-dir"
+  bundles: [universal]
+  steps:
+    - bash: "gh repo clone user/repo my-dir"
+      expect: "allow"
+- name: "test_git.py: git add ."
+  bundles: [universal]
+  steps:
+    - bash: "git add ."
+      expect: "allow"
+- name: "test_git.py: git add -A"
+  bundles: [universal]
+  steps:
+    - bash: "git add -A"
+      expect: "allow"
+- name: "test_git.py: git commit -m 'test'"
+  bundles: [universal]
+  steps:
+    - bash: "git commit -m 'test'"
+      expect: "allow"
+- name: "test_git.py: git status"
+  bundles: [universal]
+  steps:
+    - bash: "git status"
+      expect: "allow"
+- name: "test_git.py: git diff"
+  bundles: [universal]
+  steps:
+    - bash: "git diff"
+      expect: "allow"
+- name: "test_git.py: git log --oneline"
+  bundles: [universal]
+  steps:
+    - bash: "git log --oneline"
+      expect: "allow"
+- name: "test_git.py: git branch feature-123"
+  bundles: [universal]
+  steps:
+    - bash: "git branch feature-123"
+      expect: "allow"
+- name: "test_git.py: git checkout main"
+  bundles: [universal]
+  steps:
+    - bash: "git checkout main"
+      expect: "allow"
+- name: "test_git.py: git ls-files"
+  bundles: [universal]
+  steps:
+    - bash: "git ls-files"
+      expect: "allow"
+- name: "test_git.py: git mv old.txt new.txt"
+  bundles: [universal]
+  steps:
+    - bash: "git mv old.txt new.txt"
+      expect: "allow"
+- name: "test_git.py: git rm file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "git rm file.txt"
+      expect: "deny"
+- name: "test_git.py: git reflog"
+  bundles: [universal]
+  steps:
+    - bash: "git reflog"
+      expect: "allow"
+- name: "test_git.py: git show HEAD"
+  bundles: [universal]
+  steps:
+    - bash: "git show HEAD"
+      expect: "allow"
+- name: "test_git.py: git push origin main"
+  bundles: [universal]
+  steps:
+    - bash: "git push origin main"
+      expect: "allow"
+- name: "test_git.py: git push --force"
+  bundles: [universal]
+  steps:
+    - bash: "git push --force"
+      expect: "deny"
+- name: "test_git.py: git push --force-with-lease"
+  bundles: [universal]
+  steps:
+    - bash: "git push --force-with-lease"
+      expect: "allow"
+- name: "test_git.py: git init /tmp/new-repo"
+  bundles: [universal]
+  steps:
+    - bash: "git init /tmp/new-repo"
+      expect: "deny"
+- name: "test_git.py: git stash"
+  bundles: [universal]
+  steps:
+    - bash: "git stash"
+      expect: "allow"
+- name: "test_git.py: git stash pop"
+  bundles: [universal]
+  steps:
+    - bash: "git stash pop"
+      expect: "allow"
+- name: "test_git.py: git stash list"
+  bundles: [universal]
+  steps:
+    - bash: "git stash list"
+      expect: "allow"
+- name: "test_git.py: git remote"
+  bundles: [universal]
+  steps:
+    - bash: "git remote"
+      expect: "allow"
+- name: "test_git.py: git remote -v"
+  bundles: [universal]
+  steps:
+    - bash: "git remote -v"
+      expect: "allow"
+- name: "test_git.py: git remote -v 2>/dev/null | head -5"
+  bundles: [universal]
+  steps:
+    - bash: "git remote -v 2>/dev/null | head -5"
+      expect: "allow"
+- name: "test_git.py: git remote get-url origin"
+  bundles: [universal]
+  steps:
+    - bash: "git remote get-url origin"
+      expect: "allow"
+- name: "test_git.py: git remote show origin"
+  bundles: [universal]
+  steps:
+    - bash: "git remote show origin"
+      expect: "allow"
+- name: "test_git.py: git remote add upstream https://github.com/user/repo.git"
+  bundles: [universal]
+  steps:
+    - bash: "git remote add upstream https://github.com/user/repo.git"
+      expect: "pass"
+- name: "test_git.py: git remote remove origin"
+  bundles: [universal]
+  steps:
+    - bash: "git remote remove origin"
+      expect: "pass"
+- name: "test_git.py: git remote set-url origin https://github.com/new/repo.git"
+  bundles: [universal]
+  steps:
+    - bash: "git remote set-url origin https://github.com/new/repo.git"
+      expect: "pass"
+- name: "test_git.py: git remote rename old new"
+  bundles: [universal]
+  steps:
+    - bash: "git remote rename old new"
+      expect: "pass"
+- name: "test_git.py: git -C agent-skills status"
+  bundles: [universal]
+  steps:
+    - bash: "git -C agent-skills status"
+      expect: "allow"
+- name: "test_git.py: git -C ./subdir remote -v"
+  bundles: [universal]
+  steps:
+    - bash: "git -C ./subdir remote -v"
+      expect: "allow"
+- name: "test_git.py: git -C /tmp/agent-skills status"
+  bundles: [universal]
+  steps:
+    - bash: "git -C /tmp/agent-skills status"
+      expect: "deny"
+- name: "test_git.py: git -C ../other-repo status"
+  bundles: [universal]
+  steps:
+    - bash: "git -C ../other-repo status"
+      expect: "deny"
+- name: "test_git_additions.py: git ls-tree HEAD"
+  bundles: [universal]
+  steps:
+    - bash: "git ls-tree HEAD"
+      expect: "allow"
+- name: "test_git_additions.py: git ls-tree"
+  bundles: [universal]
+  steps:
+    - bash: "git ls-tree"
+      expect: "allow"
+- name: "test_git_additions.py: git --version"
+  bundles: [universal]
+  steps:
+    - bash: "git --version"
+      expect: "allow"
+- name: "test_javascript.py: npm install"
+  bundles: [universal]
+  steps:
+    - bash: "npm install"
+      expect: "pass"
+- name: "test_javascript.py: npm test"
+  bundles: [universal]
+  steps:
+    - bash: "npm test"
+      expect: "allow"
+- name: "test_javascript.py: npm run test"
+  bundles: [universal]
+  steps:
+    - bash: "npm run test"
+      expect: "allow"
+- name: "test_javascript.py: npm run build"
+  bundles: [universal]
+  steps:
+    - bash: "npm run build"
+      expect: "allow"
+- name: "test_javascript.py: yarn install"
+  bundles: [universal]
+  steps:
+    - bash: "yarn install"
+      expect: "pass"
+- name: "test_javascript.py: yarn test"
+  bundles: [universal]
+  steps:
+    - bash: "yarn test"
+      expect: "allow"
+- name: "test_javascript.py: pnpm install"
+  bundles: [universal]
+  steps:
+    - bash: "pnpm install"
+      expect: "pass"
+- name: "test_javascript.py: pnpm build"
+  bundles: [universal]
+  steps:
+    - bash: "pnpm build"
+      expect: "allow"
+- name: "test_network.py: curl http://localhost:8080"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://localhost:8080"
+      expect: "allow"
+- name: "test_network.py: curl http://localhost:3000/api"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://localhost:3000/api"
+      expect: "allow"
+- name: "test_network.py: curl http://127.0.0.1:8000"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://127.0.0.1:8000"
+      expect: "allow"
+- name: "test_network.py: curl -X POST http://localhost:8000/api -H 'Content-Type: application/json'"
+  bundles: [universal]
+  steps:
+    - bash: "curl -X POST http://localhost:8000/api -H 'Content-Type: application/json'"
+      expect: "allow"
+- name: "test_network.py: curl https://example.com"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://example.com"
+      expect: "deny"
+- name: "test_network.py: curl https://github.com/user/repo"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://github.com/user/repo"
+      expect: "deny"
+- name: "test_network.py: curl https://api.example.com/data"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://api.example.com/data"
+      expect: "deny"
+- name: "test_network.py: curl http://127.1.2.3:9000"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://127.1.2.3:9000"
+      expect: "allow"
+- name: "test_network.py: curl http://[::1]:8000"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://[::1]:8000"
+      expect: "allow"
+- name: "test_network.py: curl https://google.com?localhost=true"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://google.com?localhost=true"
+      expect: "deny"
+- name: "test_network.py: curl https://localhost.evil.com"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://localhost.evil.com"
+      expect: "deny"
+- name: "test_network.py: curl https://127.0.0.1.evil.com"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://127.0.0.1.evil.com"
+      expect: "deny"
+- name: "test_network.py: curl https://evil.com/localhost/api"
+  bundles: [universal]
+  steps:
+    - bash: "curl https://evil.com/localhost/api"
+      expect: "deny"
+- name: "test_network.py: curl http://192.168.1.1"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://192.168.1.1"
+      expect: "deny"
+- name: "test_network.py: curl http://192.168.127.100"
+  bundles: [universal]
+  steps:
+    - bash: "curl http://192.168.127.100"
+      expect: "deny"
+- name: "test_opa.py: opa test ."
+  bundles: [universal]
+  steps:
+    - bash: "opa test ."
+      expect: "allow"
+- name: "test_opa.py: opa eval 'data.example.allow'"
+  bundles: [universal]
+  steps:
+    - bash: "opa eval 'data.example.allow'"
+      expect: "pass"
+- name: "test_opa.py: opa run server"
+  bundles: [universal]
+  steps:
+    - bash: "opa run server"
+      expect: "pass"
+- name: "test_podman.py: podman machine list"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine list"
+      expect: "allow"
+- name: "test_podman.py: podman machine ps"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine ps"
+      expect: "allow"
+- name: "test_podman.py: podman machine inspect myvm"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine inspect myvm"
+      expect: "allow"
+- name: "test_podman.py: podman machine exists myvm"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine exists myvm"
+      expect: "allow"
+- name: "test_podman.py: podman machine init"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine init"
+      expect: "allow"
+- name: "test_podman.py: podman machine start myvm"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine start myvm"
+      expect: "allow"
+- name: "test_podman.py: podman machine stop myvm"
+  bundles: [universal]
+  steps:
+    - bash: "podman machine stop myvm"
+      expect: "allow"
+- name: "test_podman.py: podman ps"
+  bundles: [universal]
+  steps:
+    - bash: "podman ps"
+      expect: "allow"
+- name: "test_podman.py: podman inspect mycontainer"
+  bundles: [universal]
+  steps:
+    - bash: "podman inspect mycontainer"
+      expect: "allow"
+- name: "test_podman.py: podman images"
+  bundles: [universal]
+  steps:
+    - bash: "podman images"
+      expect: "allow"
+- name: "test_podman.py: podman volume ls"
+  bundles: [universal]
+  steps:
+    - bash: "podman volume ls"
+      expect: "allow"
+- name: "test_podman.py: podman network ls"
+  bundles: [universal]
+  steps:
+    - bash: "podman network ls"
+      expect: "allow"
+- name: "test_podman.py: podman version"
+  bundles: [universal]
+  steps:
+    - bash: "podman version"
+      expect: "allow"
+- name: "test_podman.py: podman info"
+  bundles: [universal]
+  steps:
+    - bash: "podman info"
+      expect: "allow"
+- name: "test_podman.py: podman system df"
+  bundles: [universal]
+  steps:
+    - bash: "podman system df"
+      expect: "allow"
+- name: "test_python_packages.py: uv sync"
+  bundles: [universal]
+  steps:
+    - bash: "uv sync"
+      expect: "pass"
+- name: "test_python_packages.py: uv add requests"
+  bundles: [universal]
+  steps:
+    - bash: "uv add requests"
+      expect: "pass"
+- name: "test_python_packages.py: uv sync"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv sync"
+      expect: "allow"
+- name: "test_python_packages.py: uv add fastapi"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv add fastapi"
+      expect: "allow"
+- name: "test_python_packages.py: uv add uvicorn[standard]"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv add uvicorn[standard]"
+      expect: "allow"
+- name: "test_python_packages.py: uv add --dev fastapi[all]"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv add --dev fastapi[all]"
+      expect: "allow"
+- name: "test_python_packages.py: uv add --dev pytest-cov"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv add --dev pytest-cov"
+      expect: "allow"
+- name: "test_python_packages.py: uv remove old-package"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv remove old-package"
+      expect: "allow"
+- name: "test_python_packages.py: uv pip install pytest"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv pip install pytest"
+      expect: "deny"
+- name: "test_python_packages.py: uv run python script.py"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv run python script.py"
+      expect: "deny"
+- name: "test_python_packages.py: uv run pytest"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv run pytest"
+      expect: "allow"
+- name: "test_python_packages.py: uv run pytest /tmp/test.py"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv run pytest /tmp/test.py"
+      expect: "deny"
+- name: "test_python_packages.py: pip install requests"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pip install requests"
+      expect: "allow"
+- name: "test_python_packages.py: pip install pytest"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pip install pytest"
+      expect: "allow"
+- name: "test_python_packages.py: pip install -r requirements.txt"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pip install -r requirements.txt"
+      expect: "allow"
+- name: "test_python_packages.py: pip install requests"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pip install requests"
+      expect: "allow"
+- name: "test_python_packages.py: black ."
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "black ."
+      expect: "allow"
+- name: "test_python_packages.py: ruff check ."
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "ruff check ."
+      expect: "allow"
+- name: "test_python_packages.py: mypy src/"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "mypy src/"
+      expect: "allow"
+- name: "test_python_packages.py: pytest tests/"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pytest tests/"
+      expect: "allow"
+- name: "test_python_packages.py: uv run pytest"
+  bundles: [universal, python_uv, python_pip]
+  steps:
+    - bash: "uv run pytest"
+      expect: "allow"
+- name: "test_python_packages.py: pytest | head"
+  bundles: [universal, python_pip]
+  steps:
+    - bash: "pytest | head"
+      expect: "allow"
+- name: "test_python_packages.py: uv run pytest | head"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv run pytest | head"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'SELECT * FROM users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'SELECT * FROM users'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'SELECT * FROM users WHERE id = 1'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'SELECT * FROM users WHERE id = 1'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'SELECT * FROM users JOIN orders ON users.id = orders.user_id'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'SELECT * FROM users JOIN orders ON users.id = orders.user_id'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'SELECT COUNT(*) FROM users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'SELECT COUNT(*) FROM users'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'select * from users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'select * from users'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'SELECT id, name FROM users LIMIT 10'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'SELECT id, name FROM users LIMIT 10'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'EXPLAIN SELECT * FROM users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'EXPLAIN SELECT * FROM users'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite '.schema'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite '.schema'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite '.tables'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite '.tables'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'INSERT INTO users VALUES (1, \"test\")'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'INSERT INTO users VALUES (1, \"test\")'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'UPDATE users SET name = \"new\" WHERE id = 1'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'UPDATE users SET name = \"new\" WHERE id = 1'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'DELETE FROM users WHERE id = 1'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'DELETE FROM users WHERE id = 1'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'DROP TABLE users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'DROP TABLE users'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'CREATE TABLE test (id INT)'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'CREATE TABLE test (id INT)'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'ALTER TABLE users ADD COLUMN age INT'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'ALTER TABLE users ADD COLUMN age INT'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'TRUNCATE TABLE users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'TRUNCATE TABLE users'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'BEGIN TRANSACTION'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'BEGIN TRANSACTION'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'COMMIT'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'COMMIT'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'ROLLBACK'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'ROLLBACK'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'ATTACH DATABASE \"other.db\" AS other'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'ATTACH DATABASE \"other.db\" AS other'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'DETACH DATABASE other'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'DETACH DATABASE other'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'VACUUM'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'VACUUM'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'REINDEX'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'REINDEX'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 db.sqlite 'ANALYZE'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite 'ANALYZE'"
+      expect: "deny"
+- name: "test_sqlite3.py: sqlite3 -header -column db.sqlite 'SELECT * FROM users'"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 -header -column db.sqlite 'SELECT * FROM users'"
+      expect: "allow"
+- name: "test_sqlite3.py: sqlite3 db.sqlite"
+  bundles: [universal]
+  steps:
+    - bash: "sqlite3 db.sqlite"
+      expect: "pass"
+- name: "test_universal_commands.py: pwd"
+  bundles: [universal]
+  steps:
+    - bash: "pwd"
+      expect: "allow"
+- name: "test_universal_commands.py: ps aux"
+  bundles: [universal]
+  steps:
+    - bash: "ps aux"
+      expect: "allow"
+- name: "test_universal_commands.py: which python"
+  bundles: [universal]
+  steps:
+    - bash: "which python"
+      expect: "allow"
+- name: "test_universal_commands.py: ls src/"
+  bundles: [universal]
+  steps:
+    - bash: "ls src/"
+      expect: "allow"
+- name: "test_universal_commands.py: cat README.md"
+  bundles: [universal]
+  steps:
+    - bash: "cat README.md"
+      expect: "allow"
+- name: "test_universal_commands.py: head -n 10 file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "head -n 10 file.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: head -n 10 /tmp/secret"
+  bundles: [universal]
+  steps:
+    - bash: "head -n 10 /tmp/secret"
+      expect: "deny"
+- name: "test_universal_commands.py: tail -f log.txt"
+  bundles: [universal]
+  steps:
+    - bash: "tail -f log.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: grep pattern file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "grep pattern file.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: find . -name '*.py'"
+  bundles: [universal]
+  steps:
+    - bash: "find . -name '*.py'"
+      expect: "allow"
+- name: "test_universal_commands.py: tree src/"
+  bundles: [universal]
+  steps:
+    - bash: "tree src/"
+      expect: "allow"
+- name: "test_universal_commands.py: wc -l file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "wc -l file.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: diff file1.txt file2.txt"
+  bundles: [universal]
+  steps:
+    - bash: "diff file1.txt file2.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: sort file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "sort file.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: cut -d',' -f1 data.csv"
+  bundles: [universal]
+  steps:
+    - bash: "cut -d',' -f1 data.csv"
+      expect: "allow"
+- name: "test_universal_commands.py: test -f file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "test -f file.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: [ -f file.txt ]"
+  bundles: [universal]
+  steps:
+    - bash: "[ -f file.txt ]"
+      expect: "allow"
+- name: "test_universal_commands.py: mkdir new-dir"
+  bundles: [universal]
+  steps:
+    - bash: "mkdir new-dir"
+      expect: "allow"
+- name: "test_universal_commands.py: cp file.txt backup.txt"
+  bundles: [universal]
+  steps:
+    - bash: "cp file.txt backup.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: mv old.txt new.txt"
+  bundles: [universal]
+  steps:
+    - bash: "mv old.txt new.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: mv file.txt subdir/"
+  bundles: [universal]
+  steps:
+    - bash: "mv file.txt subdir/"
+      expect: "allow"
+- name: "test_universal_commands.py: touch newfile.txt"
+  bundles: [universal]
+  steps:
+    - bash: "touch newfile.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: trash oldfile.txt"
+  bundles: [universal]
+  steps:
+    - bash: "trash oldfile.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: chmod +x script.sh"
+  bundles: [universal]
+  steps:
+    - bash: "chmod +x script.sh"
+      expect: "allow"
+- name: "test_universal_commands.py: du -sh src/"
+  bundles: [universal]
+  steps:
+    - bash: "du -sh src/"
+      expect: "allow"
+- name: "test_universal_commands.py: ls /etc"
+  bundles: [universal]
+  steps:
+    - bash: "ls /etc"
+      expect: "deny"
+- name: "test_universal_commands.py: cat ../../etc/passwd"
+  bundles: [universal]
+  steps:
+    - bash: "cat ../../etc/passwd"
+      expect: "deny"
+- name: "test_universal_commands.py: chmod 777 /usr/bin/sudo"
+  bundles: [universal]
+  steps:
+    - bash: "chmod 777 /usr/bin/sudo"
+      expect: "deny"
+- name: "test_universal_commands.py: chmod +x ../../../script.sh"
+  bundles: [universal]
+  steps:
+    - bash: "chmod +x ../../../script.sh"
+      expect: "deny"
+- name: "test_universal_commands.py: touch /tmp/newfile"
+  bundles: [universal]
+  steps:
+    - bash: "touch /tmp/newfile"
+      expect: "deny"
+- name: "test_universal_commands.py: trash /home/user/file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "trash /home/user/file.txt"
+      expect: "deny"
+- name: "test_universal_commands.py: ls ~/"
+  bundles: [universal]
+  steps:
+    - bash: "ls ~/"
+      expect: "deny"
+- name: "test_universal_commands.py: ls ~/.ssh/"
+  bundles: [universal]
+  steps:
+    - bash: "ls ~/.ssh/"
+      expect: "deny"
+- name: "test_universal_commands.py: ls -la ~/.ssh/"
+  bundles: [universal]
+  steps:
+    - bash: "ls -la ~/.ssh/"
+      expect: "deny"
+- name: "test_universal_commands.py: ls -la /workspace/subdir"
+  bundles: [universal]
+  steps:
+    - bash: "ls -la /workspace/subdir"
+      expect: "allow"
+- name: "test_universal_commands.py: cat ~/.bashrc"
+  bundles: [universal]
+  steps:
+    - bash: "cat ~/.bashrc"
+      expect: "deny"
+- name: "test_universal_commands.py: rm -rf directory/"
+  bundles: [universal]
+  steps:
+    - bash: "rm -rf directory/"
+      expect: "deny"
+- name: "test_universal_commands.py: sudo apt-get update"
+  bundles: [universal]
+  steps:
+    - bash: "sudo apt-get update"
+      expect: "deny"
+- name: "test_universal_commands.py: echo test > /tmp/file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "echo test > /tmp/file.txt"
+      expect: "deny"
+- name: "test_universal_commands.py: echo test > output.txt"
+  bundles: [universal]
+  steps:
+    - bash: "echo test > output.txt"
+      expect: "allow"
+- name: "test_universal_commands.py: whoami"
+  bundles: [universal]
+  steps:
+    - bash: "whoami"
+      expect: "allow"
+- name: "test_universal_commands.py: df -h"
+  bundles: [universal]
+  steps:
+    - bash: "df -h"
+      expect: "allow"
+- name: "test_universal_commands.py: file ./README.md"
+  bundles: [universal]
+  steps:
+    - bash: "file ./README.md"
+      expect: "allow"
+- name: "test_universal_commands.py: file src/main.py"
+  bundles: [universal]
+  steps:
+    - bash: "file src/main.py"
+      expect: "allow"
+- name: "test_universal_commands.py: file /etc/passwd"
+  bundles: [universal]
+  steps:
+    - bash: "file /etc/passwd"
+      expect: "deny"
+- name: "test_universal_commands.py: file /tmp/test.txt"
+  bundles: [universal]
+  steps:
+    - bash: "file /tmp/test.txt"
+      expect: "deny"
+- name: "test_universal_commands.py: grep -n \"guidance_activations\" policies/demo_flags/*.rego"
+  bundles: [universal]
+  steps:
+    - bash: "grep -n \"guidance_activations\" policies/demo_flags/*.rego"
+      expect: "allow"
+- name: "test_universal_commands.py: grep -r 'TODO' src/"
+  bundles: [universal]
+  steps:
+    - bash: "grep -r 'TODO' src/"
+      expect: "allow"
+- name: "test_universal_commands.py: grep 'pattern' /etc/hosts"
+  bundles: [universal]
+  steps:
+    - bash: "grep 'pattern' /etc/hosts"
+      expect: "deny"
+- name: "test_universal_commands.py: grep 'test' ../other-project/file.txt"
+  bundles: [universal]
+  steps:
+    - bash: "grep 'test' ../other-project/file.txt"
+      expect: "deny"
+- name: "test_universal_commands.py: cat /workspace/src/main.py"
+  bundles: [universal]
+  steps:
+    - bash: "cat /workspace/src/main.py"
+      expect: "allow"
+- name: "test_universal_commands.py: ls /workspace/src/"
+  bundles: [universal]
+  steps:
+    - bash: "ls /workspace/src/"
+      expect: "allow"
+- name: "test_universal_commands.py: grep 'TODO' /workspace/src/main.py"
+  bundles: [universal]
+  steps:
+    - bash: "grep 'TODO' /workspace/src/main.py"
+      expect: "allow"
+- name: "test_universal_commands.py: cat /workspace/src/../lib/file.py"
+  bundles: [universal]
+  steps:
+    - bash: "cat /workspace/src/../lib/file.py"
+      expect: "allow"
+- name: "test_universal_commands.py: cat src/../lib/file.py"
+  bundles: [universal]
+  steps:
+    - bash: "cat src/../lib/file.py"
+      expect: "allow"
+- name: "test_universal_commands.py: cat /etc/passwd"
+  bundles: [universal]
+  steps:
+    - bash: "cat /etc/passwd"
+      expect: "deny"
+- name: "test_universal_commands.py: ls /workspacefoo/bar"
+  bundles: [universal]
+  steps:
+    - bash: "ls /workspacefoo/bar"
+      expect: "deny"
+- name: "test_universal_commands.py: cat /workspace/src/../../etc/passwd"
+  bundles: [universal]
+  steps:
+    - bash: "cat /workspace/src/../../etc/passwd"
+      expect: "deny"
+- name: "test_uv_tool_install.py: uv tool install some-package"
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv tool install some-package"
+      expect: "allow"
+- name: "test_uv_tool_install.py: uv tool install ."
+  bundles: [universal, python_uv]
+  steps:
+    - bash: "uv tool install ."
+      expect: "allow"
+- name: "test_uvx.py: uvx black ."
+  bundles: [universal]
+  steps:
+    - bash: "uvx black ."
+      expect: "allow"
+- name: "test_uvx.py: uvx mypy src/"
+  bundles: [universal]
+  steps:
+    - bash: "uvx mypy src/"
+      expect: "allow"
+- name: "test_uvx.py: uvx bandit -r src/"
+  bundles: [universal]
+  steps:
+    - bash: "uvx bandit -r src/"
+      expect: "allow"
+- name: "test_uvx.py: uvx ruff check ."
+  bundles: [universal]
+  steps:
+    - bash: "uvx ruff check ."
+      expect: "allow"
+- name: "test_uvx.py: uvx some-random-tool"
+  bundles: [universal]
+  steps:
+    - bash: "uvx some-random-tool"
+      expect: "pass"
