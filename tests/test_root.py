@@ -4,15 +4,13 @@ HTTP Integration Tests for the root endpoint
 
 
 def test_root_returns_expected_shape(client):
-    """GET / returns name, version, git_sha, editors, and endpoints"""
+    """GET / returns name, version, git_sha, and endpoints"""
     response = client.get("/")
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "AI Agent Policy Server by DevLeaps"
+    assert data["name"] == "AI Agent Policy Bundle Server by DevLeaps"
     assert "version" in data
     assert "git_sha" in data
-    assert data["editors"] == ["claude-code"]
-    assert "claude-code" in data["endpoints"]
     assert "bundles" in data["endpoints"]
 
 

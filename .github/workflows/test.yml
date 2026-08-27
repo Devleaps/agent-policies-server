@@ -33,6 +33,11 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4.2.2
 
+      - name: Set up OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
