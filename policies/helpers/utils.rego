@@ -1,5 +1,16 @@
 package helpers
 
+# Host allowlist matching - exact host or true subdomain, never substring.
+# "github.com.evil.tld" contains "github.com" but must NOT match it; only
+# "github.com" itself or "*.github.com" (e.g. "docs.github.com") may match.
+is_host_or_subdomain(host, domain) if {
+	host == domain
+}
+
+is_host_or_subdomain(host, domain) if {
+	endswith(host, concat("", [".", domain]))
+}
+
 # Path validation
 # Checks for unsafe paths: absolute paths, home directory, path traversal, /tmp.
 # When a resolved (workspace-relative) form exists in input.resolved_paths, that is

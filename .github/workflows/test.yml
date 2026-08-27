@@ -23,6 +23,9 @@ jobs:
       - name: opa check
         run: opa check policies
 
+      - name: opa test
+        run: opa test policies rego_tests -v
+
   pytest:
     name: Run pytest suite
     runs-on: ubuntu-24.04
