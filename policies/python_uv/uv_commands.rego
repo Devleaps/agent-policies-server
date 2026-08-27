@@ -121,6 +121,28 @@ decisions[decision] if {
 # Allowed uv add flags (don't affect package validation)
 uv_add_safe_flags := ["--dev", "-d", "--optional", "--group"]
 
+# The package name for `uv add`, mirroring the deleted _enrich_input's
+# extraction order exactly: first non-flag positional argument, falling back
+# to the value of --dev/-d/--group/--optional if no positional argument
+# exists (e.g. `uv add --dev pytest-cov` has no positional argument at all -
+# the parser puts pytest-cov in options["--dev"]). Extras are NOT stripped
+# here; that happens once, in the client, before it looks the package up.
+uv_add_raw_package_name := input.parsed.arguments[0] if {
+	count(input.parsed.arguments) > 0
+} else := input.parsed.options["--dev"] if {
+	input.parsed.options["--dev"]
+} else := input.parsed.options["-d"] if {
+	input.parsed.options["-d"]
+} else := input.parsed.options["--group"] if {
+	input.parsed.options["--group"]
+} else := input.parsed.options["--optional"] if {
+	input.parsed.options["--optional"]
+}
+
+# Strip extras, e.g. "uvicorn[standard]" -> "uvicorn" - this is the PyPI
+# lookup key, matching the deleted _enrich_input's base_name computation.
+uv_add_package_name := split(uv_add_raw_package_name, "[")[0]
+
 # Check if all flags are safe for uv add
 uv_add_has_only_safe_flags if {
 	count(input.parsed.flags) == 0
@@ -133,15 +155,32 @@ uv_add_has_only_safe_flags if {
 	}
 }
 
+# uv add, nothing looked up yet - ask the client for PyPI metadata before
+# deciding. See policies/python_pip/pip_install.rego for the full protocol
+# explanation (this bundle mirrors it exactly, keyed by the same
+# extras-stripped package name).
+decisions[decision] if {
+	input.parsed.executable == "uv"
+	input.parsed.subcommand == "add"
+	uv_add_has_only_safe_flags
+	pkg := uv_add_package_name
+	not input.pypi_lookup_attempted[pkg]
+	decision := {
+		"action": "incomplete",
+		"require": [{"kind": "pypi_metadata", "package": pkg}],
+	}
+}
+
 # Check PyPI package age for uv add
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
 	uv_add_has_only_safe_flags
-	input.pypi_metadata.age_days < 365
+	pkg := uv_add_package_name
+	input.pypi_metadata[pkg].age_days < 365
 	decision := {
 		"action": "deny",
-		"reason": sprintf("Package '%v' is only %v days old (first released %v). Policy requires packages to be at least 365 days old for security and stability.", [input.pypi_metadata.name, input.pypi_metadata.age_days, input.pypi_metadata.first_version]),
+		"reason": sprintf("Package '%v' is only %v days old (first released %v). Policy requires packages to be at least 365 days old for security and stability.", [input.pypi_metadata[pkg].name, input.pypi_metadata[pkg].age_days, input.pypi_metadata[pkg].first_version]),
 	}
 }
 
@@ -150,16 +189,20 @@ decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
 	uv_add_has_only_safe_flags
-	input.pypi_metadata.age_days >= 365
+	pkg := uv_add_package_name
+	input.pypi_metadata[pkg].age_days >= 365
 	decision := {"action": "allow"}
 }
 
-# Deny uv add if PyPI metadata is missing (package not found)
+# Deny uv add if the client attempted the PyPI lookup and it genuinely came
+# back empty (package not found), distinct from "not looked up yet".
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "add"
 	uv_add_has_only_safe_flags
-	not input.pypi_metadata
+	pkg := uv_add_package_name
+	input.pypi_lookup_attempted[pkg]
+	not input.pypi_metadata[pkg]
 	decision := {
 		"action": "deny",
 		"reason": "Package not found on PyPI. Cannot verify package age for security policy.",
