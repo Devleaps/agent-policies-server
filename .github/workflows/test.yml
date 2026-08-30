@@ -8,8 +8,8 @@ on:
       - master
 
 jobs:
-  opa-check:
-    name: Verify policies compile under stock OPA
+  test:
+    name: Run test suite (opa check, regal lint, opa test, pytest)
     runs-on: ubuntu-24.04
     steps:
       - name: Check out the repo
@@ -20,23 +20,11 @@ jobs:
         with:
           version: latest
 
-      - name: opa check
-        run: opa check policies
-
-      - name: opa test
-        run: opa test policies rego_tests -v
-
-  pytest:
-    name: Run pytest suite
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4.2.2
-
-      - name: Set up OPA
-        uses: open-policy-agent/setup-opa@v2
-        with:
-          version: latest
+      - name: Set up Regal
+        run: |
+          curl -L -o regal https://github.com/StyraInc/regal/releases/latest/download/regal_Linux_x86_64
+          chmod +x regal
+          sudo mv regal /usr/local/bin/regal
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -45,4 +33,4 @@ jobs:
         run: uv sync
 
       - name: Run tests
-        run: uv run pytest
+        run: ./scripts/test.sh
