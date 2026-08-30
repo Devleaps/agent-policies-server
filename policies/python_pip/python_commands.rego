@@ -12,7 +12,7 @@ is_python_exec if {
 }
 
 # python -m venv - deny
-decisions[decision] if {
+decisions contains decision if {
 	is_python_exec
 	input.parsed.options["-m"] == "venv"
 	decision := {
@@ -22,17 +22,21 @@ decisions[decision] if {
 }
 
 # python -c - deny
-decisions[decision] if {
+decisions contains decision if {
 	is_python_exec
 	input.parsed.options["-c"]
 	decision := {
 		"action": "deny",
-		"reason": "By policy, python -c commands are not allowed. For scripts, place them in a directory and run with python. To test new functionality: add test cases and run with `pytest`. Quick verification scripts are discouraged - use the existing test framework instead.",
+		"reason": concat("", [
+			"By policy, python -c commands are not allowed. For scripts, place them in a directory and run with python. ",
+			"To test new functionality: add test cases and run with `pytest`. ",
+			"Quick verification scripts are discouraged - use the existing test framework instead.",
+		]),
 	}
 }
 
 # python -m pytest - deny (use pytest directly)
-decisions[decision] if {
+decisions contains decision if {
 	is_python_exec
 	input.parsed.options["-m"] == "pytest"
 	decision := {
@@ -42,7 +46,7 @@ decisions[decision] if {
 }
 
 # python test_*.py - deny (use pytest)
-decisions[decision] if {
+decisions contains decision if {
 	is_python_exec
 	count(input.parsed.arguments) > 0
 	startswith(input.parsed.arguments[0], "test_")

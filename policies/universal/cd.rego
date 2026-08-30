@@ -17,7 +17,7 @@ is_upward_navigation(path) if {
 }
 
 # Allow cd with upward navigation (e.g., "..", "../..", "../../..")
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cd"
 	count(input.parsed.arguments) > 0
 	path := input.parsed.arguments[0]
@@ -26,7 +26,7 @@ decisions[decision] if {
 }
 
 # Allow cd with safe relative paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cd"
 	count(input.parsed.arguments) > 0
 	path := input.parsed.arguments[0]
@@ -36,7 +36,7 @@ decisions[decision] if {
 }
 
 # Deny cd with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cd"
 	count(input.parsed.arguments) > 0
 	path := input.parsed.arguments[0]
@@ -44,6 +44,9 @@ decisions[decision] if {
 	not helpers.is_safe_path(path)
 	decision := {
 		"action": "deny",
-		"reason": "By policy, cd with unsafe path. Use workspace-relative paths only (e.g., cd subdir or cd project/src). If you need to navigate upward, use paths like cd .. or cd ../..",
+		"reason": concat("", [
+			"By policy, cd with unsafe path. Use workspace-relative paths only (e.g., cd subdir or cd project/src). ",
+			"If you need to navigate upward, use paths like cd .. or cd ../..",
+		]),
 	}
 }

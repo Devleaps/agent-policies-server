@@ -45,14 +45,14 @@ bracket_args_and_options_safe if {
 }
 
 # Allow cat with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cat"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny cat with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cat"
 	not all_args_and_options_safe
 	decision := {
@@ -62,31 +62,34 @@ decisions[decision] if {
 }
 
 # Allow chmod with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "chmod"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny chmod with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "chmod"
 	not all_args_and_options_safe
 	decision := {
 		"action": "deny",
-		"reason": "chmod: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp). Modifying permissions on system files or sensitive directories is not allowed.",
+		"reason": concat("", [
+			"chmod: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp). ",
+			"Modifying permissions on system files or sensitive directories is not allowed.",
+		]),
 	}
 }
 
 # Allow cp with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cp"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny cp with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cp"
 	not all_args_and_options_safe
 	decision := {
@@ -96,14 +99,14 @@ decisions[decision] if {
 }
 
 # Allow cut with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cut"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny cut with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "cut"
 	not all_args_and_options_safe
 	decision := {
@@ -113,14 +116,14 @@ decisions[decision] if {
 }
 
 # Allow diff with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "diff"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny diff with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "diff"
 	not all_args_and_options_safe
 	decision := {
@@ -130,14 +133,14 @@ decisions[decision] if {
 }
 
 # Allow du with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "du"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny du with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "du"
 	not all_args_and_options_safe
 	decision := {
@@ -147,14 +150,14 @@ decisions[decision] if {
 }
 
 # Allow ls with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "ls"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny ls with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "ls"
 	not all_args_and_options_safe
 	decision := {
@@ -164,14 +167,14 @@ decisions[decision] if {
 }
 
 # Allow mkdir with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "mkdir"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny mkdir with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "mkdir"
 	not all_args_and_options_safe
 	decision := {
@@ -181,14 +184,14 @@ decisions[decision] if {
 }
 
 # Allow sed with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sed"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny sed with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sed"
 	not all_args_and_options_safe
 	decision := {
@@ -198,14 +201,14 @@ decisions[decision] if {
 }
 
 # Allow sort with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sort"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny sort with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sort"
 	not all_args_and_options_safe
 	decision := {
@@ -215,14 +218,14 @@ decisions[decision] if {
 }
 
 # Allow tail with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "tail"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny tail with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "tail"
 	not all_args_and_options_safe
 	decision := {
@@ -232,14 +235,14 @@ decisions[decision] if {
 }
 
 # Allow head with safe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "head"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
 # Deny head with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "head"
 	not all_args_and_options_safe
 	decision := {
@@ -249,13 +252,13 @@ decisions[decision] if {
 }
 
 # grep - allow with safe paths, deny with unsafe paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "grep"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "grep"
 	not all_args_and_options_safe
 	decision := {
@@ -264,82 +267,82 @@ decisions[decision] if {
 	}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "lsof"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pkill"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "ps"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pwd"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "echo"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "nslookup"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pytest"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "tflint"
 	decision := {"action": "allow"}
 }
 
 # opa test - allow policy testing
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "opa"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "test"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "which"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "whoami"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "df"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "true"
 	decision := {"action": "allow"}
 }
 
 # mv - move/rename files (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "mv"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "mv"
 	not all_args_and_options_safe
 	decision := {
@@ -349,13 +352,13 @@ decisions[decision] if {
 }
 
 # rmdir - remove empty directories (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "rmdir"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "rmdir"
 	not all_args_and_options_safe
 	decision := {
@@ -365,13 +368,13 @@ decisions[decision] if {
 }
 
 # touch - create/update files (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "touch"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "touch"
 	not all_args_and_options_safe
 	decision := {
@@ -381,13 +384,13 @@ decisions[decision] if {
 }
 
 # trash - macOS trash command (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "trash"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "trash"
 	not all_args_and_options_safe
 	decision := {
@@ -397,13 +400,13 @@ decisions[decision] if {
 }
 
 # wc - word count (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "wc"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "wc"
 	not all_args_and_options_safe
 	decision := {
@@ -413,13 +416,13 @@ decisions[decision] if {
 }
 
 # test - shell built-in for file/string tests (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "test"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "test"
 	not all_args_and_options_safe
 	decision := {
@@ -429,13 +432,13 @@ decisions[decision] if {
 }
 
 # [ - alias for test command (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "["
 	bracket_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "["
 	not bracket_args_and_options_safe
 	decision := {
@@ -445,13 +448,13 @@ decisions[decision] if {
 }
 
 # tree - visualize directory structure (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "tree"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "tree"
 	not all_args_and_options_safe
 	decision := {
@@ -461,13 +464,13 @@ decisions[decision] if {
 }
 
 # file - identify file type (safe paths required)
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "file"
 	all_args_and_options_safe
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "file"
 	not all_args_and_options_safe
 	decision := {
@@ -477,10 +480,13 @@ decisions[decision] if {
 }
 
 # rm - always denied, use trash instead
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "rm"
 	decision := {
 		"action": "deny",
-		"reason": "The rm command is not allowed. Always use trash instead. The macOS trash command safely moves files to Trash.",
+		"reason": concat("", [
+			"The rm command is not allowed. Always use trash instead. ",
+			"The macOS trash command safely moves files to Trash.",
+		]),
 	}
 }

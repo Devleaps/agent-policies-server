@@ -1,3 +1,6 @@
+# METADATA
+# scope: package
+# entrypoint: true
 package python_pip
 
 # Pip install policies with PyPI age checking.
@@ -11,35 +14,35 @@ package python_pip
 # rule shape covers every measurement kind, not just this one).
 
 # pip audit - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "audit"
 	decision := {"action": "allow"}
 }
 
 # pip freeze - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "freeze"
 	decision := {"action": "allow"}
 }
 
 # pip show - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "show"
 	decision := {"action": "allow"}
 }
 
 # pip uninstall - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "uninstall"
 	decision := {"action": "allow"}
 }
 
 # pip install -r requirements.txt - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
 	input.parsed.options["-r"]
@@ -49,7 +52,7 @@ decisions[decision] if {
 
 # pip install, single package, nothing looked up yet - ask the client for
 # PyPI metadata before deciding.
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
 	not input.parsed.options["-r"]
@@ -62,7 +65,7 @@ decisions[decision] if {
 }
 
 # pip install with PyPI age check - allow if package >= 365 days old
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
 	not input.parsed.options["-r"]
@@ -72,7 +75,7 @@ decisions[decision] if {
 }
 
 # pip install with PyPI age check - deny if package < 365 days old
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
 	not input.parsed.options["-r"]
@@ -80,14 +83,20 @@ decisions[decision] if {
 	input.pypi_metadata[pkg].age_days < 365
 	decision := {
 		"action": "deny",
-		"reason": sprintf("Package '%v' is only %v days old (first released %v). Policy requires packages to be at least 365 days old for security and stability.", [input.pypi_metadata[pkg].name, input.pypi_metadata[pkg].age_days, input.pypi_metadata[pkg].first_version]),
+		"reason": sprintf(
+			concat("", [
+				"Package '%v' is only %v days old (first released %v). ",
+				"Policy requires packages to be at least 365 days old for security and stability.",
+			]),
+			[input.pypi_metadata[pkg].name, input.pypi_metadata[pkg].age_days, input.pypi_metadata[pkg].first_version],
+		),
 	}
 }
 
 # pip install - deny if the client attempted the PyPI lookup and it
 # genuinely came back empty (package not found), as opposed to simply not
 # having been looked up yet (that case is the "incomplete" rule above).
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
 	not input.parsed.options["-r"]

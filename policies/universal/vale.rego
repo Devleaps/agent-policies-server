@@ -1,7 +1,7 @@
 package universal
 
-import rego.v1
 import data.helpers
+import rego.v1
 
 # Vale - A markup-aware linter for prose
 # https://vale.sh/docs/cli
@@ -15,7 +15,7 @@ import data.helpers
 # Vale never modifies source files - it's a pure linter
 
 # Allow all vale commands with workspace-relative paths
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "vale"
 
 	# Check all arguments are workspace-relative (if any)
@@ -27,9 +27,8 @@ decisions[decision] if {
 }
 
 # Deny vale with absolute paths or path traversal
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "vale"
-	count(input.parsed.arguments) > 0
 	some arg in input.parsed.arguments
 	not helpers.is_safe_path(arg)
 

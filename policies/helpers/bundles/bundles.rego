@@ -4,5 +4,5 @@ package helpers.bundles
 # Usage: import data.helpers.bundles
 #        bundles.is_active("python_uv")
 is_active(bundle_name) if {
-    bundle_name in input.event.enabled_bundles
+	bundle_name in input.event.enabled_bundles
 }

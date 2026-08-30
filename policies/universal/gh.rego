@@ -22,7 +22,7 @@ gh_run_read_subcommands := ["view", "list", "watch"]
 gh_workflow_read_subcommands := ["view", "list"]
 
 # gh pr - read-only operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "pr"
 	count(input.parsed.arguments) > 0
@@ -31,7 +31,7 @@ decisions[decision] if {
 }
 
 # gh issue - read-only operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "issue"
 	count(input.parsed.arguments) > 0
@@ -40,7 +40,7 @@ decisions[decision] if {
 }
 
 # gh repo - read-only operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "repo"
 	count(input.parsed.arguments) > 0
@@ -49,7 +49,7 @@ decisions[decision] if {
 }
 
 # gh run - read-only operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
@@ -58,7 +58,7 @@ decisions[decision] if {
 }
 
 # gh workflow - read-only operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "workflow"
 	count(input.parsed.arguments) > 0
@@ -67,7 +67,7 @@ decisions[decision] if {
 }
 
 # gh auth status - read-only
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "auth"
 	count(input.parsed.arguments) > 0
@@ -76,23 +76,24 @@ decisions[decision] if {
 }
 
 # gh api - allow GET requests only
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "api"
+
 	# Default method is GET, so allow if no method specified or method is GET
 	not input.parsed.options["-X"]
 	not input.parsed.options["--method"]
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "api"
 	input.parsed.options["-X"] == "GET"
 	decision := {"action": "allow"}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "api"
 	input.parsed.options["--method"] == "GET"
@@ -100,10 +101,9 @@ decisions[decision] if {
 }
 
 # gh api - deny non-GET requests
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "api"
-	input.parsed.options["-X"]
 	input.parsed.options["-X"] != "GET"
 	decision := {
 		"action": "deny",
@@ -111,10 +111,9 @@ decisions[decision] if {
 	}
 }
 
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "gh"
 	input.parsed.subcommand == "api"
-	input.parsed.options["--method"]
 	input.parsed.options["--method"] != "GET"
 	decision := {
 		"action": "deny",

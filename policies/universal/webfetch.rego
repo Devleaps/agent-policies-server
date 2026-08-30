@@ -36,10 +36,10 @@ webfetch_allowed_domains := [
 	"www.kimi.com",
 ]
 
-decisions[decision] if {
+decisions contains decision if {
 	input.event.tool_name == "WebFetch"
 	host := input.event.parameters.host
+	decision := {"action": "allow"}
 	some domain in webfetch_allowed_domains
 	helpers.is_host_or_subdomain(host, domain)
-	decision := {"action": "allow"}
 }

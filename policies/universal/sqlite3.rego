@@ -9,7 +9,10 @@ command_upper := upper(input.event.command)
 
 # Check for write operations using word boundaries
 has_write_operation if {
-	write_ops := ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "REPLACE", "ATTACH", "DETACH", "TRUNCATE", "BEGIN", "COMMIT", "ROLLBACK", "VACUUM", "REINDEX", "ANALYZE"]
+	write_ops := [
+		"INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "REPLACE", "ATTACH",
+		"DETACH", "TRUNCATE", "BEGIN", "COMMIT", "ROLLBACK", "VACUUM", "REINDEX", "ANALYZE",
+	]
 	some op in write_ops
 
 	# Use regex with word boundaries - pattern must match entire string in Rego
@@ -38,17 +41,21 @@ has_dot_command if {
 }
 
 # Deny write operations
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sqlite3"
 	has_write_operation
 	decision := {
 		"action": "deny",
-		"reason": "By policy, sqlite3 write operations (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, REPLACE, ATTACH, DETACH, TRUNCATE, BEGIN, COMMIT, ROLLBACK, VACUUM, REINDEX, ANALYZE) are not allowed. Only SELECT queries are permitted for database read operations.",
+		"reason": concat("", [
+			"By policy, sqlite3 write operations (INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, REPLACE, ",
+			"ATTACH, DETACH, TRUNCATE, BEGIN, COMMIT, ROLLBACK, VACUUM, REINDEX, ANALYZE) are not allowed. ",
+			"Only SELECT queries are permitted for database read operations.",
+		]),
 	}
 }
 
 # Allow SELECT queries
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sqlite3"
 	not has_write_operation
 	has_select
@@ -56,7 +63,7 @@ decisions[decision] if {
 }
 
 # Allow EXPLAIN queries
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sqlite3"
 	not has_write_operation
 	has_explain
@@ -64,7 +71,7 @@ decisions[decision] if {
 }
 
 # Allow dot commands
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "sqlite3"
 	not has_write_operation
 	has_dot_command
