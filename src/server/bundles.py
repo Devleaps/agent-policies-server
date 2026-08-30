@@ -13,13 +13,18 @@ instead), so this module composes exactly one bundle per request, containing
 `opa run` config therefore always has exactly one `bundles.<name>` entry,
 never several that could collide.
 
-Composed bundles are content-addressed and cached under COMPOSED_DIR so
-repeat requests for the same bundle set are free.
+Composed bundles are cached under COMPOSED_DIR, keyed by both the requested
+bundle-name set and a hash of the actual .rego source content under each
+policy directory - so repeat requests for the same bundle set are free, and
+editing a policy file invalidates the cache automatically rather than
+requiring a manual restart or cache-clear.
 """
 
 import hashlib
 import logging
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import List
 
@@ -43,11 +48,28 @@ KNOWN_BUNDLES = {"universal", "python_uv", "python_pip", "demo_bundles", "demo_f
 HELPERS_DIR = POLICIES_DIR / "helpers"
 
 
-def _cache_key(names: List[str]) -> str:
-    """Content-address a bundle set by its sorted, deduplicated name list."""
+def _hash_rego_sources(build_paths: List[str]) -> str:
+    """Hash the content of every .rego file under each build path, in a
+    stable (sorted) order, so a cache key changes whenever policy source
+    actually changes - not just when the requested bundle-name set does.
+    """
+    hasher = hashlib.sha256()
+    for build_path in build_paths:
+        for rego_file in sorted(Path(build_path).rglob("*.rego")):
+            hasher.update(str(rego_file).encode())
+            hasher.update(rego_file.read_bytes())
+    return hasher.hexdigest()[:16]
+
+
+def _cache_key(names: List[str], build_paths: List[str]) -> str:
+    """Content-address a bundle set by its sorted, deduplicated name list
+    *and* the actual .rego source content under each path - a name-only key
+    would keep serving a stale cached artifact forever after a policy edit,
+    since the name set doesn't change when a file's contents do.
+    """
     canonical = ",".join(sorted(set(names)))
-    digest = hashlib.sha256(canonical.encode()).hexdigest()[:16]
-    return f"{canonical.replace(',', '+')}-{digest}"
+    content_digest = _hash_rego_sources(build_paths)
+    return f"{canonical.replace(',', '+')}-{content_digest}"
 
 
 @router.get("/composed")
@@ -62,14 +84,23 @@ async def get_composed_bundle(
     if unknown:
         raise HTTPException(status_code=404, detail=f"Unknown bundle(s): {unknown}")
 
-    key = _cache_key(requested)
+    build_paths = [str(HELPERS_DIR)] + [str(POLICIES_DIR / n) for n in sorted(set(requested))]
+    key = _cache_key(requested, build_paths)
     output_path = COMPOSED_DIR / f"{key}.tar.gz"
 
     if not output_path.is_file():
         COMPOSED_DIR.mkdir(parents=True, exist_ok=True)
-        build_paths = [str(HELPERS_DIR)] + [str(POLICIES_DIR / n) for n in sorted(set(requested))]
 
-        cmd = ["opa", "build", "-o", str(output_path)]
+        # Build to a temp file in the same directory and atomically publish
+        # via os.replace on success, so a concurrent request for the same
+        # key can never observe a partially-written tarball through the
+        # is_file() check above - it either sees nothing (and builds its
+        # own, redundantly but safely) or the complete final file.
+        fd, tmp_path_str = tempfile.mkstemp(dir=COMPOSED_DIR, suffix=".tar.gz.tmp")
+        os.close(fd)
+        tmp_path = Path(tmp_path_str)
+
+        cmd = ["opa", "build", "-o", str(tmp_path)]
         for p in build_paths:
             cmd += ["-b", p]
 
@@ -77,11 +108,12 @@ async def get_composed_bundle(
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             logger.error(f"opa build failed for {requested}: {result.stderr}")
-            if output_path.exists():
-                output_path.unlink()
-            raise HTTPException(
-                status_code=500, detail=f"Failed to compose bundle: {result.stderr}"
-            )
+            tmp_path.unlink(missing_ok=True)
+            # Full stderr (absolute server paths, Rego internals) is logged
+            # above but never sent to the client - only a generic message.
+            raise HTTPException(status_code=500, detail="Failed to compose bundle")
+
+        os.replace(tmp_path, output_path)
 
     return FileResponse(
         output_path,
