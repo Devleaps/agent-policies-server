@@ -33,9 +33,10 @@ merged with whichever policy bundles were asked for:
 GET /bundles/composed?names=universal,python_uv
 ```
 
-Composed bundles are content-addressed and cached under `bundles/composed/`,
-so repeat requests for the same bundle set are free after the first `opa
-build`.
+Composed bundles are cached under `bundles/composed/`, keyed by both the
+requested bundle-name set and a hash of the actual `.rego` source content, so
+repeat requests for the same bundle set are free after the first `opa build`,
+and editing a policy file invalidates the cache automatically.
 
 ### Project structure
 
@@ -51,16 +52,20 @@ policies/
 ├── helpers/                # Shared dependency (path safety, flag helpers)
 ├── universal/               # Always-enforced bundle
 │   ├── dangerous_commands.rego
+│   ├── dangerous_commands_test.rego
 │   ├── file_operations.rego
 │   ├── git.rego
 │   ├── webfetch.rego
+│   ├── webfetch_test.rego
 │   └── ...
 ├── python_pip/              # Opt-in: pip-based projects
 ├── python_uv/                # Opt-in: uv-based projects
 └── demo_bundles/, demo_flags/  # Reference examples
 
-rego_tests/                # Native `opa test` coverage (kept separate from
-                            # policies/ so test files never ship in a bundle)
+# `*_test.rego` files live alongside the policy they test (same package,
+# so tests can call `decisions[...]`/`guidances[...]` directly and use
+# `with input as ...`). Accepted overhead: `opa build -b policies/<name>`
+# ships these test files inside every served bundle.
 
 tests/
 ├── corpus/extracted_bash.yaml  # Declarative equivalence corpus consumed by
@@ -77,7 +82,7 @@ tests/
 package universal
 
 # Deny dangerous commands
-decisions[decision] if {
+decisions contains decision if {
     input.parsed.executable == "sudo"
     decision := {
         "action": "deny",
@@ -86,7 +91,7 @@ decisions[decision] if {
 }
 
 # Allow safe commands
-decisions[decision] if {
+decisions contains decision if {
     input.parsed.executable == "pwd"
     decision := {"action": "allow"}
 }
@@ -119,10 +124,12 @@ Rego policies receive this input (built client-side by
 ## Testing
 
 ```bash
-uv run pytest                  # Bundle server tests
-opa check policies              # Verify policies compile under stock OPA
-opa test policies rego_tests -v # Run native Rego test coverage
+uv run pytest         # Bundle server tests
+opa check policies    # Verify policies compile under stock OPA
+opa test policies -v  # Run native Rego test coverage (test files live alongside policies)
 ```
+
+Or just run `./scripts/test.sh`, which runs all of the above plus `regal lint`.
 
 ## Policy bundles
 
