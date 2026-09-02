@@ -7,6 +7,8 @@ import subprocess
 
 import pytest
 
+from src.server.bundles import KNOWN_BUNDLES
+
 
 @pytest.fixture
 def scratch_cache(tmp_path, monkeypatch):
@@ -15,6 +17,12 @@ def scratch_cache(tmp_path, monkeypatch):
 
     monkeypatch.setattr(bundles_module, "COMPOSED_DIR", tmp_path)
     return tmp_path
+
+
+def test_list_known_bundles_returns_the_allowlist(client):
+    response = client.get("/bundles")
+    assert response.status_code == 200
+    assert response.json() == {"bundles": sorted(KNOWN_BUNDLES)}
 
 
 def test_missing_names_param_is_rejected(client):

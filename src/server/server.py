@@ -25,7 +25,8 @@ async def root():
         "git_sha": BUILD_GIT_SHA,
         "endpoints": {
             "bundles": [
-                f"/bundles/composed?names=<comma-separated subset of {sorted(KNOWN_BUNDLES)}>"
+                "/bundles",
+                f"/bundles/composed?names=<comma-separated subset of {sorted(KNOWN_BUNDLES)}>",
             ],
         },
     }

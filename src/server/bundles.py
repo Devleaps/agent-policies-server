@@ -72,6 +72,16 @@ def _cache_key(names: List[str], build_paths: List[str]) -> str:
     return f"{canonical.replace(',', '+')}-{content_digest}"
 
 
+@router.get("")
+async def list_known_bundles() -> dict:
+    """The allowlist itself, so clients (agent-policies-adapter's daemon.js)
+    can validate a configured bundle name locally before ever hitting
+    /composed, instead of hardcoding a second copy of KNOWN_BUNDLES that
+    silently drifts out of sync with this one.
+    """
+    return {"bundles": sorted(KNOWN_BUNDLES)}
+
+
 @router.get("/composed")
 async def get_composed_bundle(
     names: str = Query(..., description="Comma-separated bundle names, e.g. 'universal,python_uv'"),

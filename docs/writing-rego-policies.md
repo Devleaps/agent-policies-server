@@ -1,8 +1,18 @@
 # Writing Rego policies for AI agent policy server
 
+> **Stale as of the stock-OPA migration**: this guide predates the move away
+> from regopy to stock Open Policy Agent. The bundle structure, testing, and
+> policy-organization guidance below is still broadly accurate, but every
+> `decisions[decision] if {...}` / `guidances[g] if {...}` code sample uses
+> the old partial-set syntax - stock OPA requires
+> `decisions contains decision if {...}` (see any file under `policies/` for
+> current examples). Any note about "not supported in regopy" no longer
+> applies; check `opa test`/`regal lint` instead of this doc for what is
+> actually enforced.
+
 ## Overview
 
-This guide explains how to write Rego policies for the AI Agent Policy Server using regopy (embedded Rego interpreter).
+This guide explains how to write Rego policies for the AI Agent Policy Server. Policies are evaluated by a stock `opa run --server` daemon running locally on each client machine (see agent-policies-adapter), not embedded server-side.
 
 ## Basic structure
 
