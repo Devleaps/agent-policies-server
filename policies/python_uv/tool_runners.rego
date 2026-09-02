@@ -3,7 +3,7 @@ package python_uv
 # Tool runner policies - force usage via uv run
 
 # Deny direct black usage
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "black"
 	decision := {
 		"action": "deny",
@@ -12,7 +12,7 @@ decisions[decision] if {
 }
 
 # Deny direct ruff usage
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "ruff"
 	decision := {
 		"action": "deny",
@@ -21,7 +21,7 @@ decisions[decision] if {
 }
 
 # Deny direct mypy usage
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "mypy"
 	decision := {
 		"action": "deny",
@@ -30,7 +30,7 @@ decisions[decision] if {
 }
 
 # Deny direct pytest usage
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pytest"
 	decision := {
 		"action": "deny",

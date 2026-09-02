@@ -1,0 +1,14 @@
+project:
+  rego-version: 1
+
+rules:
+  testing:
+    # Test files deliberately share the same package as the policy they
+    # test (not a separate `_test` package), so they can call `decisions[...]`
+    # /`guidances[...]` directly and use `with input as ...` to override input
+    # for one evaluation. Test files live alongside the policies they test
+    # under policies/ - accepted overhead is that `opa build -b policies/<name>`
+    # ships _test.rego files inside every served bundle (opa build has no
+    # built-in test-file exclusion).
+    test-outside-test-package:
+      level: ignore

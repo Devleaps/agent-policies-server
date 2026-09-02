@@ -1,10 +1,11 @@
 FROM python:3.12-slim
 
+ARG OPA_VERSION=1.12.3
+ADD https://openpolicyagent.org/downloads/v${OPA_VERSION}/opa_linux_amd64_static /usr/local/bin/opa
+RUN chmod +x /usr/local/bin/opa
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libatomic1 \
     git \
-    cmake \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir uv

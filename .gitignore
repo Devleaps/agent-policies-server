@@ -15,6 +15,7 @@ env/
 dist/
 build/
 *.egg-info/
+/bundles/
 
 # IDE
 .vscode/

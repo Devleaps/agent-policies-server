@@ -1,14 +1,18 @@
 # Agent Policies Server
 
-This repository serves both as a reference implementation and also the public Devleaps policy server source code. This repository is used alongside clients to enable automated decisionmaking and guidance for AI assistants in software development, like Claude Code, Cursor, GitHub Copilot and Gemini CLI.
+This repository is the public Devleaps policy bundle server: it builds and
+serves [OPA](https://www.openpolicyagent.org/) bundles from the Rego policies
+in `policies/`. Evaluation happens locally on each developer's machine, in a
+stock `opa run --server` daemon managed by the Claude Code plugin - this
+server's only job is composing and serving bundles, not evaluating policy
+decisions itself.
 
-Client Plugins:
+Client Plugin:
 - https://github.com/Devleaps/agent-policies-claude-code
-- https://github.com/Devleaps/agent-policies-gemini-cli
 
 ## Quick start
 
-Start the policy server:
+Start the bundle server:
 ```bash
 uv run python -m src.main
 ```
@@ -17,50 +21,57 @@ The server runs on `http://localhost:8338`.
 
 ## Architecture
 
-### Rego-based policy system
+### Bundle composition
 
-All policies are written in **Rego** and evaluated using regopy, an embedded Rego interpreter:
+`helpers` (path-safety and flag-comparison utilities imported by several
+bundles) is a shared Rego dependency. OPA has no supported way to load two
+independently-built bundles that each embed a copy of the same package, so
+this server composes exactly one bundle per request, containing `helpers`
+merged with whichever policy bundles were asked for:
 
-- **Policies**: Located in `policies/` directory, organized by bundle
-- **Parser**: Python-based bash command parser (bashlex)
-- **Evaluator**: Rego policy evaluator (regopy)
-- **Bundles**: Universal (always enforced), python-pip, python-uv (opt-in)
+```
+GET /bundles/composed?names=universal,python_uv
+```
+
+Composed bundles are cached under `bundles/composed/`, keyed by both the
+requested bundle-name set and a hash of the actual `.rego` source content, so
+repeat requests for the same bundle set are free after the first `opa build`,
+and editing a policy file invalidates the cache automatically.
 
 ### Project structure
 
 ```
 src/
-├── bundles_impl.py            # Bundle evaluation functions
-├── bundles/                   # Guidance implementations only
-│   ├── python_uv/guidance.py
-│   └── universal/guidance/
-├── core/                      # Parser and evaluator
-│   ├── command_parser.py      # Bashlex parser
-│   └── rego_integration.py    # Rego evaluator
-├── main.py                    # Server entry point
-└── utils.py                   # Helper utilities
+├── config.py             # host/port settings
+├── main.py                # uvicorn entry point
+└── server/
+    ├── server.py          # FastAPI app, root endpoint
+    └── bundles.py          # GET /bundles/composed
 
 policies/
-├── helpers/
-│   └── utils.rego             # Reusable Rego helpers
-├── universal/                 # Universal bundle (always enforced)
+├── helpers/                # Shared dependency (path safety, flag helpers)
+├── universal/               # Always-enforced bundle
 │   ├── dangerous_commands.rego
+│   ├── dangerous_commands_test.rego
 │   ├── file_operations.rego
 │   ├── git.rego
-│   ├── network.rego
-│   ├── cloud.rego
+│   ├── webfetch.rego
+│   ├── webfetch_test.rego
 │   └── ...
-├── python_pip/                # Pip bundle (opt-in)
-│   ├── pip_install.rego
-│   └── tool_runners.rego
-└── python_uv/                 # UV bundle (opt-in)
-    ├── uv_commands.rego
-    └── tool_runners.rego
+├── python_pip/              # Opt-in: pip-based projects
+├── python_uv/                # Opt-in: uv-based projects
+└── demo_bundles/, demo_flags/  # Reference examples
+
+# `*_test.rego` files live alongside the policy they test (same package,
+# so tests can call `decisions[...]`/`guidances[...]` directly and use
+# `with input as ...`). Accepted overhead: `opa build -b policies/<name>`
+# ships these test files inside every served bundle.
 
 tests/
-├── core/                      # Parser tests
-├── bundles/                   # Policy integration tests
-└── test_rego_helpers.py       # Helper function tests
+├── corpus/extracted_bash.yaml  # Declarative equivalence corpus consumed by
+│                                 agent-policies-claude-code's run-corpus.js
+├── test_bundles.py           # Bundle composition/caching/serving
+└── test_root.py
 ```
 
 ## Policy examples
@@ -71,7 +82,7 @@ tests/
 package universal
 
 # Deny dangerous commands
-decisions[decision] if {
+decisions contains decision if {
     input.parsed.executable == "sudo"
     decision := {
         "action": "deny",
@@ -80,7 +91,7 @@ decisions[decision] if {
 }
 
 # Allow safe commands
-decisions[decision] if {
+decisions contains decision if {
     input.parsed.executable == "pwd"
     decision := {"action": "allow"}
 }
@@ -88,14 +99,16 @@ decisions[decision] if {
 
 ### Input document structure
 
-Rego policies receive this input:
+Rego policies receive this input (built client-side by
+`agent-policies-claude-code`'s `parser.js`/`paths.js`):
 
 ```json
 {
   "event": {
     "command": "git commit -m 'message'",
     "tool_name": "Bash",
-    "session_id": "abc123"
+    "workspace_root": "/workspace",
+    "enabled_bundles": ["universal"]
   },
   "parsed": {
     "executable": "git",
@@ -103,26 +116,31 @@ Rego policies receive this input:
     "arguments": [],
     "flags": [],
     "options": {"-m": "message"}
-  }
+  },
+  "resolved_paths": {}
 }
 ```
 
 ## Testing
 
 ```bash
-pytest                       # Run all tests
-pytest tests/bundles/        # Run bundle tests only
-pytest -k "test_git"         # Run specific tests
+uv run pytest         # Bundle server tests
+opa check policies    # Verify policies compile under stock OPA
+opa test policies -v  # Run native Rego test coverage (test files live alongside policies)
 ```
+
+Or just run `./scripts/test.sh`, which runs all of the above plus `regal lint`.
 
 ## Policy bundles
 
-- **Universal**: File operations, git, dangerous commands, cloud CLIs
-- **Python-pip**: Pip install whitelist, Python quality tools
+- **Universal**: File operations, git, dangerous commands, cloud CLIs, WebFetch allowlist
+- **Python-pip**: Pip install allowlist, Python quality tools
 - **Python-uv**: UV package manager, Python quality tools
 
-Clients enable bundles via `--bundle` flags when connecting to the server.
+Clients request bundles via `GET /bundles/composed?names=<comma-separated bundle names>`.
 
 ## Documentation
 
-- `docs/writing-rego-policies.md` - Complete guide to writing Rego policies
+- `docs/writing-rego-policies.md` - Guide to writing Rego policies (predates
+  the move to stock OPA evaluation; the Rego syntax guidance still applies,
+  but references to `regopy`-specific behavior are stale)

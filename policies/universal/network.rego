@@ -47,14 +47,14 @@ has_allowed_domain if has_allowed_domain_arg
 has_allowed_domain if has_allowed_domain_option
 
 # curl with localhost - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "curl"
 	has_localhost_url
 	decision := {"action": "allow"}
 }
 
 # curl with allowed external domain - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "curl"
 	not has_localhost_url
 	has_allowed_domain
@@ -62,7 +62,7 @@ decisions[decision] if {
 }
 
 # curl with disallowed URL - deny
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "curl"
 	not has_localhost_url
 	not has_allowed_domain

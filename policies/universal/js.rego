@@ -6,14 +6,14 @@ package universal
 # - pnpm: Allow common development commands
 
 # npm test - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "npm"
 	input.parsed.subcommand == "test"
 	decision := {"action": "allow"}
 }
 
 # npm run test - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "npm"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
@@ -22,7 +22,7 @@ decisions[decision] if {
 }
 
 # npm run build - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "npm"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
@@ -31,7 +31,7 @@ decisions[decision] if {
 }
 
 # yarn test - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "test"
@@ -39,7 +39,7 @@ decisions[decision] if {
 }
 
 # yarn start - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "start"
@@ -47,7 +47,7 @@ decisions[decision] if {
 }
 
 # yarn build - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "build"
@@ -55,7 +55,7 @@ decisions[decision] if {
 }
 
 # yarn remove - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "remove"
@@ -63,7 +63,7 @@ decisions[decision] if {
 }
 
 # yarn why - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "yarn"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "why"
@@ -71,7 +71,7 @@ decisions[decision] if {
 }
 
 # pnpm build - allow
-decisions[decision] if {
+decisions contains decision if {
 	input.parsed.executable == "pnpm"
 	count(input.parsed.arguments) > 0
 	input.parsed.arguments[0] == "build"
