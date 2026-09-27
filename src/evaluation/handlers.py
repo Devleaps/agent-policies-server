@@ -137,10 +137,10 @@ def evaluate_guidance(
 
     Bundles to evaluate are read from event.enabled_bundles (defaults to ['universal']).
 
-    Yields both PolicyDecision objects (for flag-setting rules) and PolicyGuidance objects
-    (for guidance checks). The executor processes flags from PolicyDecision objects.
+    Yields both PolicyDecision objects (from file-edit `decisions` rules) and
+    PolicyGuidance objects (from `guidances` rules).
     """
-    # Evaluate file-edit decisions (e.g., flag-setting rules like invalidating ran_tests)
+    # Evaluate file-edit decisions
     file_edit_decisions = rego_evaluator.evaluate_file_edit_decisions(
         event, bundles=event.enabled_bundles
     )
