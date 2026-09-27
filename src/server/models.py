@@ -44,7 +44,6 @@ class PolicyDecision:
 
     action: PolicyAction
     reason: Optional[str] = None
-    flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
     @staticmethod
     def deny(reason: str) -> "PolicyDecision":
@@ -68,7 +67,6 @@ class PolicyGuidance:
 
     content: str
     metadata: Optional[Dict[str, Any]] = None
-    flags: Optional[List[Dict[str, Any]]] = None  # Session flags to set/update
 
 
 class PatchLine(BaseModel):

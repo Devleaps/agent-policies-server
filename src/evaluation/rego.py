@@ -24,7 +24,6 @@ from src.server.models import (
     PolicyGuidance,
     PolicyAction,
 )
-from src.server.session import get_all_flags
 
 from src.evaluation.parser import ParsedCommand
 
@@ -138,8 +137,8 @@ class RegoEvaluator:
     ) -> List[PolicyDecision]:
         """Evaluate decisions rules for a file edit event.
 
-        This allows Rego policies to set session flags in response to file edits
-        (e.g., invalidating a 'ran_tests' flag when a .py file is edited).
+        Lets Rego `decisions` rules react to file edits (by file_path or
+        structured_patch) in addition to the `guidances` rules.
 
         Args:
             event: The file edit event from the client
@@ -289,7 +288,6 @@ class RegoEvaluator:
             },
             "parsed": parsed_dict,
             "resolved_paths": resolved_paths,
-            "session_flags": get_all_flags(event.session_id),
         }
 
         return input_doc
@@ -325,7 +323,6 @@ class RegoEvaluator:
                 }
                 for patch in (event.structured_patch or [])
             ],
-            "session_flags": get_all_flags(event.session_id),
         }
 
         return input_doc
@@ -597,7 +594,6 @@ class RegoEvaluator:
 
                         action_str = decision_obj.get("action", "").lower()
                         reason = decision_obj.get("reason")
-                        flags = decision_obj.get("flags")
 
                         action_map = {
                             "allow": PolicyAction.ALLOW,
@@ -607,18 +603,12 @@ class RegoEvaluator:
 
                         action = action_map.get(action_str)
                         if not action:
-                            if flags:
-                                # Flag-only decisions (no action) default to ALLOW
-                                action = PolicyAction.ALLOW
-                            else:
-                                logger.warning(
-                                    f"Unknown action '{action_str}' in decision, skipping"
-                                )
-                                continue
+                            logger.warning(
+                                f"Unknown action '{action_str}' in decision, skipping"
+                            )
+                            continue
 
-                        decisions.append(
-                            PolicyDecision(action=action, reason=reason, flags=flags)
-                        )
+                        decisions.append(PolicyDecision(action=action, reason=reason))
 
                     except Exception as e:
                         logger.error(
@@ -803,13 +793,12 @@ class RegoEvaluator:
                         guidance_obj = json.loads(guidance_json_str)
 
                         content = guidance_obj.get("content", "")
-                        flags = guidance_obj.get("flags")
 
                         if not content:
                             logger.warning("Guidance with empty content, skipping")
                             continue
 
-                        guidances.append(PolicyGuidance(content=content, flags=flags))
+                        guidances.append(PolicyGuidance(content=content))
 
                     except Exception as e:
                         logger.error(
