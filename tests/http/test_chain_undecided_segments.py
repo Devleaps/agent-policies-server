@@ -19,6 +19,7 @@ from tests.http.conftest import check_policy
         "some-unknown-cmd && pwd",
         "git status && npx some-package",
         "diff <(some-unknown-cmd) README.md",
+        "cat < <(some-unknown-cmd)",
     ],
 )
 def test_allowed_plus_undecided_defers_to_user(client, base_event, command):
@@ -32,6 +33,7 @@ def test_allowed_plus_undecided_defers_to_user(client, base_event, command):
         "git status; git diff",
         "cat README.md | grep foo | head -n 5",
         "diff <(cat a.txt) b.txt",
+        "cat < <(ls)",
     ],
 )
 def test_all_segments_allowed_is_allowed(client, base_event, command):
@@ -44,6 +46,9 @@ def test_all_segments_allowed_is_allowed(client, base_event, command):
         "some-unknown-cmd && sudo ls",
         "pwd && rm -rf build",
         "some-unknown-cmd | xargs ls",
+        # A process substitution used as a redirect target runs too
+        "cat < <(sudo ls)",
+        "ls > >(rm -rf build)",
         # Every segment of a longer chain counts, not just the ends
         "pwd && sudo ls && cat README.md",
         "pwd && ls || sudo ls && cat README.md",
