@@ -92,8 +92,17 @@ class BashCommandParser:
         if not parts:
             raise ParseError("No parseable command found")
 
-        node = parts[0]
-        return cls._parse_node(node, command)
+        # bashlex returns one node per line: every line runs, so every line
+        # is chained, as if joined with ";"
+        commands = []
+        for node in parts:
+            parsed = cls._parse_node(node, command)
+            commands.append(parsed)
+            commands.extend(parsed.chained)
+            parsed.chained = []
+        result = commands[0]
+        result.chained = commands[1:]
+        return result
 
     @classmethod
     def _parse_node(cls, node, original: str) -> ParsedCommand:
