@@ -29,7 +29,7 @@ is_safe_path(path) if {
 # Accepts ONLY: localhost, 127.x.x.x, ::1 as the actual hostname
 # Rejects: localhost.evil.com, 127.0.0.1.evil.com, evil.com/localhost, etc.
 
-# Shell quotes are kept in parsed words, so trim them first
+# A URL may still carry its shell quotes, so trim them first
 is_localhost_url(url) if {
 	unquoted := trim(url, "\"'")
 	contains(unquoted, "://")
