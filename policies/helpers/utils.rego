@@ -6,10 +6,12 @@ package helpers
 # checked instead of the original so that absolute workspace paths pass safely.
 # Words the shell expands ($HOME, ${R}, "$X/y") are never safe: the policy
 # cannot see the value (e.g. $HOME/.aws/credentials). A literal $, as in
-# grep 'end$', is not an expansion. Command substitution never gets this far:
-# the parser rejects it.
+# grep 'end$', is not an expansion; neither is a variable assigned earlier in
+# the same command, which the parser substitutes. /dev/null is always safe.
 
 has_shell_expansion(path) if input.expanded_words[path]
+
+is_safe_path("/dev/null") if not has_shell_expansion("/dev/null")
 
 is_safe_path(path) if {
 	not has_shell_expansion(path)
