@@ -226,7 +226,7 @@ decisions[decision] if {
 	has_force_flag
 	decision := {
 		"action": "deny",
-		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators.",
+		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators. Use `git push --force-with-lease` instead, which refuses to overwrite commits you have not seen.",
 	}
 }
 
@@ -299,6 +299,20 @@ decisions[decision] if {
 		"action": "deny",
 		"reason": "`git branch -D` is not allowed. Force-deleting branches can result in data loss.",
 	}
+}
+
+# Flags that move an in-progress rebase along without starting a new one
+git_rebase_progress_flags := {"--continue", "--abort", "--skip", "--quit"}
+
+# git rebase --continue/--abort/--skip/--quit - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "rebase"
+	count(input.parsed.arguments) == 0
+	count(input.parsed.options) == 0
+	count(input.parsed.flags) == 1
+	input.parsed.flags[0] in git_rebase_progress_flags
+	decision := {"action": "allow"}
 }
 
 # git stash - allow all subcommands
