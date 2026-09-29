@@ -44,6 +44,9 @@ def test_all_segments_allowed_is_allowed(client, base_event, command):
         "some-unknown-cmd && sudo ls",
         "pwd && rm -rf build",
         "some-unknown-cmd | xargs ls",
+        # Every segment of a longer chain counts, not just the ends
+        "pwd && sudo ls && cat README.md",
+        "pwd && ls || sudo ls && cat README.md",
     ],
 )
 def test_deny_in_any_segment_still_denies(client, base_event, command):
