@@ -14,20 +14,19 @@ def executables(command):
     return [parsed.executable] + [c.executable for c in parsed.chained]
 
 
-# The examples from the agent-policies to-do list
 @pytest.mark.parametrize(
     "command",
     [
-        "for f in tests/test_llm.py tests/test_prompt_overlap.py tests/test_agent_turn.py tests/test_tools.py; do\n"
-        "     echo \"$f: $(grep -c 'app\\.llm\\.anthropic\\|app\\.llm\\.httpx' \"$f\")\"\n"
+        "for f in tests/test_a.py tests/test_b.py; do\n"
+        "     echo \"$f: $(grep -c 'foo\\.bar\\|foo\\.baz' \"$f\")\"\n"
         "   done",
-        'pwd ; grep -n "AppConfig(" -A 7 /dev/null $(echo) ; true',
+        'pwd ; grep -n "Config(" -A 7 /dev/null $(echo) ; true',
         "export A=$(pwd)",
         'until [ "$(gh run list --repo example-org/example-repo --limit 1 --json status'
         " --jq '.[0].status')\" = \"completed\" ]; do sleep 10; done",
     ],
 )
-def test_todo_examples_are_allowed(client, base_event, command):
+def test_compound_commands_of_allowed_commands_are_allowed(client, base_event, command):
     check_policy(client, base_event, command, "allow")
 
 
