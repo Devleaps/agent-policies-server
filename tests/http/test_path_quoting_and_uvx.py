@@ -74,3 +74,8 @@ def test_uvx_directory_outside_workspace_denied(client, base_event):
 )
 def test_uvx_allowed_tools_still_allowed(client, base_event, command):
     check_policy(client, base_event, command, "allow")
+
+
+def test_quoted_command_name_still_denied(client, base_event):
+    check_policy(client, base_event, "'rm' file.txt", "deny")
+    check_policy(client, base_event, '"sudo" ls', "deny")
