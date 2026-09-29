@@ -87,6 +87,11 @@ class StructuredPatch(BaseModel):
     newLines: int  # Number of lines in new content
     lines: List[PatchLine]  # Parsed diff lines with operation and content separated
 
+    @property
+    def new_lines(self) -> List[PatchLine]:
+        """Lines as they read after the edit: added and unchanged, never removed."""
+        return [line for line in self.lines if line.operation != "removed"]
+
 
 @dataclass
 class ToolUseEvent(BaseEvent):
