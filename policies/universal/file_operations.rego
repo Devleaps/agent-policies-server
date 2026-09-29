@@ -31,19 +31,6 @@ all_args_and_options_safe if {
 	}
 }
 
-# Helper for [ command - filters out closing ] bracket from arguments
-bracket_args_and_options_safe if {
-	# Filter out ']' from arguments
-	filtered_args := [arg | some arg in input.parsed.arguments; arg != "]"]
-
-	every arg in filtered_args {
-		helpers.is_safe_path(arg)
-	}
-	every key, value in input.parsed.options {
-		helpers.is_safe_path(value)
-	}
-}
-
 # Allow cat with safe paths
 decisions[decision] if {
 	input.parsed.executable == "cat"
@@ -412,32 +399,76 @@ decisions[decision] if {
 	}
 }
 
-# test - shell built-in for file/string tests (safe paths required)
+# test / [ operands: only file tests name paths. String tests (-n, -z, =,
+# !=, -eq, ...) compare values and read nothing, so "$X" there is fine.
+test_unary_file_ops := {
+	"-e", "-f", "-d", "-r", "-w", "-x", "-s", "-L", "-h", "-p", "-S",
+	"-b", "-c", "-g", "-u", "-k", "-O", "-G", "-N", "-t",
+}
+
+test_binary_file_ops := {"-nt", "-ot", "-ef"}
+
+test_has_binary_file_op if {
+	some key, _ in input.parsed.options
+	key in test_binary_file_ops
+}
+
+test_operands_safe if {
+	every key, value in input.parsed.options {
+		test_operand_safe(key, value)
+	}
+	not test_positional_unsafe
+}
+
+test_operand_safe(key, value) if {
+	key in test_unary_file_ops
+	helpers.is_safe_path(value)
+}
+
+test_operand_safe(key, value) if {
+	key in test_binary_file_ops
+	helpers.is_safe_path(value)
+}
+
+test_operand_safe(key, _) if {
+	not key in test_unary_file_ops
+	not key in test_binary_file_ops
+}
+
+# With -nt/-ot/-ef the left operand is a positional path too
+test_positional_unsafe if {
+	test_has_binary_file_op
+	some arg in input.parsed.arguments
+	arg != "]"
+	not helpers.is_safe_path(arg)
+}
+
+# test - shell built-in for file/string tests (file operands must be safe)
 decisions[decision] if {
 	input.parsed.executable == "test"
-	all_args_and_options_safe
+	test_operands_safe
 	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "test"
-	not all_args_and_options_safe
+	not test_operands_safe
 	decision := {
 		"action": "deny",
 		"reason": "test: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
 	}
 }
 
-# [ - alias for test command (safe paths required)
+# [ - alias for test command (file operands must be safe)
 decisions[decision] if {
 	input.parsed.executable == "["
-	bracket_args_and_options_safe
+	test_operands_safe
 	decision := {"action": "allow"}
 }
 
 decisions[decision] if {
 	input.parsed.executable == "["
-	not bracket_args_and_options_safe
+	not test_operands_safe
 	decision := {
 		"action": "deny",
 		"reason": "[: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
