@@ -79,3 +79,13 @@ def test_uvx_allowed_tools_still_allowed(client, base_event, command):
 def test_quoted_command_name_still_denied(client, base_event):
     check_policy(client, base_event, "'rm' file.txt", "deny")
     check_policy(client, base_event, '"sudo" ls', "deny")
+
+
+@pytest.mark.parametrize("command", ["cat $'/etc/passwd'", "cat $'\\x2fetc/passwd'"])
+def test_ansi_c_quoted_path_is_never_safe(client, base_event, command):
+    """bashlex reads $'...' as an expansion, so its value is never trusted."""
+    check_policy(client, base_event, command, "deny")
+
+
+def test_ansi_c_quoted_command_name_is_not_allowed(client, base_event):
+    check_policy(client, base_event, "$'rm' -rf build", None)
