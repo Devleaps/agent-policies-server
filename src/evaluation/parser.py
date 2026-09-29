@@ -168,6 +168,17 @@ class BashCommandParser:
                 parts.append(word_value)
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
+                # A heredoc body or here-string runs its substitutions
+                heredoc = getattr(part, "heredoc", None)
+                if heredoc is not None and (
+                    "$(" in heredoc.value or "`" in heredoc.value
+                ):
+                    raise ParseError("Command substitution in redirect not supported")
+                if any(
+                    sub.kind in ("commandsubstitution", "processsubstitution")
+                    for sub in (getattr(part.output, "parts", None) or [])
+                ):
+                    raise ParseError("Command substitution in redirect not supported")
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
                     redirect_target = original[part.output.pos[0] : part.output.pos[1]]
