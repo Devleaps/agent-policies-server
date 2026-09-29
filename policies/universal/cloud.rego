@@ -221,10 +221,47 @@ az_rest_method := lower(trim(input.parsed.options["-m"], "\"'")) if {
 	not input.parsed.options["--method"]
 }
 
+# az rest sends an Azure access token with the request (for --resource, or
+# the one az infers from the URL), so a GET is only allowed to Azure itself:
+# a relative ARM path or an Azure/Microsoft host. Anything else defers to the
+# user, since a GET to another host could carry the token there.
+az_rest_url := trim(input.parsed.options["--url"], "\"'")
+
+az_rest_url := trim(input.parsed.options["--uri"], "\"'") if {
+	not input.parsed.options["--url"]
+}
+
+az_rest_azure_hosts := {
+	"management.azure.com",
+	"dev.azure.com",
+	"vssps.dev.azure.com",
+	"graph.microsoft.com",
+}
+
+az_rest_url_is_azure if {
+	startswith(az_rest_url, "/")
+}
+
+az_rest_url_is_azure if {
+	host := split(split(az_rest_url, "://")[1], "/")[0]
+	host in az_rest_azure_hosts
+}
+
+az_rest_url_is_azure if {
+	host := split(split(az_rest_url, "://")[1], "/")[0]
+	endswith(host, ".visualstudio.com")
+}
+
+az_rest_output_file_safe if not input.parsed.options["--output-file"]
+
+az_rest_output_file_safe if helpers.is_safe_path(input.parsed.options["--output-file"])
+
 decisions[decision] if {
 	input.parsed.executable == "az"
 	input.parsed.subcommand == "rest"
 	az_rest_method == "get"
+	az_rest_url_is_azure
+	az_rest_output_file_safe
 	decision := {"action": "allow"}
 }
 
