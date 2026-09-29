@@ -144,6 +144,18 @@ class BashCommandParser:
         raise ParseError(f"Unsupported node kind: {node.kind}")
 
     @classmethod
+    def _word_substitutions(cls, word, original: str) -> list[ParsedCommand]:
+        """Parse the process substitutions inside a word node."""
+        substitutions = []
+        for subpart in getattr(word, "parts", None) or []:
+            if subpart.kind == "commandsubstitution":
+                raise ParseError("Command substitution not supported")
+            elif subpart.kind == "processsubstitution":
+                if hasattr(subpart, "command"):
+                    substitutions.append(cls._parse_node(subpart.command, original))
+        return substitutions
+
+    @classmethod
     def _parse_command_node(cls, node, original: str) -> ParsedCommand:
         """Parse a command node into ParsedCommand."""
 
@@ -153,23 +165,17 @@ class BashCommandParser:
 
         for part in node.parts:
             if part.kind == "word":
-                if hasattr(part, "parts") and part.parts:
-                    for subpart in part.parts:
-                        if subpart.kind == "commandsubstitution":
-                            raise ParseError("Command substitution not supported")
-                        elif subpart.kind == "processsubstitution":
-                            if hasattr(subpart, "command"):
-                                parsed_subst = cls._parse_node(
-                                    subpart.command, original
-                                )
-                                process_substitutions.append(parsed_subst)
-
+                process_substitutions.extend(cls._word_substitutions(part, original))
                 word_value = original[part.pos[0] : part.pos[1]]
                 parts.append(word_value)
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
+                    # A redirect target such as < <(cmd) runs cmd too
+                    process_substitutions.extend(
+                        cls._word_substitutions(part.output, original)
+                    )
                     redirect_target = original[part.output.pos[0] : part.output.pos[1]]
                     redirects.append((redirect_op, redirect_target))
                 # Else: heredoc or file descriptor - skip for now (TODO: extract heredoc content)
