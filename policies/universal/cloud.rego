@@ -229,25 +229,22 @@ az_rest_url := trim(input.parsed.options["--uri"], "\"'") if {
 	not input.parsed.options["--url"]
 }
 
-az_rest_azure_hosts := {
-	"management.azure.com",
-	"dev.azure.com",
-	"vssps.dev.azure.com",
-	"graph.microsoft.com",
-}
+# The host must end at a port, path, query or fragment: nothing like
+# "https://attacker.example?.visualstudio.com" or "https://x.azure.com@attacker"
+az_rest_azure_url_patterns := [
+	`^https://(management\.azure\.com|dev\.azure\.com|vssps\.dev\.azure\.com|graph\.microsoft\.com)(:443)?([/?#].*)?$`,
+	`^https://[A-Za-z0-9-]+\.visualstudio\.com(:443)?([/?#].*)?$`,
+]
 
+# A relative ARM path; az prefixes the management endpoint
 az_rest_url_is_azure if {
 	startswith(az_rest_url, "/")
+	not startswith(az_rest_url, "//")
 }
 
 az_rest_url_is_azure if {
-	host := split(split(az_rest_url, "://")[1], "/")[0]
-	host in az_rest_azure_hosts
-}
-
-az_rest_url_is_azure if {
-	host := split(split(az_rest_url, "://")[1], "/")[0]
-	endswith(host, ".visualstudio.com")
+	some pattern in az_rest_azure_url_patterns
+	regex.match(pattern, lower(az_rest_url))
 }
 
 az_rest_output_file_safe if not input.parsed.options["--output-file"]
