@@ -24,7 +24,7 @@ def _event(base_event, cwd="/workspace/repo", workspace_root="/workspace"):
         "cd",
         "cd -",
         "cd $SOMEWHERE",
-        "cd ../../other-client/some-repo",
+        "cd ../../group-b/repo-b",
     ],
 )
 def test_cd_alone_allowed(client, base_event, command):
@@ -46,10 +46,10 @@ def test_chain_after_cd_inside_workspace_allowed(client, base_event, command):
     check_policy(client, _event(base_event), command, "allow")
 
 
-def test_to_do_file_example_allowed(client, base_event):
-    """cd ../../other-client/... from a repo two levels below the workspace root."""
-    event = _event(base_event, cwd="/workspace/Devleaps/agent-policies-server")
-    check_policy(client, event, "cd ../../other-client/some-repo && ls src", "allow")
+def test_cd_to_a_sibling_group_inside_the_workspace_allowed(client, base_event):
+    """cd ../../group-b/... from a repo two levels below the workspace root."""
+    event = _event(base_event, cwd="/workspace/group-a/repo-a")
+    check_policy(client, event, "cd ../../group-b/repo-b && ls src", "allow")
 
 
 @pytest.mark.parametrize(
