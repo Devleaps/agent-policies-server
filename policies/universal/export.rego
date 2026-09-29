@@ -1,12 +1,13 @@
 package universal
 
-# export - allow setting variables to literal values
-# - Every argument must be NAME=value with no $ expansion or backticks
+# export - allow setting variables
+# - Every argument must be NAME=value
 # - All variable names are allowed for now
-# - export A=$(cmd) fails to parse and defers to the user
+# - Any value: $X only copies a variable, and a $(cmd) in it is either
+#   evaluated as a command of its own or rejected by the parser
 
-export_literal_assignment(arg) if {
-	regex.match("^[A-Za-z_][A-Za-z0-9_]*=[^$`]*$", arg)
+export_assignment(arg) if {
+	regex.match("^[A-Za-z_][A-Za-z0-9_]*=", arg)
 }
 
 decisions[decision] if {
@@ -15,7 +16,7 @@ decisions[decision] if {
 	count(input.parsed.flags) == 0
 	count(input.parsed.options) == 0
 	every arg in input.parsed.arguments {
-		export_literal_assignment(arg)
+		export_assignment(arg)
 	}
 	decision := {"action": "allow"}
 }
