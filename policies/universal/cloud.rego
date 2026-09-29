@@ -183,11 +183,77 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
+# az --version / az version - allow (read-only)
+az_is_version if {
+	input.parsed.subcommand == null
+	"--version" in input.parsed.flags
+}
+
+az_is_version if {
+	input.parsed.subcommand == "version"
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	az_is_version
+	decision := {"action": "allow"}
+}
+
+# az repos pr create / az pipelines run - no decision: the user's own
+# settings decide. Every other az write is denied below.
+az_deferred_to_user if {
+	input.parsed.subcommand == "repos"
+	array.slice(input.parsed.arguments, 0, 2) == ["pr", "create"]
+}
+
+az_deferred_to_user if {
+	input.parsed.subcommand == "pipelines"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "run"
+}
+
+# az rest - allow GET only, same as gh api
+az_rest_method := lower(trim(input.parsed.options["--method"], "\"'"))
+
+az_rest_method := lower(trim(input.parsed.options["-m"], "\"'")) if {
+	not input.parsed.options["--method"]
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	az_rest_method == "get"
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	not az_rest_method
+	decision := {
+		"action": "deny",
+		"reason": "az rest requires an explicit --method GET. Only GET requests are allowed for safety.",
+	}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	az_rest_method != "get"
+	decision := {
+		"action": "deny",
+		"reason": "Only GET is allowed for az rest. POST, PUT, PATCH and DELETE are not permitted.",
+	}
+}
+
 # az other commands - deny
 decisions[decision] if {
 	input.parsed.executable == "az"
 	not az_has_list
 	not az_has_show
+	not az_is_version
+	not az_deferred_to_user
+	input.parsed.subcommand != "rest"
 	decision := {
 		"action": "deny",
 		"reason": "Only Azure CLI read-only commands with 'list' or 'show' are allowed. Dangerous operations like create, delete, update, or set are not permitted.",
