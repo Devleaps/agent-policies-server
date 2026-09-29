@@ -288,6 +288,7 @@ class RegoEvaluator:
             },
             "parsed": parsed_dict,
             "resolved_paths": resolved_paths,
+            "expanded_words": {word: True for word in parsed.expanded_words},
         }
 
         return input_doc

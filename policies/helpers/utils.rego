@@ -4,8 +4,15 @@ package helpers
 # Checks for unsafe paths: absolute paths, home directory, path traversal, /tmp.
 # When a resolved (workspace-relative) form exists in input.resolved_paths, that is
 # checked instead of the original so that absolute workspace paths pass safely.
+# Words the shell expands ($HOME, ${R}, "$X/y") are never safe: the policy
+# cannot see the value (e.g. $HOME/.aws/credentials). A literal $, as in
+# grep 'end$', is not an expansion. Command substitution never gets this far:
+# the parser rejects it.
+
+has_shell_expansion(path) if input.expanded_words[path]
 
 is_safe_path(path) if {
+	not has_shell_expansion(path)
 	resolved := input.resolved_paths[path]
 	not startswith(resolved, "/")
 	not startswith(resolved, "~")
@@ -16,6 +23,7 @@ is_safe_path(path) if {
 }
 
 is_safe_path(path) if {
+	not has_shell_expansion(path)
 	not input.resolved_paths[path]
 	not startswith(path, "/")
 	not startswith(path, "~")

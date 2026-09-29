@@ -30,6 +30,7 @@ class ParsedCommand:
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
         process_substitutions: List of commands from <(...) or >(...) substitutions
+        expanded_words: Words containing a shell parameter expansion ($X, ${X})
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
     """
@@ -43,6 +44,7 @@ class ParsedCommand:
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
+    expanded_words: List[str] = field(default_factory=list)
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -150,6 +152,7 @@ class BashCommandParser:
         parts = []
         redirects = []
         process_substitutions = []
+        expanded_words = []
 
         for part in node.parts:
             if part.kind == "word":
@@ -163,15 +166,23 @@ class BashCommandParser:
                                     subpart.command, original
                                 )
                                 process_substitutions.append(parsed_subst)
+                        elif subpart.kind == "parameter":
+                            expanded_words.append(part.word)
 
-                word_value = original[part.pos[0] : part.pos[1]]
-                parts.append(word_value)
+                # bashlex's .word has shell quoting removed, so policies see
+                # the path the shell will use: '/etc/passwd' -> /etc/passwd
+                parts.append(part.word)
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
-                    redirect_target = original[part.output.pos[0] : part.output.pos[1]]
+                    redirect_target = part.output.word
                     redirects.append((redirect_op, redirect_target))
+                    if any(
+                        sub.kind == "parameter"
+                        for sub in (getattr(part.output, "parts", None) or [])
+                    ):
+                        expanded_words.append(redirect_target)
                 # Else: heredoc or file descriptor - skip for now (TODO: extract heredoc content)
 
         if not parts:
@@ -226,6 +237,7 @@ class BashCommandParser:
             options=options,
             redirects=redirects,
             process_substitutions=process_substitutions,
+            expanded_words=expanded_words,
             original=original,
         )
 
