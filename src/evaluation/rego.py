@@ -223,7 +223,8 @@ class RegoEvaluator:
             segments.extend(
                 self._evaluate_command_segments(event, command, bundles, locations)
             )
-            if command.executable == "cd":
+            # A piped cd runs in a subshell
+            if command.executable == "cd" and not command.pipes:
                 locations = _unique(loc.after_cd(event, command) for loc in locations)
             if command.location_unknown_after:
                 locations = (UNKNOWN_LOCATION,)

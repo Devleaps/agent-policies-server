@@ -261,3 +261,7 @@ def test_known_echo_output_is_substituted():
 def test_echo_with_unknown_output_stays_expanded(client, base_event):
     check_policy(client, base_event, "cat $(echo $HOME/.ssh/id_rsa)", "deny")
     check_policy(client, base_event, "cat $(echo /etc/passwd)", "deny")
+
+
+def test_piped_cd_does_not_move_later_commands(client, base_event):
+    check_policy(client, base_event, "cd subdir | true && cat ../README.md", "deny")
