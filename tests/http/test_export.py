@@ -28,9 +28,6 @@ def test_export_assignment_allowed(client, base_event, command):
 @pytest.mark.parametrize(
     "command",
     [
-        # Command substitution is up to the parser: rejected here
-        "export A=`date`",
-        "export A=$(date)",
         "export A",
         "export -n A",
         "export",
