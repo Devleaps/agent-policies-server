@@ -186,6 +186,14 @@ class BashCommandParser:
         arguments: list[str] = []
         flags = []
         options = {}
+        # Values of an option given again: a dict keeps only the last one, so
+        # "cat -n ~/.ssh/id_rsa -n README.md" would hide the key from policies
+        displaced = []
+
+        def set_option(key: str, value: str) -> None:
+            if key in options:
+                displaced.append(options[key])
+            options[key] = value
 
         i = 0
         while i < len(remaining):
@@ -196,10 +204,10 @@ class BashCommandParser:
                 # Check if it's an option with value (--key=value)
                 if "=" in part:
                     key, value = part.split("=", 1)
-                    options[key] = value
+                    set_option(key, value)
                 # Check if next part is the value for this option
                 elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
-                    options[part] = remaining[i + 1]
+                    set_option(part, remaining[i + 1])
                     i += 1  # Skip next part
                 else:
                     # It's a boolean flag
@@ -217,6 +225,9 @@ class BashCommandParser:
                     arguments.append(part)
 
             i += 1
+
+        # Checked as arguments, like any other word that may be a path
+        arguments.extend(displaced)
 
         return ParsedCommand(
             executable=executable,
