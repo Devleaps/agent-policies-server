@@ -123,6 +123,9 @@ class BashCommandParser:
                     parsed = cls._parse_command_node(part_node, original)
                     parsed.pos = part_node.pos
                     commands.append(parsed)
+                elif part_node.kind not in ("pipe", "reservedword"):
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in pipeline: {part_node.kind}")
 
             if commands:
                 result = commands[0]
@@ -141,6 +144,9 @@ class BashCommandParser:
                     parsed.pos = part_node.pos
                     parsed.original = original
                     commands.append(parsed)
+                elif part_node.kind != "operator":
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in list: {part_node.kind}")
 
             if not commands:
                 raise ParseError("No commands found in list")
@@ -181,6 +187,11 @@ class BashCommandParser:
                 # bashlex's .word has shell quoting removed, so policies see
                 # the path the shell will use: '/etc/passwd' -> /etc/passwd
                 parts.append(part.word)
+            elif part.kind == "assignment":
+                # Prefix assignments (X=1 cmd) run their substitutions too
+                for subpart in getattr(part, "parts", None) or []:
+                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
+                        raise ParseError("Command substitution not supported")
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # Handle both word nodes (with .pos) and file descriptors (int)
