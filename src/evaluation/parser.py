@@ -45,6 +45,8 @@ class ParsedCommand:
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
     expanded_words: List[str] = field(default_factory=list)
+    # The list operator after this command (&&, ||, ;, &)
+    operator: Optional[str] = None
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -132,6 +134,8 @@ class BashCommandParser:
                     parsed.pos = part_node.pos
                     parsed.original = original
                     commands.append(parsed)
+                elif part_node.kind == "operator" and commands:
+                    commands[-1].operator = part_node.op
 
             if not commands:
                 raise ParseError("No commands found in list")

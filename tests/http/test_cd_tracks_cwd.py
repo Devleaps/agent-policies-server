@@ -93,3 +93,23 @@ def test_without_workspace_root_only_plain_descent_stays_inside(
 ):
     event = _event(base_event, workspace_root=None)
     check_policy(client, event, command, expected)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # Only && guarantees the cd worked; otherwise ../README.md must be
+        # safe from both directories
+        "cd subdir; cat ../README.md",
+        "cd subdir || cat ../README.md",
+        "cd subdir && pwd; cat ../README.md",
+        # A piped cd runs in a subshell
+        "cd subdir | true && cat ../README.md",
+    ],
+)
+def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, command):
+    check_policy(client, base_event, command, "deny")
+
+
+def test_cd_followed_by_and_moves_the_directory(client, base_event):
+    check_policy(client, base_event, "cd subdir && cat ../README.md", "allow")

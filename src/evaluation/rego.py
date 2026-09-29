@@ -14,7 +14,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 import httpx
 from regopy import Interpreter, NodeKind
@@ -82,6 +82,26 @@ class Location:
         if event.workspace_root:
             return Location(new_cwd, not _is_within(new_cwd, event.workspace_root))
         return Location(new_cwd, self.outside or climbs)
+
+
+UNKNOWN_LOCATION = Location(None, True)
+
+# Where a statement may run from, most likely first
+Locations = Tuple[Location, ...]
+
+# Past this many possible locations, the location is taken as unknown
+MAX_LOCATIONS = 8
+
+
+def _unique(locations) -> Locations:
+    result = tuple(dict.fromkeys(locations))
+    if len(result) > MAX_LOCATIONS:
+        return (UNKNOWN_LOCATION,)
+    return result
+
+
+def _is_workspace_relative(path: str) -> bool:
+    return not path.startswith(("/", "~", "../")) and path != ".."
 
 
 class RegoEvaluator:
@@ -166,27 +186,36 @@ class RegoEvaluator:
         event: ToolUseEvent,
         parsed: ParsedCommand,
         bundles: List[str],
-        location: Optional[Location] = None,
+        locations: Optional[Locations] = None,
     ) -> List[List[PolicyDecision]]:
         """Evaluate each command in the chain, pipes and process substitutions.
 
         A `cd` in the chain moves the location the later chained commands are
-        evaluated from, so `cd ../.. && cat x` checks x where it really is.
+        evaluated from, so `cd ../.. && cat x` checks x where it really is. A
+        cd may fail, so past anything but `&&` a command may also run from
+        where the cd started: every such location is kept, newest first.
         Pipes and process substitutions run in subshells and do not move it.
 
         Returns one list of decisions per command segment, in order; an empty
         list means no rule matched that segment.
         """
-        if location is None:
-            location = Location.initial(event)
+        if locations is None:
+            locations = (Location.initial(event),)
 
         segments = []
+        # Every location seen since the last operator other than &&
+        run = list(locations)
         for command in [parsed] + parsed.chained:
             segments.extend(
-                self._evaluate_command_segments(event, command, bundles, location)
+                self._evaluate_command_segments(event, command, bundles, locations)
             )
-            if command.executable == "cd":
-                location = location.after_cd(event, command)
+            # A piped cd runs in a subshell
+            if command.executable == "cd" and not command.pipes:
+                locations = _unique(loc.after_cd(event, command) for loc in locations)
+            run.extend(locations)
+            if command.operator != "&&":
+                locations = _unique(reversed(run))
+                run = list(locations)
         return segments
 
     def _evaluate_command_segments(
@@ -194,10 +223,10 @@ class RegoEvaluator:
         event: ToolUseEvent,
         parsed: ParsedCommand,
         bundles: List[str],
-        location: Location,
+        locations: Locations,
     ) -> List[List[PolicyDecision]]:
         """Evaluate one command plus its pipes and process substitutions."""
-        input_doc = self._build_input_document(event, parsed, location)
+        input_doc = self._build_input_document(event, parsed, locations)
         self._enrich_input(input_doc, parsed)
 
         current_command_decisions = []
@@ -218,7 +247,7 @@ class RegoEvaluator:
 
         for sub_command in parsed.pipes + parsed.process_substitutions:
             segments.extend(
-                self.evaluate_segments(event, sub_command, bundles, location)
+                self.evaluate_segments(event, sub_command, bundles, locations)
             )
 
         return segments
@@ -344,27 +373,32 @@ class RegoEvaluator:
             return os.path.relpath(resolved, workspace_root.rstrip("/"))
         return resolved
 
+    def _resolve_path(self, path: str, location: Location, event: ToolUseEvent) -> str:
+        r = self._normalize_path(path, event.workspace_root, location.cwd, event.home)
+        if location.outside and r == path and path and not path.startswith(("/", "~")):
+            r = self._outside_path(path, location, event.workspace_root)
+        return r
+
     def _build_input_document(
         self,
         event: ToolUseEvent,
         parsed: ParsedCommand,
-        location: Optional[Location] = None,
+        locations: Optional[Locations] = None,
     ) -> Dict[str, Any]:
         """Convert ToolUseEvent and ParsedCommand to Rego input.
 
         Args:
             event: The tool use event
             parsed: Parsed command structure
-            location: Where the command runs; defaults to the event's cwd
+            locations: Where the command may run, most likely first; defaults
+                to the event's cwd
 
         Returns:
             Dictionary suitable for Rego input
         """
-        if location is None:
-            location = Location.initial(event)
+        if locations is None:
+            locations = (Location.initial(event),)
         workspace_root = event.workspace_root
-        cwd = location.cwd
-        home = event.home
 
         paths = (
             [a for a in parsed.arguments]
@@ -373,9 +407,12 @@ class RegoEvaluator:
         )
         resolved_paths = {}
         for p in paths:
-            r = self._normalize_path(p, workspace_root, cwd, home)
-            if location.outside and r == p and p and not p.startswith(("/", "~")):
-                r = self._outside_path(p, location, workspace_root)
+            candidates = [self._resolve_path(p, loc, event) for loc in locations]
+            # A path is only as safe as it is from every possible location
+            r = next(
+                (c for c in candidates if not _is_workspace_relative(c)),
+                candidates[0],
+            )
             if r != p:
                 resolved_paths[p] = r
 
