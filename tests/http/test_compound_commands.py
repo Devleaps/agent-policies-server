@@ -211,9 +211,6 @@ def test_backgrounded_cd_does_not_move_later_commands(client, base_event):
         "cd subdir && pwd; cat ../README.md",
         # A cd in a loop or branch leaves the directory unknown
         "if true; then cd subdir; fi; cat ../README.md",
-        "for d in a b; do cat README.md; cd ..; done",
-        "while true; do cat README.md; cd ..; done",
-        "C=cd; while true; do cat README.md; $C ..; done",
     ],
 )
 def test_uncertain_cd_never_makes_an_outside_path_safe(client, base_event, command):
@@ -255,7 +252,8 @@ def test_changed_home_makes_tilde_unknown():
     ],
 )
 def test_changed_home_or_cdpath_makes_cd_unknown(client, base_event, command):
-    check_policy(client, base_event, command, "deny")
+    # The directory cd goes to is unknown, so cat passwd cannot be judged
+    check_policy(client, base_event, command, None)
 
 
 def test_known_echo_output_is_substituted():
@@ -281,6 +279,12 @@ def test_piped_cd_does_not_move_later_commands(client, base_event):
         "cd - && ls",
         "cd $X && ls",
         "for d in a b; do cd $d && ls; done",
+        "cd $(git rev-parse --show-toplevel) && cat README.md",
+        "cd $(ls x) && ls > out.txt",
+        # A cd in an earlier iteration moves the loop somewhere unknown
+        "for d in a b; do cat README.md; cd ..; done",
+        "while true; do cat README.md; cd ..; done",
+        "C=cd; while true; do cat README.md; $C ..; done",
     ],
 )
 def test_commands_from_an_unknown_directory_defer_to_user(client, base_event, command):
