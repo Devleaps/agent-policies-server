@@ -261,7 +261,12 @@ az_rest_url_is_azure if {
 
 az_rest_output_file_safe if not input.parsed.options["--output-file"]
 
-az_rest_output_file_safe if helpers.is_safe_path(input.parsed.options["--output-file"])
+# The shell removes quotes and backslashes: --output-file \/etc/profile
+# writes /etc/profile, so such a path is never safe
+az_rest_output_file_safe if {
+	helpers.is_safe_path(input.parsed.options["--output-file"])
+	not regex.match("[\"'\\\\$`]", input.parsed.options["--output-file"])
+}
 
 decisions[decision] if {
 	input.parsed.executable == "az"
