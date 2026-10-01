@@ -38,6 +38,25 @@ _ASSIGNING = {"read", "mapfile", "readarray", "getopts", "let", "unset", "printf
 _ENV_REPLACING = {"source", ".", "eval"}
 # Variables that change how the shell expands words and resolves cd
 _SHELL_BEHAVIOUR_VARS = ("IFS", "HOME", "CDPATH")
+# Variables that change which program runs or what it loads (PATH=. git
+# status runs ./git). Keep in step with export_sensitive in
+# policies/universal/export.rego.
+_SENSITIVE_VARS = {
+    "BASH_ENV", "ENV", "IFS", "HOME", "SHELLOPTS", "BASHOPTS",
+    "PROMPT_COMMAND", "NODE_OPTIONS", "PYTHONSTARTUP", "PYTHONHOME",
+    "PERL5OPT", "RUBYOPT", "JAVA_TOOL_OPTIONS", "PAGER", "EDITOR", "VISUAL",
+    "SSH_ASKPASS", "SUDO_ASKPASS", "MANPAGER", "LESSOPEN", "LESSCLOSE",
+    "BROWSER", "PS1", "PS4", "ZDOTDIR", "PERL5LIB", "RUBYLIB",
+}
+_SENSITIVE_VAR_PREFIXES = ("LD_", "DYLD_", "GIT_")
+
+
+def is_sensitive_variable(name: str) -> bool:
+    return (
+        "PATH" in name
+        or name.startswith(_SENSITIVE_VAR_PREFIXES)
+        or name in _SENSITIVE_VARS
+    )
 
 
 # File tests of test / [: the operand(s) name a path
@@ -93,6 +112,8 @@ class ParsedCommand:
         operator: The list operator after this statement (&&, ||, ;, &)
         location_unknown_before: The working directory is unknown here
         location_unknown_after: The working directory is unknown after this
+        sensitive_assignment: Sets a variable such as PATH that changes what
+            runs, for the shell (PATH=.) or for this command (PATH=. git)
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
     """
@@ -113,6 +134,7 @@ class ParsedCommand:
     operator: Optional[str] = None
     location_unknown_before: bool = False
     location_unknown_after: bool = False
+    sensitive_assignment: bool = False
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -231,6 +253,16 @@ def _contains_cd(node) -> bool:
         and any(p.kind == "word" for p in n.parts)
         and next(p for p in n.parts if p.kind == "word").word == "cd"
         for n in _walk(node)
+    )
+
+
+def _moves_cwd(node, statements: List["ParsedCommand"]) -> bool:
+    """Whether a loop body can cd: a literal cd, or one whose name comes from
+    a variable (C=cd; while ...; do $C ..; done). A cd in a pipeline runs in a
+    subshell and moves nothing."""
+    return _contains_cd(node) or any(
+        statement.executable == "cd" and not statement.pipes
+        for statement in statements
     )
 
 
@@ -441,7 +473,7 @@ class BashCommandParser:
         inner = cls._enter_conditional(node, ctx)
         children = [p for p in node.parts if p.kind != "reservedword"]
         statements = cls._body_statements(children, inner)
-        if node.kind != "if" and statements and _contains_cd(node):
+        if node.kind != "if" and statements and _moves_cwd(node, statements):
             # A cd in an earlier iteration moves every later statement
             statements[0].location_unknown_before = True
         return statements
@@ -494,7 +526,7 @@ class BashCommandParser:
         else:
             inner.env[var] = None
             body_statements = cls._body_statements(body, inner)
-            if body_statements and _contains_cd(node):
+            if body_statements and _moves_cwd(node, body_statements):
                 # A cd in an earlier iteration moves every later statement
                 body_statements[0].location_unknown_before = True
             statements.extend(body_statements)
@@ -620,11 +652,18 @@ class BashCommandParser:
             # its substitutions
             for value, expanded in assignments:
                 ctx.assign(value, None if expanded else value.split("=", 1)[1])
+            sensitive = any(
+                is_sensitive_variable(value.split("=", 1)[0])
+                for value, _ in assignments
+                if value
+            )
             return ParsedCommand(
                 executable="",
                 # With a redirect (> /etc/passwd) it is evaluated like a
-                # command, so the redirect check runs
-                group=None if redirects else [],
+                # command, so the redirect check runs; so is a sensitive
+                # assignment, which then gets no decision
+                group=None if redirects or sensitive else [],
+                sensitive_assignment=sensitive,
                 redirects=redirects,
                 process_substitutions=process_substitutions,
                 original=ctx.original,
@@ -707,6 +746,7 @@ class BashCommandParser:
                 or "CDPATH" in ctx.env
                 or bool({"HOME", "CDPATH"} & prefix_names)
             ),
+            sensitive_assignment=any(map(is_sensitive_variable, prefix_names)),
             original=ctx.original,
             pos=node.pos,
         )

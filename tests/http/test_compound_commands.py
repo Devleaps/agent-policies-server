@@ -213,6 +213,7 @@ def test_backgrounded_cd_does_not_move_later_commands(client, base_event):
         "if true; then cd subdir; fi; cat ../README.md",
         "for d in a b; do cat README.md; cd ..; done",
         "while true; do cat README.md; cd ..; done",
+        "C=cd; while true; do cat README.md; $C ..; done",
     ],
 )
 def test_uncertain_cd_never_makes_an_outside_path_safe(client, base_event, command):
@@ -288,3 +289,20 @@ def test_commands_from_an_unknown_directory_defer_to_user(client, base_event, co
 
 def test_deny_from_an_unknown_directory_still_denies(client, base_event):
     check_policy(client, base_event, "cd $(ls target.txt) && sudo ls", "deny")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "PATH=.; git status",
+        "PATH=. git status",
+        "PYTHONPATH=src; pwd",
+        "GIT_EXTERNAL_DIFF=evil git diff",
+    ],
+)
+def test_sensitive_assignment_defers_to_user(client, base_event, command):
+    check_policy(client, base_event, command, None)
+
+
+def test_other_assignment_stays_allowed(client, base_event):
+    check_policy(client, base_event, "X=1; LANG=C git status", "allow")

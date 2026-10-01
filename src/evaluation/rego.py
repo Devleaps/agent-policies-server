@@ -288,6 +288,13 @@ class RegoEvaluator:
                     for d in current_command_decisions
                     if d.action != PolicyAction.ALLOW
                 ]
+            # PATH=. git status runs ./git: no decision, like export PATH=.
+            if parsed.sensitive_assignment:
+                current_command_decisions = [
+                    d
+                    for d in current_command_decisions
+                    if d.action != PolicyAction.ALLOW
+                ]
             segments.append(current_command_decisions)
 
         for sub_command in parsed.pipes + parsed.process_substitutions:
