@@ -24,6 +24,7 @@ uvx_package_source_options := {
 	"--default-index",
 	"--find-links",
 	"-f",
+	"--config-file",
 }
 
 uvx_changes_package if {

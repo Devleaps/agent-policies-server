@@ -401,46 +401,11 @@ decisions[decision] if {
 
 # test / [ operands: only file tests name paths. String tests (-n, -z, =,
 # !=, -eq, ...) compare values and read nothing, so "$X" there is fine.
-test_unary_file_ops := {
-	"-e", "-f", "-d", "-r", "-w", "-x", "-s", "-L", "-h", "-p", "-S",
-	"-b", "-c", "-g", "-u", "-k", "-O", "-G", "-N", "-t",
-}
-
-test_binary_file_ops := {"-nt", "-ot", "-ef"}
-
-test_has_binary_file_op if {
-	some key, _ in input.parsed.options
-	key in test_binary_file_ops
-}
-
+# The parser lists every file-test operand in order as test_paths.
 test_operands_safe if {
-	every key, value in input.parsed.options {
-		test_operand_safe(key, value)
+	every path in input.parsed.test_paths {
+		helpers.is_safe_path(path)
 	}
-	not test_positional_unsafe
-}
-
-test_operand_safe(key, value) if {
-	key in test_unary_file_ops
-	helpers.is_safe_path(value)
-}
-
-test_operand_safe(key, value) if {
-	key in test_binary_file_ops
-	helpers.is_safe_path(value)
-}
-
-test_operand_safe(key, _) if {
-	not key in test_unary_file_ops
-	not key in test_binary_file_ops
-}
-
-# With -nt/-ot/-ef the left operand is a positional path too
-test_positional_unsafe if {
-	test_has_binary_file_op
-	some arg in input.parsed.arguments
-	arg != "]"
-	not helpers.is_safe_path(arg)
 }
 
 # test - shell built-in for file/string tests (file operands must be safe)
