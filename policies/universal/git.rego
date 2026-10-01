@@ -226,7 +226,7 @@ decisions[decision] if {
 	has_force_flag
 	decision := {
 		"action": "deny",
-		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators. Use `git push --force-with-lease` instead, which refuses to overwrite commits you have not seen.",
+		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators. Use `git push --force-with-lease` instead, which refuses the push if the remote branch has moved since your last fetch.",
 	}
 }
 
