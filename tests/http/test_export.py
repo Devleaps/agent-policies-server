@@ -49,3 +49,8 @@ def test_export_other_defers_to_user(client, base_event, command):
 
 def test_export_then_allowed_command(client, base_event):
     check_policy(client, base_event, "export A=B && pwd", "allow")
+
+
+def test_export_path_then_command_defers_to_user(client, base_event):
+    """A ./git could run instead of git once . is on PATH."""
+    check_policy(client, base_event, "export PATH=.:$PATH && git status", None)
