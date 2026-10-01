@@ -39,6 +39,8 @@ def test_export_assignment_allowed(client, base_event, command):
         "export PAGER=evil",
         "export BASH_ENV=evil.sh",
         "export GIT_CONFIG_COUNT=1",
+        "export GIT_EXTERNAL_DIFF=evil",
+        "export LESSOPEN=evil",
         "export A=B PATH=bin",
         "export",
     ],

@@ -27,14 +27,19 @@ export_sensitive_names := {
 	"RUBYOPT",
 	"JAVA_TOOL_OPTIONS",
 	"PAGER",
-	"GIT_PAGER",
 	"EDITOR",
 	"VISUAL",
-	"GIT_EDITOR",
-	"GIT_SSH",
-	"GIT_SSH_COMMAND",
-	"GIT_ASKPASS",
 	"SSH_ASKPASS",
+	"SUDO_ASKPASS",
+	"MANPAGER",
+	"LESSOPEN",
+	"LESSCLOSE",
+	"BROWSER",
+	"PS1",
+	"PS4",
+	"ZDOTDIR",
+	"PERL5LIB",
+	"RUBYLIB",
 }
 
 # PATH, PYTHONPATH, LD_LIBRARY_PATH, CDPATH, GIT_EXEC_PATH, ...
@@ -45,8 +50,9 @@ export_sensitive(name) if startswith(name, "LD_")
 
 export_sensitive(name) if startswith(name, "DYLD_")
 
-# GIT_CONFIG_COUNT/KEY_n/VALUE_n can set core.pager, core.sshCommand, ...
-export_sensitive(name) if startswith(name, "GIT_CONFIG")
+# Git reads many variables that run commands or move its state:
+# GIT_EXTERNAL_DIFF, GIT_SSH_COMMAND, GIT_CONFIG_*, GIT_DIR, ...
+export_sensitive(name) if startswith(name, "GIT_")
 
 export_sensitive(name) if name in export_sensitive_names
 
