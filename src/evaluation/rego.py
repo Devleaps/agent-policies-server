@@ -273,10 +273,10 @@ class RegoEvaluator:
                             reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
                         )
                     )
-            # From an unknown directory (after cd $(...), cd $X, cd -), even a
-            # command without paths reads somewhere unknown: ls lists it, git
-            # status reports on it. Nothing is allowed there; deny still is.
-            if UNKNOWN_LOCATION in locations:
+            # Outside the workspace, or somewhere unknown (cd $(...), cd $X,
+            # cd -), even a command without paths reads that directory: cd /etc
+            # && ls lists it. Nothing is allowed there; deny still is.
+            if any(location.outside for location in locations):
                 current_command_decisions = [
                     d
                     for d in current_command_decisions

@@ -270,3 +270,21 @@ def test_echo_with_unknown_output_stays_expanded(client, base_event):
 
 def test_piped_cd_does_not_move_later_commands(client, base_event):
     check_policy(client, base_event, "cd subdir | true && cat ../README.md", "deny")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd $(ls target.txt) && ls",
+        "cd $(ls target.txt) && git status",
+        "cd - && ls",
+        "cd $X && ls",
+        "for d in a b; do cd $d && ls; done",
+    ],
+)
+def test_commands_from_an_unknown_directory_defer_to_user(client, base_event, command):
+    check_policy(client, base_event, command, None)
+
+
+def test_deny_from_an_unknown_directory_still_denies(client, base_event):
+    check_policy(client, base_event, "cd $(ls target.txt) && sudo ls", "deny")
