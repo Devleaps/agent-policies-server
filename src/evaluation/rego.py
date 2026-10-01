@@ -38,11 +38,11 @@ _REQUIREMENT_NAME_END = re.compile(r"[\[=<>!~;@\s]")
 def package_base_name(requirement: str) -> str:
     """Reduce a requirement word to its bare package name.
 
-    A word may still carry its shell quotes ('"fastapi==0.118.0"'). Strips
-    the quotes, then extras, version specifiers and markers:
+    A word may still carry shell quotes, whole or in part ('"fastapi"==1.0').
+    Strips every quote, then extras, version specifiers and markers:
     '"uvicorn[standard]>=0.30"' → 'uvicorn'.
     """
-    unquoted = requirement.strip().strip("\"'")
+    unquoted = requirement.strip().replace('"', "").replace("'", "")
     return _REQUIREMENT_NAME_END.split(unquoted, maxsplit=1)[0]
 
 

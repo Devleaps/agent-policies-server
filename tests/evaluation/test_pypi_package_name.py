@@ -18,6 +18,9 @@ from src.server.models import ToolUseEvent
         ('"httpx"', "httpx"),
         ("'httpx'", "httpx"),
         ('"fastapi==0.118.0"', "fastapi"),
+        # Quoted in part: the shell still passes fastapi==0.118.0
+        ('"fastapi"==0.118.0', "fastapi"),
+        ("fast'api'==0.118.0", "fastapi"),
         ("httpx==0.28.1", "httpx"),
         ("uvicorn[standard]", "uvicorn"),
         ('"uvicorn[standard]>=0.30"', "uvicorn"),
