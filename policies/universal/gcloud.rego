@@ -86,11 +86,35 @@ gcloud_is_read_only if {
 	some word in gcloud_positionals
 	word in gcloud_read_verbs
 	not gcloud_has_write_verb
+	not gcloud_has_shell_syntax
 }
 
 gcloud_has_write_verb if {
 	some word in gcloud_positionals
 	word in gcloud_write_verbs
+}
+
+# Composite write commands: add-metadata, set-machine-type, remove-tags, ...
+gcloud_has_write_verb if {
+	some word in gcloud_positionals
+	some verb in gcloud_write_verbs
+	startswith(word, concat("", [verb, "-"]))
+}
+
+# Quotes, escapes or expansions can hide a verb: d"e"lete runs delete. Only
+# words before the read verb can be command words; after it come names and
+# filters, which are often quoted (logging read 'resource.type="x"').
+gcloud_read_verb_positions contains i if {
+	some i, word in gcloud_positionals
+	word in gcloud_read_verbs
+}
+
+gcloud_first_read_verb := min(gcloud_read_verb_positions)
+
+gcloud_has_shell_syntax if {
+	some i, word in gcloud_positionals
+	i < gcloud_first_read_verb
+	regex.match("[\"'\\\\$`]", word)
 }
 
 decisions[decision] if {

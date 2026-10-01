@@ -214,8 +214,11 @@ az_deferred_to_user if {
 	input.parsed.arguments[0] == "run"
 }
 
-# az rest - allow GET only, same as gh api
-az_rest_method := lower(trim(input.parsed.options["--method"], "\"'"))
+# az rest - allow GET only, same as gh api. With both --method and -m the
+# later one wins, so neither is trusted and the request is denied below.
+az_rest_method := lower(trim(input.parsed.options["--method"], "\"'")) if {
+	not input.parsed.options["-m"]
+}
 
 az_rest_method := lower(trim(input.parsed.options["-m"], "\"'")) if {
 	not input.parsed.options["--method"]
@@ -238,13 +241,19 @@ az_rest_azure_url_patterns := [
 	`^https://[A-Za-z0-9-]+\.visualstudio\.com(:443)?([/?#].*)?$`,
 ]
 
+# Quotes, escapes or expansions inside the URL change what az receives:
+# /""/attacker.example becomes //attacker.example in the shell
+az_rest_url_has_shell_syntax if regex.match("[\"'\\\\$`]", az_rest_url)
+
 # A relative ARM path; az prefixes the management endpoint
 az_rest_url_is_azure if {
+	not az_rest_url_has_shell_syntax
 	startswith(az_rest_url, "/")
 	not startswith(az_rest_url, "//")
 }
 
 az_rest_url_is_azure if {
+	not az_rest_url_has_shell_syntax
 	some pattern in az_rest_azure_url_patterns
 	regex.match(pattern, lower(az_rest_url))
 }
