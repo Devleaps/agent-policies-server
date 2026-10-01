@@ -225,8 +225,11 @@ az_rest_method := lower(trim(input.parsed.options["-m"], "\"'")) if {
 # az rest sends an Azure access token with the request (for --resource, or
 # the one az infers from the URL), so a GET is only allowed to Azure itself:
 # a relative ARM path or an Azure/Microsoft host. Anything else defers to the
-# user, since a GET to another host could carry the token there.
-az_rest_url := trim(input.parsed.options["--url"], "\"'")
+# user, since a GET to another host could carry the token there. With both
+# --url and --uri the later one wins, so neither is trusted.
+az_rest_url := trim(input.parsed.options["--url"], "\"'") if {
+	not input.parsed.options["--uri"]
+}
 
 az_rest_url := trim(input.parsed.options["--uri"], "\"'") if {
 	not input.parsed.options["--url"]
