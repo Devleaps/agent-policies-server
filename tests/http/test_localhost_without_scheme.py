@@ -16,6 +16,9 @@ from tests.http.conftest import check_policy
         "curl '[::1]:8080/'",
         "curl -s -X PUT localhost:8123/v1/log/2026-09-08 -H 'Content-Type: application/json' -d '{}'",
         "curl -s -X PUT 'localhost:8123/v1/log/2026-09-08' -d '{}'",
+        # :// in the query is not a scheme
+        "curl 'localhost?next=http://example.com'",
+        "curl 'localhost:8123/cb?redirect=https://example.com/x'",
     ],
 )
 def test_curl_localhost_without_scheme_allowed(client, base_event, command):
@@ -28,6 +31,7 @@ def test_curl_localhost_without_scheme_allowed(client, base_event, command):
         "curl localhost.evil.com/x",
         "curl 127.0.0.1.evil.com:80/x",
         "curl evil.com/localhost",
+        "curl evil.com/?u=http://localhost",
         "curl example.com",
     ],
 )

@@ -29,17 +29,20 @@ is_safe_path(path) if {
 # Accepts ONLY: localhost, 127.x.x.x, ::1 as the actual hostname
 # Rejects: localhost.evil.com, 127.0.0.1.evil.com, evil.com/localhost, etc.
 
+# A scheme only counts at the start: localhost?next=http://x has none
+has_url_scheme(url) if regex.match(`^[A-Za-z][A-Za-z0-9+.-]*://`, url)
+
 # A URL may still carry its shell quotes, so trim them first
 is_localhost_url(url) if {
 	unquoted := trim(url, "\"'")
-	contains(unquoted, "://")
+	has_url_scheme(unquoted)
 	is_localhost_schemed_url(unquoted)
 }
 
 # curl accepts URLs without a scheme (e.g. localhost:8123/path) and uses http
 is_localhost_url(url) if {
 	unquoted := trim(url, "\"'")
-	not contains(unquoted, "://")
+	not has_url_scheme(unquoted)
 	is_localhost_schemed_url(concat("", ["http://", unquoted]))
 }
 
