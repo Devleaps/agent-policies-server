@@ -59,6 +59,9 @@ class Location:
         unknown = Location(None, True)
         if cd.flags or cd.options:
             return unknown
+        # CDPATH=/ cd etc goes to /etc; HOME=/x cd goes to /x
+        if {"CDPATH", "HOME"} & set(cd.assignments):
+            return unknown
         target = cd.arguments[0] if cd.arguments else "~"
         if target == "-" or target in cd.expanded_words:
             return unknown
@@ -101,7 +104,8 @@ def _unique(locations) -> Locations:
 
 
 def _is_workspace_relative(path: str) -> bool:
-    return not path.startswith(("/", "~", "../")) and path != ".."
+    # Any .. segment may climb out: x/../../secret
+    return not path.startswith(("/", "~")) and ".." not in path.split("/")
 
 
 class RegoEvaluator:
@@ -205,17 +209,24 @@ class RegoEvaluator:
         segments = []
         # Every location seen since the last operator other than &&
         run = list(locations)
+        previous_operator = None
         for command in [parsed] + parsed.chained:
             segments.extend(
                 self._evaluate_command_segments(event, command, bundles, locations)
             )
             # A piped cd runs in a subshell
             if command.executable == "cd" and not command.pipes:
-                locations = _unique(loc.after_cd(event, command) for loc in locations)
+                moved = tuple(loc.after_cd(event, command) for loc in locations)
+                # After ||, the cd is skipped when the command before it
+                # succeeded: in "a || cd x && cat y", cat may run from either
+                if previous_operator == "||":
+                    moved += locations
+                locations = _unique(moved)
             run.extend(locations)
             if command.operator != "&&":
                 locations = _unique(reversed(run))
                 run = list(locations)
+            previous_operator = command.operator
         return segments
 
     def _evaluate_command_segments(

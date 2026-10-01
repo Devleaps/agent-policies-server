@@ -31,6 +31,7 @@ class ParsedCommand:
         chained: List of chained commands (&&, ||, ;)
         process_substitutions: List of commands from <(...) or >(...) substitutions
         expanded_words: Words containing a shell parameter expansion ($X, ${X})
+        assignments: Names set by prefix assignments (CDPATH=/ cd etc)
         test_paths: For test and [, the operands of file tests, in order
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
@@ -46,6 +47,7 @@ class ParsedCommand:
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
     expanded_words: List[str] = field(default_factory=list)
+    assignments: List[str] = field(default_factory=list)
     test_paths: List[str] = field(default_factory=list)
     # The list operator after this command (&&, ||, ;, &)
     operator: Optional[str] = None
@@ -201,9 +203,12 @@ class BashCommandParser:
         redirects = []
         process_substitutions = []
         expanded_words = []
+        assignments = []
 
         for part in node.parts:
-            if part.kind == "word":
+            if part.kind == "assignment":
+                assignments.append(part.word.split("=", 1)[0])
+            elif part.kind == "word":
                 process_substitutions.extend(cls._word_substitutions(part, original))
                 if any(
                     sub.kind == "parameter"
@@ -287,6 +292,7 @@ class BashCommandParser:
             redirects=redirects,
             process_substitutions=process_substitutions,
             expanded_words=expanded_words,
+            assignments=assignments,
             test_paths=(
                 file_test_operands(remaining) if executable in ("test", "[") else []
             ),
