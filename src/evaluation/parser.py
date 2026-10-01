@@ -5,9 +5,13 @@ It uses bashlex (Python port of GNU bash parser) to generate AST and extract
 command components.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 import bashlex
+
+# $( or a backtick not escaped by an odd number of backslashes
+_UNESCAPED_SUBSTITUTION = re.compile(r"(?<!\\)(?:\\\\)*(?:\$\(|`)")
 
 
 class ParseError(Exception):
@@ -170,8 +174,8 @@ class BashCommandParser:
                 redirect_op = cls._get_redirect_operator(part)
                 # A heredoc body or here-string runs its substitutions
                 heredoc = getattr(part, "heredoc", None)
-                if heredoc is not None and (
-                    "$(" in heredoc.value or "`" in heredoc.value
+                if heredoc is not None and _UNESCAPED_SUBSTITUTION.search(
+                    heredoc.value
                 ):
                     raise ParseError("Command substitution in redirect not supported")
                 if any(
