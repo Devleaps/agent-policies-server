@@ -414,12 +414,14 @@ class RegoEvaluator:
     def _outside_path(path: str, location: Location, workspace_root: Optional[str]):
         """Resolve a relative path used from outside the workspace.
 
-        Returns the workspace-relative form if it lands back inside, the
-        absolute path otherwise, or a '../' form when the directory is unknown -
-        either of the last two fails is_safe_path.
+        Returns the workspace-relative form if it lands back inside, and the
+        absolute path otherwise, which fails is_safe_path. When the directory
+        is unknown the path stays as it is: nothing is allowed from there
+        anyway, and cd $X && cat README.md should defer to the user, not be
+        denied as a path outside the workspace.
         """
         if not location.cwd:
-            return "../" + path
+            return path
         resolved = os.path.normpath(os.path.join(location.cwd, path))
         if workspace_root and _is_within(resolved, workspace_root):
             return os.path.relpath(resolved, workspace_root.rstrip("/"))

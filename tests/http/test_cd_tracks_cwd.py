@@ -79,8 +79,6 @@ def test_cd_to_a_sibling_group_inside_the_workspace_allowed(client, base_event):
         "cd /etc && cat passwd",
         "cd ~ && cat .ssh/id_rsa",
         "cd && cat .ssh/id_rsa",
-        "cd $HOME && cat .aws/credentials",
-        "cd - && cat secrets.txt",
         "cd /etc; cat passwd",
         "cd /etc && echo x > hosts",
     ],
@@ -129,9 +127,6 @@ def test_without_workspace_root_only_plain_descent_stays_inside(
         "cd a/b/c; cat x/../../../secret",
         # If cd /etc works, cd /workspace is skipped and cat runs in /etc
         "cd /etc || cd /workspace && cat passwd",
-        # CDPATH decides where a relative cd goes
-        "CDPATH=/ cd etc && cat passwd",
-        "HOME=/etc cd && cat passwd",
     ],
 )
 def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, command):
@@ -150,3 +145,23 @@ def test_cd_back_into_the_workspace_from_outside_allowed(client, base_event):
 def test_cwd_with_traversal_out_of_the_workspace_is_outside(client, base_event):
     event = _event(base_event, cwd="/workspace/../etc")
     check_policy(client, event, "cat passwd", "deny")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # The directory is unknown, so a relative path cannot be judged
+        "cd $HOME && cat .aws/credentials",
+        "cd - && cat secrets.txt",
+        "cd $X && cat README.md",
+        "cd $(git rev-parse --show-toplevel) && cat README.md",
+        "cd $X && ls > out.txt",
+        # CDPATH or HOME decides where cd goes
+        "CDPATH=/ cd etc && cat passwd",
+        "HOME=/etc cd && cat passwd",
+    ],
+)
+def test_chain_after_cd_to_an_unknown_directory_defers_to_user(
+    client, base_event, command
+):
+    check_policy(client, _event(base_event), command, None)
