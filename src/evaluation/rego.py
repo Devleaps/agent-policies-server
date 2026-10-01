@@ -273,6 +273,15 @@ class RegoEvaluator:
                             reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
                         )
                     )
+            # From an unknown directory (after cd $(...), cd $X, cd -), even a
+            # command without paths reads somewhere unknown: ls lists it, git
+            # status reports on it. Nothing is allowed there; deny still is.
+            if UNKNOWN_LOCATION in locations:
+                current_command_decisions = [
+                    d
+                    for d in current_command_decisions
+                    if d.action != PolicyAction.ALLOW
+                ]
             segments.append(current_command_decisions)
 
         for sub_command in parsed.pipes + parsed.process_substitutions:
