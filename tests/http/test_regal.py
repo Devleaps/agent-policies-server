@@ -2,6 +2,8 @@
 HTTP Integration Tests for regal (Rego linter) and installing it via brew.
 """
 
+import pytest
+
 from tests.http.conftest import check_policy
 
 
@@ -35,3 +37,18 @@ def test_regal_lint_unsafe_path_denied(client, base_event):
 
 def test_regal_fix_defers_to_user(client, base_event):
     check_policy(client, base_event, "regal fix policies", None)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "regal lint --output-file report.json policies",
+        "regal lint -o report.json policies",
+    ],
+)
+def test_regal_lint_writing_a_report_defers_to_user(client, base_event, command):
+    check_policy(client, base_event, command, None)
+
+
+def test_regal_lint_report_outside_workspace_denied(client, base_event):
+    check_policy(client, base_event, "regal lint --output-file /etc/x policies", "deny")
