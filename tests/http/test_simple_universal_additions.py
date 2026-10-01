@@ -26,6 +26,11 @@ def test_date_utc_with_format_allowed(client, base_event):
     check_policy(client, base_event, "date -u +%Y-%m-%dT%H:%M:%SZ", "allow")
 
 
+def test_date_quoted_format_with_spaces_allowed(client, base_event):
+    check_policy(client, base_event, "date '+%Y-%m-%d %H:%M:%S'", "allow")
+    check_policy(client, base_event, 'date -u "+%Y-%m-%d %H:%M"', "allow")
+
+
 def test_date_adjusted_display_allowed(client, base_event):
     check_policy(client, base_event, "date -v-1d +%Y-%m-%d", "allow")
 

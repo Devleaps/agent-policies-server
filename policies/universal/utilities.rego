@@ -14,6 +14,9 @@ date_flag_keys := {"-u", "--utc", "-R", "-I"}
 
 date_value_keys := {"-d", "--date"}
 
+# A display format: +%Y, or quoted as the parser keeps it ('+%Y %H')
+date_is_format(word) if startswith(trim_left(word, "\"'"), "+")
+
 date_flag_is_display(flag) if {
 	flag in date_flag_keys
 }
@@ -25,7 +28,7 @@ date_flag_is_display(flag) if {
 
 date_option_is_display(key, value) if {
 	key in date_flag_keys
-	startswith(value, "+")
+	date_is_format(value)
 }
 
 date_option_is_display(key, _) if {
@@ -45,7 +48,7 @@ decisions[decision] if {
 		date_option_is_display(key, value)
 	}
 	every arg in input.parsed.arguments {
-		startswith(arg, "+")
+		date_is_format(arg)
 	}
 	decision := {"action": "allow"}
 }
