@@ -1,5 +1,7 @@
 package python_pip
 
+import data.helpers
+
 # Pip install policies with PyPI age checking
 
 # pip audit - allow
@@ -31,11 +33,24 @@ decisions[decision] if {
 }
 
 # pip install -r requirements.txt - allow
+# The -r file itself must be a workspace requirements file, and nothing else
+# may be installed: "requirements.txt" elsewhere in the command (pip install
+# -r evil.txt && echo requirements.txt) is not enough. A repeated -r hides
+# the earlier file from the parser, so it defers.
+pip_requirements_file(path) if {
+	helpers.is_safe_path(path)
+	regex.match(`(^|/)requirements[A-Za-z0-9_.-]*\.txt$`, path)
+}
+
+pip_repeated_requirements if count(regex.find_n(`(^|\s)(-r|--requirement)(\s|=)`, input.parsed.original, -1)) > 1
+
 decisions[decision] if {
 	input.parsed.executable == "pip"
 	input.parsed.subcommand == "install"
-	input.parsed.options["-r"]
-	contains(input.event.command, "requirements.txt")
+	count(input.parsed.options) == 1
+	count(input.parsed.arguments) == 0
+	pip_requirements_file(input.parsed.options["-r"])
+	not pip_repeated_requirements
 	decision := {"action": "allow"}
 }
 
