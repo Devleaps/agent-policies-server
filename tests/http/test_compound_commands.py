@@ -47,6 +47,11 @@ def test_compound_commands_of_allowed_commands_are_allowed(client, base_event, c
         "{ pwd; rm -rf build; }",
         "pwd & rm -rf build",
         "cat <(rm -rf build)",
+        # Every statement of a group in a pipe runs
+        "{ pwd; rm -rf build; } | cat",
+        "cat README.md | { head -n 1; rm -rf build; }",
+        # A redirect with no command still writes the file
+        "pwd; > /etc/passwd",
     ],
 )
 def test_denied_inner_command_denies(client, base_event, command):
@@ -245,6 +250,7 @@ def test_changed_home_makes_tilde_unknown():
     [
         "HOME=/etc; cd && cat passwd",
         "CDPATH=/; cd etc && cat passwd",
+        "CDPATH=/ cd etc && cat passwd",
     ],
 )
 def test_changed_home_or_cdpath_makes_cd_unknown(client, base_event, command):
