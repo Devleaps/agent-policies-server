@@ -16,7 +16,6 @@ from tests.http.conftest import check_policy
         "export GREETING='hello world'",
         'export GREETING="hello world"',
         "export EMPTY=",
-        "export PATH=bin",
         "export A=$B",
         'export A="${HOME}/x"',
     ],
@@ -30,6 +29,17 @@ def test_export_assignment_allowed(client, base_event, command):
     [
         "export A",
         "export -n A",
+        # Variables that change which program runs or what it loads
+        "export PATH=bin",
+        "export PATH=.:$PATH",
+        "export PYTHONPATH=src",
+        "export LD_PRELOAD=evil.so",
+        "export DYLD_INSERT_LIBRARIES=evil.dylib",
+        "export GIT_SSH_COMMAND=evil",
+        "export PAGER=evil",
+        "export BASH_ENV=evil.sh",
+        "export GIT_CONFIG_COUNT=1",
+        "export A=B PATH=bin",
         "export",
     ],
 )
