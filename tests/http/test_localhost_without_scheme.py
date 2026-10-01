@@ -32,6 +32,9 @@ def test_curl_localhost_without_scheme_allowed(client, base_event, command):
         "curl 127.0.0.1.evil.com:80/x",
         "curl evil.com/localhost",
         "curl evil.com/?u=http://localhost",
+        # localhost as a payload is not the URL
+        "curl -d localhost https://example.com",
+        "curl -H localhost:8080 https://example.com",
         "curl example.com",
     ],
 )
