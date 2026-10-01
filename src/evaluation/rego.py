@@ -101,7 +101,8 @@ def _unique(locations) -> Locations:
 
 
 def _is_workspace_relative(path: str) -> bool:
-    return not path.startswith(("/", "~", "../")) and path != ".."
+    # Any .. segment may climb out: x/../../secret
+    return not path.startswith(("/", "~")) and ".." not in path.split("/")
 
 
 class RegoEvaluator:
@@ -217,6 +218,7 @@ class RegoEvaluator:
         segments = []
         # Every location seen since the last operator other than &&
         run = list(locations)
+        previous_operator = None
         for command in commands:
             if command.location_unknown_before:
                 locations = (UNKNOWN_LOCATION,)
@@ -225,13 +227,19 @@ class RegoEvaluator:
             )
             # A piped cd runs in a subshell
             if command.executable == "cd" and not command.pipes:
-                locations = _unique(loc.after_cd(event, command) for loc in locations)
+                moved = tuple(loc.after_cd(event, command) for loc in locations)
+                # After ||, the cd is skipped when the command before it
+                # succeeded: in "a || cd x && cat y", cat may run from either
+                if previous_operator == "||":
+                    moved += locations
+                locations = _unique(moved)
             if command.location_unknown_after:
                 locations = (UNKNOWN_LOCATION,)
             run.extend(locations)
             if command.operator != "&&":
                 locations = _unique(reversed(run))
                 run = list(locations)
+            previous_operator = command.operator
         return segments
 
     def _evaluate_command_segments(
@@ -426,6 +434,8 @@ class RegoEvaluator:
             [a for a in parsed.arguments]
             + [path for _, path in parsed.redirects]
             + list(parsed.options.values())
+            + [v for values in parsed.repeated_options.values() for v in values]
+            + parsed.test_paths
         )
         resolved_paths = {}
         for p in paths:
@@ -444,6 +454,8 @@ class RegoEvaluator:
             "arguments": parsed.arguments,
             "flags": parsed.flags,
             "options": parsed.options,
+            "repeated_options": parsed.repeated_options,
+            "test_paths": parsed.test_paths,
             "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
             "original": parsed.original,
         }

@@ -105,6 +105,13 @@ def test_without_workspace_root_only_plain_descent_stays_inside(
         "cd subdir && pwd; cat ../README.md",
         # A piped cd runs in a subshell
         "cd subdir | true && cat ../README.md",
+        # A .. inside the path climbs out from the starting directory
+        "cd a/b/c; cat x/../../../secret",
+        # If cd /etc works, cd /workspace is skipped and cat runs in /etc
+        "cd /etc || cd /workspace && cat passwd",
+        # CDPATH decides where a relative cd goes
+        "CDPATH=/ cd etc && cat passwd",
+        "HOME=/etc cd && cat passwd",
     ],
 )
 def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, command):
@@ -113,3 +120,4 @@ def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, comma
 
 def test_cd_followed_by_and_moves_the_directory(client, base_event):
     check_policy(client, base_event, "cd subdir && cat ../README.md", "allow")
+    check_policy(client, base_event, "cd a/b/c && cat x/../../y.txt", "allow")

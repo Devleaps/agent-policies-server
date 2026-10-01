@@ -23,6 +23,9 @@ MAX_STATEMENTS = 200
 # A for loop over more literal items is evaluated once, with its variable unknown
 MAX_FOR_ITEMS = 20
 
+# $( or a backtick not escaped by an odd number of backslashes
+_UNESCAPED_SUBSTITUTION = re.compile(r"(?<!\\)(?:\\\\)*(?:\$\(|`)")
+
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _NAME_PREFIX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*")
 # A substituted value with these would be split or globbed by the shell
@@ -37,6 +40,36 @@ _ENV_REPLACING = {"source", ".", "eval"}
 _SHELL_BEHAVIOUR_VARS = ("IFS", "HOME", "CDPATH")
 
 
+# File tests of test / [: the operand(s) name a path
+TEST_UNARY_FILE_OPS = {
+    "-a", "-e", "-f", "-d", "-r", "-w", "-x", "-s", "-L", "-h", "-p", "-S",
+    "-b", "-c", "-g", "-u", "-k", "-O", "-G", "-N",
+}
+TEST_BINARY_FILE_OPS = {"-nt", "-ot", "-ef"}
+# After these, a test expression starts again (so -a there is "file exists")
+TEST_EXPRESSION_STARTS = {"!", "(", "-a", "-o"}
+
+
+def file_test_operands(words: List[str]) -> List[str]:
+    """Return the operands of file tests in a test / [ expression, in order.
+
+    -a is "file exists" where an expression starts and "and" between two
+    expressions: [ -a x ] tests x, [ -f a -a -f b ] tests a and b.
+    """
+    if words and words[-1] == "]":
+        words = words[:-1]
+    paths = []
+    for i, word in enumerate(words):
+        has_next = i + 1 < len(words)
+        starts_expression = i == 0 or words[i - 1] in TEST_EXPRESSION_STARTS
+        if word in TEST_UNARY_FILE_OPS and has_next:
+            if word != "-a" or starts_expression:
+                paths.append(words[i + 1])
+        elif word in TEST_BINARY_FILE_OPS and has_next and i > 0:
+            paths.extend([words[i - 1], words[i + 1]])
+    return paths
+
+
 @dataclass
 class ParsedCommand:
     """Represents a parsed bash command with all its components.
@@ -48,12 +81,14 @@ class ParsedCommand:
         arguments: Positional arguments (excludes flags and options)
         flags: Boolean flags (e.g., ["--force", "-v"])
         options: Options with values (e.g., {"-m": "message", "--tag": "v1.0"})
+        repeated_options: Earlier values of an option given more than once
         redirects: List of redirect operations (e.g., [(">>", "output.log")])
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;), and every statement of
             loops, conditionals and brace groups, flattened in order
         process_substitutions: Commands from <(...), >(...), $(...) and `...`
         expanded_words: Words whose value is not known before running
+        test_paths: For test and [, the operands of file tests, in order
         group: Statements of a subshell, when this is one
         operator: The list operator after this statement (&&, ||, ;, &)
         location_unknown_before: The working directory is unknown here
@@ -67,11 +102,13 @@ class ParsedCommand:
     arguments: List[str] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
     options: Dict[str, str] = field(default_factory=dict)
+    repeated_options: Dict[str, List[str]] = field(default_factory=dict)
     redirects: List[Tuple[str, str]] = field(default_factory=list)
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
     expanded_words: List[str] = field(default_factory=list)
+    test_paths: List[str] = field(default_factory=list)
     group: Optional[List["ParsedCommand"]] = None
     operator: Optional[str] = None
     location_unknown_before: bool = False
@@ -342,7 +379,12 @@ class BashCommandParser:
                 # Skipping it would leave a command unevaluated
                 raise ParseError(f"Unsupported node in pipeline: {element.kind}")
             statements = cls._statements(element, ctx.subshell())
-            commands.append(cls._sequence_node(statements, ctx.original))
+            if len(statements) == 1:
+                commands.append(statements[0])
+            else:
+                # As a group, so a later .chained cannot overwrite the rest
+                # of { a; b; } | c
+                commands.append(cls._group(statements, element, ctx.original))
         result = commands[0]
         result.pipes = commands[1:]
         return result
@@ -555,8 +597,8 @@ class BashCommandParser:
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 heredoc = getattr(part, "heredoc", None)
-                if heredoc is not None and (
-                    "$(" in heredoc.value or "`" in heredoc.value
+                if heredoc is not None and _UNESCAPED_SUBSTITUTION.search(
+                    heredoc.value
                 ):
                     raise ParseError(
                         "Command substitution in here-document not supported"
@@ -580,7 +622,9 @@ class BashCommandParser:
                 ctx.assign(value, None if expanded else value.split("=", 1)[1])
             return ParsedCommand(
                 executable="",
-                group=[],
+                # With a redirect (> /etc/passwd) it is evaluated like a
+                # command, so the redirect check runs
+                group=None if redirects else [],
                 redirects=redirects,
                 process_substitutions=process_substitutions,
                 original=ctx.original,
@@ -597,13 +641,13 @@ class BashCommandParser:
         arguments: list[str] = []
         flags = []
         options = {}
-        # Values of an option given again: a dict keeps only the last one, so
-        # "cat -n ~/.ssh/id_rsa -n README.md" would hide the key from policies
-        displaced = []
+        # Earlier values of an option given again: a dict keeps only the last
+        # one, so "cat -n ~/.ssh/id_rsa -n README.md" would hide the key
+        repeated_options: dict[str, list[str]] = {}
 
         def set_option(key: str, value: str) -> None:
             if key in options:
-                displaced.append(options[key])
+                repeated_options.setdefault(key, []).append(options[key])
             options[key] = value
 
         i = 0
@@ -616,6 +660,9 @@ class BashCommandParser:
                 if "=" in part:
                     key, value = part.split("=", 1)
                     set_option(key, value)
+                    # --directory=$HOME: policies see only the value
+                    if part in expanded_words:
+                        expanded_words.append(value)
                 # Check if next part is the value for this option
                 elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
                     set_option(part, remaining[i + 1])
@@ -637,21 +684,29 @@ class BashCommandParser:
 
             i += 1
 
-        # Checked as arguments, like any other word that may be a path
-        arguments.extend(displaced)
-
+        prefix_names = {value.split("=", 1)[0] for value, _ in assignments if value}
         return ParsedCommand(
             executable=executable,
             subcommand=subcommand,
             arguments=arguments,
             flags=flags,
             options=options,
+            repeated_options=repeated_options,
             redirects=redirects,
             process_substitutions=process_substitutions,
             expanded_words=expanded_words,
-            # cd ~ and cd follow $HOME and $CDPATH; a changed one moves it
+            test_paths=(
+                file_test_operands(remaining) if executable in ("test", "[") else []
+            ),
+            # cd ~ and cd follow $HOME and $CDPATH; a changed one moves it,
+            # including one set for this cd alone (CDPATH=/ cd etc)
             location_unknown_after=executable == "cd"
-            and (ctx.in_compound or "HOME" in ctx.env or "CDPATH" in ctx.env),
+            and (
+                ctx.in_compound
+                or "HOME" in ctx.env
+                or "CDPATH" in ctx.env
+                or bool({"HOME", "CDPATH"} & prefix_names)
+            ),
             original=ctx.original,
             pos=node.pos,
         )

