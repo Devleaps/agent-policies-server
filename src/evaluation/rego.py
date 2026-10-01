@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 
 
 def _is_within(path: str, root: str) -> bool:
-    root = root.rstrip("/")
+    # /workspace/../etc is not inside /workspace
+    path = os.path.normpath(path)
+    root = os.path.normpath(root).rstrip("/")
     return path == root or path.startswith(root + "/")
 
 
@@ -51,7 +53,8 @@ class Location:
     @classmethod
     def initial(cls, event: ToolUseEvent) -> "Location":
         if event.workspace_root and event.cwd:
-            return cls(event.cwd, not _is_within(event.cwd, event.workspace_root))
+            cwd = os.path.normpath(event.cwd)
+            return cls(cwd, not _is_within(cwd, event.workspace_root))
         # Without a workspace root, relative paths are assumed to be inside
         return cls(event.cwd, False)
 
@@ -256,8 +259,11 @@ class RegoEvaluator:
 
         # Outside the workspace, or somewhere unknown (cd $X, cd -), even a
         # command without paths reads that directory: cd /etc && ls lists it.
-        # Nothing is allowed there; deny still is.
-        if any(location.outside for location in locations):
+        # Nothing is allowed there; deny still is. cd itself only moves, so
+        # cd /workspace from /etc stays allowed.
+        if parsed.executable != "cd" and any(
+            location.outside for location in locations
+        ):
             current_command_decisions = [
                 d for d in current_command_decisions if d.action != PolicyAction.ALLOW
             ]

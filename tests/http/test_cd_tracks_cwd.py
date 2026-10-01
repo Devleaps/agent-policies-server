@@ -37,6 +37,8 @@ def test_cd_alone_allowed(client, base_event, command):
         "cd ../other && cat README.md",
         "cd .. && cd repo && cat README.md",
         "cd sub && git status",
+        # Back into the workspace: cat runs in /workspace again
+        "cd /tmp && cd /workspace && cat README.md",
     ],
 )
 def test_chain_after_cd_inside_workspace_allowed(client, base_event, command):
@@ -52,7 +54,6 @@ def test_chain_after_cd_inside_workspace_allowed(client, base_event, command):
         "cd ../../.. && ls",
         "cd /etc && git status",
         # Even a safe path: nothing is allowed from outside the workspace
-        "cd /tmp && cd /workspace && cat README.md",
         "cd /etc && cat /workspace/repo/README.md",
         "cd /etc && cat ../workspace/repo/README.md",
     ],
@@ -140,3 +141,12 @@ def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, comma
 def test_cd_followed_by_and_moves_the_directory(client, base_event):
     check_policy(client, base_event, "cd subdir && cat ../README.md", "allow")
     check_policy(client, base_event, "cd a/b/c && cat x/../../y.txt", "allow")
+
+
+def test_cd_back_into_the_workspace_from_outside_allowed(client, base_event):
+    check_policy(client, _event(base_event, cwd="/etc"), "cd /workspace", "allow")
+
+
+def test_cwd_with_traversal_out_of_the_workspace_is_outside(client, base_event):
+    event = _event(base_event, cwd="/workspace/../etc")
+    check_policy(client, event, "cat passwd", "deny")
