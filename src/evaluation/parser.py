@@ -26,6 +26,7 @@ class ParsedCommand:
         arguments: Positional arguments (excludes flags and options)
         flags: Boolean flags (e.g., ["--force", "-v"])
         options: Options with values (e.g., {"-m": "message", "--tag": "v1.0"})
+        repeated_options: Earlier values of an option given more than once
         redirects: List of redirect operations (e.g., [(">>", "output.log")])
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
@@ -39,6 +40,7 @@ class ParsedCommand:
     arguments: List[str] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
     options: Dict[str, str] = field(default_factory=dict)
+    repeated_options: Dict[str, List[str]] = field(default_factory=dict)
     redirects: List[Tuple[str, str]] = field(default_factory=list)
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
@@ -186,13 +188,13 @@ class BashCommandParser:
         arguments: list[str] = []
         flags = []
         options = {}
-        # Values of an option given again: a dict keeps only the last one, so
-        # "cat -n ~/.ssh/id_rsa -n README.md" would hide the key from policies
-        displaced = []
+        # Earlier values of an option given again: a dict keeps only the last
+        # one, so "cat -n ~/.ssh/id_rsa -n README.md" would hide the key
+        repeated_options: dict[str, list[str]] = {}
 
         def set_option(key: str, value: str) -> None:
             if key in options:
-                displaced.append(options[key])
+                repeated_options.setdefault(key, []).append(options[key])
             options[key] = value
 
         i = 0
@@ -226,15 +228,13 @@ class BashCommandParser:
 
             i += 1
 
-        # Checked as arguments, like any other word that may be a path
-        arguments.extend(displaced)
-
         return ParsedCommand(
             executable=executable,
             subcommand=subcommand,
             arguments=arguments,
             flags=flags,
             options=options,
+            repeated_options=repeated_options,
             redirects=redirects,
             process_substitutions=process_substitutions,
             original=original,

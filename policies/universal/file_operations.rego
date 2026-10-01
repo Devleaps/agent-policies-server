@@ -29,6 +29,16 @@ all_args_and_options_safe if {
 	every key, value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
+	repeated_option_values_safe
+}
+
+# Earlier values of an option given more than once (cat -n x -n y)
+repeated_option_values_safe if {
+	every _, values in input.parsed.repeated_options {
+		every value in values {
+			helpers.is_safe_path(value)
+		}
+	}
 }
 
 # Helper for [ command - filters out closing ] bracket from arguments
@@ -42,6 +52,7 @@ bracket_args_and_options_safe if {
 	every key, value in input.parsed.options {
 		helpers.is_safe_path(value)
 	}
+	repeated_option_values_safe
 }
 
 # Allow cat with safe paths
