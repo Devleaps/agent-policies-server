@@ -36,14 +36,33 @@ def test_cd_alone_allowed(client, base_event, command):
     [
         "cd ../other && cat README.md",
         "cd .. && cd repo && cat README.md",
-        "cd /tmp && cd /workspace && cat README.md",
-        "cd /etc && cat /workspace/repo/README.md",
-        "cd /etc && cat ../workspace/repo/README.md",
         "cd sub && git status",
     ],
 )
 def test_chain_after_cd_inside_workspace_allowed(client, base_event, command):
     check_policy(client, _event(base_event), command, "allow")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # A command without paths reads the directory it runs in
+        "cd /etc && ls",
+        "cd ~ && ls",
+        "cd ../../.. && ls",
+        "cd /etc && git status",
+        # Even a safe path: nothing is allowed from outside the workspace
+        "cd /tmp && cd /workspace && cat README.md",
+        "cd /etc && cat /workspace/repo/README.md",
+        "cd /etc && cat ../workspace/repo/README.md",
+    ],
+)
+def test_commands_outside_workspace_defer_to_user(client, base_event, command):
+    check_policy(client, _event(base_event), command, None)
+
+
+def test_cd_out_of_the_workspace_alone_allowed(client, base_event):
+    check_policy(client, _event(base_event), "cd /etc", "allow")
 
 
 def test_cd_to_a_sibling_group_inside_the_workspace_allowed(client, base_event):
