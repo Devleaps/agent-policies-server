@@ -45,7 +45,6 @@ def test_regal_fix_defers_to_user(client, base_event):
         "regal lint --output-file report.json policies",
         "regal lint -o report.json policies",
         "regal lint policies > report.json",
-        "regal lint \"$HOME\"",
     ],
 )
 def test_regal_lint_writing_a_report_defers_to_user(client, base_event, command):
@@ -56,6 +55,6 @@ def test_regal_lint_report_outside_workspace_denied(client, base_event):
     check_policy(client, base_event, "regal lint --output-file /etc/x policies", "deny")
 
 
-@pytest.mark.parametrize("command", ["regal lint \"/etc\"", "regal lint ~/policies"])
+@pytest.mark.parametrize("command", ["regal lint \"/etc\"", "regal lint ~/policies", "regal lint \"$HOME\""])
 def test_regal_lint_quoted_or_home_path_denied(client, base_event, command):
     check_policy(client, base_event, command, "deny")
