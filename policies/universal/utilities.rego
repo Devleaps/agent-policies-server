@@ -59,10 +59,23 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
-# md5 - checksum files (safe paths required)
+# md5 - checksum files (safe paths required). The parser keeps one value per
+# option, so a repeated option (md5 -q /etc/passwd -q x) hides a file; md5
+# only allows when no option occurs twice in the command
+md5_repeated_option if {
+	some key, _ in input.parsed.options
+	pattern := concat("", [`(^|\s)`, key, `(\s|=|$)`])
+	count(regex.find_n(pattern, input.parsed.original, -1)) > 1
+}
+
+md5_allowed if {
+	all_args_and_options_safe
+	not md5_repeated_option
+}
+
 decisions[decision] if {
 	input.parsed.executable == "md5"
-	all_args_and_options_safe
+	md5_allowed
 	decision := {"action": "allow"}
 }
 

@@ -69,6 +69,10 @@ def test_md5_parent_path_denied(client, base_event):
     check_policy(client, base_event, "md5 ../app-production.db.bak", "deny")
 
 
+def test_md5_repeated_option_not_allowed(client, base_event):
+    check_policy(client, base_event, "md5 -q /etc/passwd -q file.txt", None)
+
+
 def test_pgrep_allowed_with_pkill_guidance(client, base_event):
     data = check_policy(client, base_event, "pgrep -f uvicorn", "allow")
     assert "pkill" in data["hookSpecificOutput"]["permissionDecisionReason"]
