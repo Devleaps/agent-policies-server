@@ -12,9 +12,10 @@ import json
 import logging
 import os
 import re
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 import httpx
 from regopy import Interpreter, NodeKind
@@ -44,6 +45,86 @@ def package_base_name(requirement: str) -> str:
     """
     unquoted = requirement.strip().replace('"', "").replace("'", "")
     return _REQUIREMENT_NAME_END.split(unquoted, maxsplit=1)[0]
+
+
+def _is_within(path: str, root: str) -> bool:
+    # /workspace/../etc is not inside /workspace
+    path = os.path.normpath(path)
+    root = os.path.normpath(root).rstrip("/")
+    return path == root or path.startswith(root + "/")
+
+
+@dataclass(frozen=True)
+class Location:
+    """Where a command in a chain runs, as far as the policy can tell.
+
+    `cwd` is the absolute directory, or None when unknown. `outside` means the
+    directory is outside the workspace or cannot be determined; relative
+    paths used from there are never workspace-relative.
+    """
+
+    cwd: Optional[str]
+    outside: bool
+
+    @classmethod
+    def initial(cls, event: ToolUseEvent) -> "Location":
+        if event.workspace_root and event.cwd:
+            cwd = os.path.normpath(event.cwd)
+            return cls(cwd, not _is_within(cwd, event.workspace_root))
+        # Without a workspace root, relative paths are assumed to be inside
+        return cls(event.cwd, False)
+
+    def after_cd(self, event: ToolUseEvent, cd: ParsedCommand) -> "Location":
+        unknown = Location(None, True)
+        if cd.flags or cd.options:
+            return unknown
+        # CDPATH=/ cd etc goes to /etc; HOME=/x cd goes to /x
+        if {"CDPATH", "HOME"} & set(cd.assignments):
+            return unknown
+        target = cd.arguments[0] if cd.arguments else "~"
+        if target == "-" or target in cd.expanded_words:
+            return unknown
+
+        if target == "~" or target.startswith("~/"):
+            if not event.home:
+                return unknown
+            target = event.home + target[1:]
+        elif target.startswith("~"):
+            return unknown
+
+        climbs = os.path.isabs(target) or ".." in target.split("/")
+        if os.path.isabs(target):
+            new_cwd = os.path.normpath(target)
+        elif self.cwd:
+            new_cwd = os.path.normpath(os.path.join(self.cwd, target))
+        else:
+            # Unknown starting directory: only a plain descent stays inside
+            return Location(None, self.outside or climbs)
+
+        if event.workspace_root:
+            return Location(new_cwd, not _is_within(new_cwd, event.workspace_root))
+        return Location(new_cwd, self.outside or climbs)
+
+
+UNKNOWN_LOCATION = Location(None, True)
+
+# Where a statement may run from, most likely first
+Locations = Tuple[Location, ...]
+
+# Past this many possible locations, the location is taken as unknown
+MAX_LOCATIONS = 8
+
+
+def _unique(locations) -> Locations:
+    result = tuple(dict.fromkeys(locations))
+    if len(result) > MAX_LOCATIONS:
+        return (UNKNOWN_LOCATION,)
+    return result
+
+
+def _is_workspace_relative(path: str) -> bool:
+    # Any .. segment may climb out: x/../../secret
+    return not path.startswith(("/", "~")) and ".." not in path.split("/")
 
 
 class RegoEvaluator:
@@ -124,14 +205,58 @@ class RegoEvaluator:
         return all_decisions
 
     def evaluate_segments(
-        self, event: ToolUseEvent, parsed: ParsedCommand, bundles: List[str]
+        self,
+        event: ToolUseEvent,
+        parsed: ParsedCommand,
+        bundles: List[str],
+        locations: Optional[Locations] = None,
     ) -> List[List[PolicyDecision]]:
         """Evaluate each command in the chain, pipes and process substitutions.
+
+        A `cd` in the chain moves the location the later chained commands are
+        evaluated from, so `cd ../.. && cat x` checks x where it really is. A
+        cd may fail, so past anything but `&&` a command may also run from
+        where the cd started: every such location is kept, newest first.
+        Pipes and process substitutions run in subshells and do not move it.
 
         Returns one list of decisions per command segment, in order; an empty
         list means no rule matched that segment.
         """
-        input_doc = self._build_input_document(event, parsed)
+        if locations is None:
+            locations = (Location.initial(event),)
+
+        segments = []
+        # Every location seen since the last operator other than &&
+        run = list(locations)
+        previous_operator = None
+        for command in [parsed] + parsed.chained:
+            segments.extend(
+                self._evaluate_command_segments(event, command, bundles, locations)
+            )
+            # A piped cd runs in a subshell
+            if command.executable == "cd" and not command.pipes:
+                moved = tuple(loc.after_cd(event, command) for loc in locations)
+                # After ||, the cd is skipped when the command before it
+                # succeeded: in "a || cd x && cat y", cat may run from either
+                if previous_operator == "||":
+                    moved += locations
+                locations = _unique(moved)
+            run.extend(locations)
+            if command.operator != "&&":
+                locations = _unique(reversed(run))
+                run = list(locations)
+            previous_operator = command.operator
+        return segments
+
+    def _evaluate_command_segments(
+        self,
+        event: ToolUseEvent,
+        parsed: ParsedCommand,
+        bundles: List[str],
+        locations: Locations,
+    ) -> List[List[PolicyDecision]]:
+        """Evaluate one command plus its pipes and process substitutions."""
+        input_doc = self._build_input_document(event, parsed, locations)
         self._enrich_input(input_doc, parsed)
 
         current_command_decisions = []
@@ -148,13 +273,23 @@ class RegoEvaluator:
                     )
                 )
 
+        # Outside the workspace, or somewhere unknown (cd $X, cd -), even a
+        # command without paths reads that directory: cd /etc && ls lists it.
+        # Nothing is allowed there; deny still is. cd itself only moves, so
+        # cd /workspace from /etc stays allowed.
+        if parsed.executable != "cd" and any(
+            location.outside for location in locations
+        ):
+            current_command_decisions = [
+                d for d in current_command_decisions if d.action != PolicyAction.ALLOW
+            ]
+
         segments = [current_command_decisions]
 
-        # Chained (&&, ||, ;), piped (|) and process-substituted commands
-        for sub_command in (
-            parsed.chained + parsed.pipes + parsed.process_substitutions
-        ):
-            segments.extend(self.evaluate_segments(event, sub_command, bundles))
+        for sub_command in parsed.pipes + parsed.process_substitutions:
+            segments.extend(
+                self.evaluate_segments(event, sub_command, bundles, locations)
+            )
 
         return segments
 
@@ -264,21 +399,49 @@ class RegoEvaluator:
 
         return path
 
+    @staticmethod
+    def _outside_path(path: str, location: Location, workspace_root: Optional[str]):
+        """Resolve a relative path used from outside the workspace.
+
+        Returns the workspace-relative form if it lands back inside, and the
+        absolute path otherwise, which fails is_safe_path. When the directory
+        is unknown the path stays as it is: nothing is allowed from there
+        anyway, and cd $X && cat README.md should defer to the user, not be
+        denied as a path outside the workspace.
+        """
+        if not location.cwd:
+            return path
+        resolved = os.path.normpath(os.path.join(location.cwd, path))
+        if workspace_root and _is_within(resolved, workspace_root):
+            return os.path.relpath(resolved, workspace_root.rstrip("/"))
+        return resolved
+
+    def _resolve_path(self, path: str, location: Location, event: ToolUseEvent) -> str:
+        r = self._normalize_path(path, event.workspace_root, location.cwd, event.home)
+        if location.outside and r == path and path and not path.startswith(("/", "~")):
+            r = self._outside_path(path, location, event.workspace_root)
+        return r
+
     def _build_input_document(
-        self, event: ToolUseEvent, parsed: ParsedCommand
+        self,
+        event: ToolUseEvent,
+        parsed: ParsedCommand,
+        locations: Optional[Locations] = None,
     ) -> Dict[str, Any]:
         """Convert ToolUseEvent and ParsedCommand to Rego input.
 
         Args:
             event: The tool use event
             parsed: Parsed command structure
+            locations: Where the command may run, most likely first; defaults
+                to the event's cwd
 
         Returns:
             Dictionary suitable for Rego input
         """
+        if locations is None:
+            locations = (Location.initial(event),)
         workspace_root = event.workspace_root
-        cwd = event.cwd
-        home = event.home
 
         paths = (
             [a for a in parsed.arguments]
@@ -287,11 +450,16 @@ class RegoEvaluator:
             + [v for values in parsed.repeated_options.values() for v in values]
             + parsed.test_paths
         )
-        resolved_paths = {
-            p: r
-            for p in paths
-            if (r := self._normalize_path(p, workspace_root, cwd, home)) != p
-        }
+        resolved_paths = {}
+        for p in paths:
+            candidates = [self._resolve_path(p, loc, event) for loc in locations]
+            # A path is only as safe as it is from every possible location
+            r = next(
+                (c for c in candidates if not _is_workspace_relative(c)),
+                candidates[0],
+            )
+            if r != p:
+                resolved_paths[p] = r
 
         parsed_dict = {
             "executable": parsed.executable,

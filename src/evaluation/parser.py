@@ -36,6 +36,7 @@ class ParsedCommand:
         chained: List of chained commands (&&, ||, ;)
         process_substitutions: List of commands from <(...) or >(...) substitutions
         expanded_words: Words containing a shell parameter expansion ($X, ${X})
+        assignments: Names set by prefix assignments (CDPATH=/ cd etc)
         test_paths: For test and [, the operands of file tests, in order
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
@@ -52,7 +53,10 @@ class ParsedCommand:
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
     expanded_words: List[str] = field(default_factory=list)
+    assignments: List[str] = field(default_factory=list)
     test_paths: List[str] = field(default_factory=list)
+    # The list operator after this command (&&, ||, ;, &)
+    operator: Optional[str] = None
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -182,6 +186,8 @@ class BashCommandParser:
                     parsed.pos = part_node.pos
                     parsed.original = original
                     commands.append(parsed)
+                elif part_node.kind == "operator" and commands:
+                    commands[-1].operator = part_node.op
                 elif part_node.kind != "operator":
                     # Skipping it would leave a command unevaluated
                     raise ParseError(f"Unsupported node in list: {part_node.kind}")
@@ -218,9 +224,16 @@ class BashCommandParser:
         redirects = []
         process_substitutions = []
         expanded_words = []
+        assignments = []
 
         for part in node.parts:
-            if part.kind == "word":
+            if part.kind == "assignment":
+                assignments.append(part.word.split("=", 1)[0])
+                # Prefix assignments (X=1 cmd) run their substitutions too
+                for subpart in getattr(part, "parts", None) or []:
+                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
+                        raise ParseError("Command substitution not supported")
+            elif part.kind == "word":
                 process_substitutions.extend(cls._word_substitutions(part, original))
                 if any(
                     sub.kind == "parameter"
@@ -231,11 +244,6 @@ class BashCommandParser:
                 # bashlex's .word has shell quoting removed, so policies see
                 # the path the shell will use: '/etc/passwd' -> /etc/passwd
                 parts.append(part.word)
-            elif part.kind == "assignment":
-                # Prefix assignments (X=1 cmd) run their substitutions too
-                for subpart in getattr(part, "parts", None) or []:
-                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
-                        raise ParseError("Command substitution not supported")
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # A heredoc body or here-string runs its substitutions
@@ -325,6 +333,7 @@ class BashCommandParser:
             redirects=redirects,
             process_substitutions=process_substitutions,
             expanded_words=expanded_words,
+            assignments=assignments,
             test_paths=(
                 file_test_operands(remaining) if executable in ("test", "[") else []
             ),

@@ -1,0 +1,167 @@
+"""
+HTTP Integration Tests: cd is allowed anywhere, and later commands in the
+chain are checked from the cd target.
+"""
+
+import pytest
+
+from tests.http.conftest import check_policy
+
+
+def _event(base_event, cwd="/workspace/repo", workspace_root="/workspace"):
+    base_event["workspace_root"] = workspace_root
+    base_event["home"] = "/home/user"
+    base_event["event"]["cwd"] = cwd
+    return base_event
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd ../other",
+        "cd /etc",
+        "cd ~",
+        "cd",
+        "cd -",
+        "cd $SOMEWHERE",
+        "cd ../../group-b/repo-b",
+    ],
+)
+def test_cd_alone_allowed(client, base_event, command):
+    check_policy(client, _event(base_event), command, "allow")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd ../other && cat README.md",
+        "cd .. && cd repo && cat README.md",
+        "cd sub && git status",
+        # Back into the workspace: cat runs in /workspace again
+        "cd /tmp && cd /workspace && cat README.md",
+    ],
+)
+def test_chain_after_cd_inside_workspace_allowed(client, base_event, command):
+    check_policy(client, _event(base_event), command, "allow")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # A command without paths reads the directory it runs in
+        "cd /etc && ls",
+        "cd ~ && ls",
+        "cd ../../.. && ls",
+        "cd /etc && git status",
+        # Even a safe path: nothing is allowed from outside the workspace
+        "cd /etc && cat /workspace/repo/README.md",
+        "cd /etc && cat ../workspace/repo/README.md",
+    ],
+)
+def test_commands_outside_workspace_defer_to_user(client, base_event, command):
+    check_policy(client, _event(base_event), command, None)
+
+
+def test_cd_out_of_the_workspace_alone_allowed(client, base_event):
+    check_policy(client, _event(base_event), "cd /etc", "allow")
+
+
+def test_cd_to_a_sibling_group_inside_the_workspace_allowed(client, base_event):
+    """cd ../../group-b/... from a repo two levels below the workspace root."""
+    event = _event(base_event, cwd="/workspace/group-a/repo-a")
+    check_policy(client, event, "cd ../../group-b/repo-b && ls src", "allow")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cd ../../.. && cat .ssh/id_rsa",
+        "cd /etc && cat passwd",
+        "cd ~ && cat .ssh/id_rsa",
+        "cd && cat .ssh/id_rsa",
+        "cd /etc; cat passwd",
+        "cd /etc && echo x > hosts",
+    ],
+)
+def test_chain_after_cd_outside_workspace_denied(client, base_event, command):
+    check_policy(client, _event(base_event), command, "deny")
+
+
+def test_pipe_does_not_move_location(client, base_event):
+    """cd in a pipeline runs in a subshell; the pipe's own paths are checked
+    from the original directory."""
+    check_policy(client, _event(base_event), "cat README.md | grep foo", "allow")
+
+
+def test_event_cwd_outside_workspace_denies_relative_paths(client, base_event):
+    check_policy(client, _event(base_event, cwd="/etc"), "cat passwd", "deny")
+
+
+@pytest.mark.parametrize(
+    "command, expected",
+    [
+        ("cd sub && cat README.md", "allow"),
+        ("cd .. && cat secrets.txt", "deny"),
+        ("cd /etc && cat passwd", "deny"),
+        ("cd ~ && cat .ssh/id_rsa", "deny"),
+    ],
+)
+def test_without_workspace_root_only_plain_descent_stays_inside(
+    client, base_event, command, expected
+):
+    event = _event(base_event, workspace_root=None)
+    check_policy(client, event, command, expected)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # Only && guarantees the cd worked; otherwise ../README.md must be
+        # safe from both directories
+        "cd subdir; cat ../README.md",
+        "cd subdir || cat ../README.md",
+        "cd subdir && pwd; cat ../README.md",
+        # A piped cd runs in a subshell
+        "cd subdir | true && cat ../README.md",
+        # A .. inside the path climbs out from the starting directory
+        "cd a/b/c; cat x/../../../secret",
+        # If cd /etc works, cd /workspace is skipped and cat runs in /etc
+        "cd /etc || cd /workspace && cat passwd",
+    ],
+)
+def test_cd_that_may_fail_keeps_the_starting_directory(client, base_event, command):
+    check_policy(client, base_event, command, "deny")
+
+
+def test_cd_followed_by_and_moves_the_directory(client, base_event):
+    check_policy(client, base_event, "cd subdir && cat ../README.md", "allow")
+    check_policy(client, base_event, "cd a/b/c && cat x/../../y.txt", "allow")
+
+
+def test_cd_back_into_the_workspace_from_outside_allowed(client, base_event):
+    check_policy(client, _event(base_event, cwd="/etc"), "cd /workspace", "allow")
+
+
+def test_cwd_with_traversal_out_of_the_workspace_is_outside(client, base_event):
+    event = _event(base_event, cwd="/workspace/../etc")
+    check_policy(client, event, "cat passwd", "deny")
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        # The directory is unknown, so a relative path cannot be judged
+        "cd $HOME && cat .aws/credentials",
+        "cd - && cat secrets.txt",
+        "cd $X && cat README.md",
+        "cd $(git rev-parse --show-toplevel) && cat README.md",
+        "cd $X && ls > out.txt",
+        # CDPATH or HOME decides where cd goes
+        "CDPATH=/ cd etc && cat passwd",
+        "HOME=/etc cd && cat passwd",
+    ],
+)
+def test_chain_after_cd_to_an_unknown_directory_defers_to_user(
+    client, base_event, command
+):
+    check_policy(client, _event(base_event), command, None)
