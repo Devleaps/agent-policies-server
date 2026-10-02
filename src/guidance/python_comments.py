@@ -18,7 +18,7 @@ def comment_ratio_guidance_rule(input_data: PostFileEditEvent):
     code_count = 0
 
     for patch in input_data.structured_patch:
-        for patch_line in patch.lines:
+        for patch_line in patch.new_lines:
             stripped = patch_line.content.strip()
 
             if not stripped:
@@ -57,7 +57,8 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
         return
 
     for patch in input_data.structured_patch:
-        for i, patch_line in enumerate(patch.lines):
+        lines = patch.new_lines
+        for i, patch_line in enumerate(lines):
             stripped = patch_line.content.strip()
 
             # Check for inline comments (code # comment)
@@ -90,8 +91,8 @@ def comment_overlap_guidance_rule(input_data: PostFileEditEvent):
 
             comment_keywords = _extract_keywords(stripped[1:])
 
-            if i + 1 < len(patch.lines):
-                next_line = patch.lines[i + 1].content.strip()
+            if i + 1 < len(lines):
+                next_line = lines[i + 1].content.strip()
 
                 if next_line and not next_line.startswith("#"):
                     code_keywords = _extract_keywords(next_line)
@@ -129,7 +130,7 @@ def commented_code_guidance_rule(input_data: PostFileEditEvent):
     for patch in input_data.structured_patch:
         consecutive_commented_code = 0
 
-        for patch_line in patch.lines:
+        for patch_line in patch.new_lines:
             line_content = patch_line.content
 
             is_commented_code = indented_comment_pattern.match(
@@ -166,7 +167,7 @@ def legacy_code_guidance_rule(input_data: PostFileEditEvent):
     ]
 
     for patch in input_data.structured_patch:
-        for patch_line in patch.lines:
+        for patch_line in patch.new_lines:
             line = patch_line.content.lower()
             for pattern in legacy_patterns:
                 if re.search(pattern, line):
