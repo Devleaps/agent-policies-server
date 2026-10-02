@@ -36,7 +36,7 @@ def test_command_with_options():
     cmd = BashCommandParser.parse('git commit -m "message"')
     assert cmd.executable == "git"
     assert cmd.subcommand == "commit"
-    assert cmd.options.get("-m") == '"message"'
+    assert cmd.options.get("-m") == "message"  # shell quotes removed
 
 
 def test_command_with_option_equals():
@@ -180,7 +180,7 @@ def test_git_commit_with_multiple_options():
     cmd = BashCommandParser.parse('git commit -m "msg" --amend')
     assert cmd.executable == "git"
     assert cmd.subcommand == "commit"
-    assert cmd.options.get("-m") == '"msg"'
+    assert cmd.options.get("-m") == "msg"
     assert "--amend" in cmd.flags
 
 
@@ -218,7 +218,7 @@ def test_main_command_options_with_flags():
     assert cmd.options.get("-C") == "src"
     assert cmd.options.get("-c") == "core.editor=vim"
     assert cmd.subcommand == "commit"
-    assert cmd.options.get("-m") == '"msg"'
+    assert cmd.options.get("-m") == "msg"
 
 
 def test_podman_machine_subcommand():
