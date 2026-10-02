@@ -91,12 +91,30 @@ class RegoEvaluator:
             parsed: Parsed command structure (from bashlex)
             bundles: List of policy bundles to evaluate (e.g., ["universal", "python_uv"])
 
+        A command is only as allowed as its least-decided segment: if any
+        segment matches no rule, ALLOW decisions from the other segments are
+        dropped so the client's own permission system decides. DENY and ASK
+        from any segment still apply.
+
         Returns:
             List of PolicyDecision objects from all matching rules across all commands
         """
-        all_decisions = []
+        segments = self.evaluate_segments(event, parsed, bundles)
+        all_decisions = [d for segment in segments for d in segment]
 
-        # Evaluate this command's policies
+        if any(not segment for segment in segments):
+            return [d for d in all_decisions if d.action != PolicyAction.ALLOW]
+
+        return all_decisions
+
+    def evaluate_segments(
+        self, event: ToolUseEvent, parsed: ParsedCommand, bundles: List[str]
+    ) -> List[List[PolicyDecision]]:
+        """Evaluate each command in the chain, pipes and process substitutions.
+
+        Returns one list of decisions per command segment, in order; an empty
+        list means no rule matched that segment.
+        """
         input_doc = self._build_input_document(event, parsed)
         self._enrich_input(input_doc, parsed)
 
@@ -114,23 +132,15 @@ class RegoEvaluator:
                     )
                 )
 
-        all_decisions.extend(current_command_decisions)
+        segments = [current_command_decisions]
 
-        # Recursively evaluate all chained commands (&&, ||, ;)
-        for chained_cmd in parsed.chained:
-            chained_decisions = self.evaluate(event, chained_cmd, bundles)
-            all_decisions.extend(chained_decisions)
+        # Chained (&&, ||, ;), piped (|) and process-substituted commands
+        for sub_command in (
+            parsed.chained + parsed.pipes + parsed.process_substitutions
+        ):
+            segments.extend(self.evaluate_segments(event, sub_command, bundles))
 
-        # Recursively evaluate all piped commands (|)
-        for piped_cmd in parsed.pipes:
-            piped_decisions = self.evaluate(event, piped_cmd, bundles)
-            all_decisions.extend(piped_decisions)
-
-        for proc_subst in parsed.process_substitutions:
-            proc_subst_decisions = self.evaluate(event, proc_subst, bundles)
-            all_decisions.extend(proc_subst_decisions)
-
-        return all_decisions
+        return segments
 
     def evaluate_file_edit_decisions(
         self, event: PostFileEditEvent, bundles: List[str]
@@ -258,6 +268,7 @@ class RegoEvaluator:
             [a for a in parsed.arguments]
             + [path for _, path in parsed.redirects]
             + list(parsed.options.values())
+            + parsed.test_paths
         )
         resolved_paths = {
             p: r
@@ -272,6 +283,7 @@ class RegoEvaluator:
             "flags": parsed.flags,
             "options": parsed.options,
             "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
+            "test_paths": parsed.test_paths,
             "original": parsed.original,
         }
 
@@ -288,6 +300,7 @@ class RegoEvaluator:
             },
             "parsed": parsed_dict,
             "resolved_paths": resolved_paths,
+            "expanded_words": {word: True for word in parsed.expanded_words},
         }
 
         return input_doc
