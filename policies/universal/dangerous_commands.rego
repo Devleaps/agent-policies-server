@@ -65,6 +65,15 @@ decisions[decision] if {
 	}
 }
 
+# Block disown - detaches processes from the session
+decisions[decision] if {
+	input.parsed.executable == "disown"
+	decision := {
+		"action": "deny",
+		"reason": "By policy, disown is not allowed. To keep a long-running command going, run it with the Bash tool's run_in_background option instead.",
+	}
+}
+
 # Block awk - security risk
 decisions[decision] if {
 	input.parsed.executable == "awk"
