@@ -268,6 +268,7 @@ class RegoEvaluator:
             [a for a in parsed.arguments]
             + [path for _, path in parsed.redirects]
             + list(parsed.options.values())
+            + [v for values in parsed.repeated_options.values() for v in values]
             + parsed.test_paths
         )
         resolved_paths = {
@@ -282,6 +283,7 @@ class RegoEvaluator:
             "arguments": parsed.arguments,
             "flags": parsed.flags,
             "options": parsed.options,
+            "repeated_options": parsed.repeated_options,
             "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
             "test_paths": parsed.test_paths,
             "original": parsed.original,

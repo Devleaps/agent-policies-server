@@ -30,6 +30,7 @@ class ParsedCommand:
         arguments: Positional arguments (excludes flags and options)
         flags: Boolean flags (e.g., ["--force", "-v"])
         options: Options with values (e.g., {"-m": "message", "--tag": "v1.0"})
+        repeated_options: Earlier values of an option given more than once
         redirects: List of redirect operations (e.g., [(">>", "output.log")])
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
@@ -45,6 +46,7 @@ class ParsedCommand:
     arguments: List[str] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
     options: Dict[str, str] = field(default_factory=dict)
+    repeated_options: Dict[str, List[str]] = field(default_factory=dict)
     redirects: List[Tuple[str, str]] = field(default_factory=list)
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
@@ -242,14 +244,10 @@ class BashCommandParser:
                     heredoc.value
                 ):
                     raise ParseError("Command substitution in redirect not supported")
-                if any(
-                    sub.kind in ("commandsubstitution", "processsubstitution")
-                    for sub in (getattr(part.output, "parts", None) or [])
-                ):
-                    raise ParseError("Command substitution in redirect not supported")
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
-                    # A redirect target such as < <(cmd) runs cmd too
+                    # A redirect target such as < <(cmd) runs cmd too; a
+                    # command substitution in it (>"$(cmd)") raises ParseError
                     process_substitutions.extend(
                         cls._word_substitutions(part.output, original)
                     )
@@ -274,6 +272,14 @@ class BashCommandParser:
         arguments: list[str] = []
         flags = []
         options = {}
+        # Earlier values of an option given again: a dict keeps only the last
+        # one, so "cat -n ~/.ssh/id_rsa -n README.md" would hide the key
+        repeated_options: dict[str, list[str]] = {}
+
+        def set_option(key: str, value: str) -> None:
+            if key in options:
+                repeated_options.setdefault(key, []).append(options[key])
+            options[key] = value
 
         i = 0
         while i < len(remaining):
@@ -284,13 +290,13 @@ class BashCommandParser:
                 # Check if it's an option with value (--key=value)
                 if "=" in part:
                     key, value = part.split("=", 1)
-                    options[key] = value
+                    set_option(key, value)
                     # --directory=$HOME: policies see only the value
                     if part in expanded_words:
                         expanded_words.append(value)
                 # Check if next part is the value for this option
                 elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
-                    options[part] = remaining[i + 1]
+                    set_option(part, remaining[i + 1])
                     i += 1  # Skip next part
                 else:
                     # It's a boolean flag
@@ -315,6 +321,7 @@ class BashCommandParser:
             arguments=arguments,
             flags=flags,
             options=options,
+            repeated_options=repeated_options,
             redirects=redirects,
             process_substitutions=process_substitutions,
             expanded_words=expanded_words,
