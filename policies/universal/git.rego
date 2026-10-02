@@ -381,3 +381,14 @@ decisions[decision] if {
 		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
 	}
 }
+
+# git applies every -C in turn, so earlier ones count too
+decisions[decision] if {
+	input.parsed.executable == "git"
+	some path in input.parsed.repeated_options["-C"]
+	not helpers.is_safe_path(path)
+	decision := {
+		"action": "deny",
+		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}
