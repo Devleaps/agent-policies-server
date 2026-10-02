@@ -226,7 +226,7 @@ decisions[decision] if {
 	has_force_flag
 	decision := {
 		"action": "deny",
-		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators.",
+		"reason": "Force push is not allowed. Force pushing can overwrite history and cause data loss for other collaborators. Use `git push --force-with-lease` instead, which refuses the push if the remote branch has moved since your last fetch.",
 	}
 }
 
@@ -301,6 +301,20 @@ decisions[decision] if {
 	}
 }
 
+# Flags that move an in-progress rebase along without starting a new one
+git_rebase_progress_flags := {"--continue", "--abort", "--skip", "--quit"}
+
+# git rebase --continue/--abort/--skip/--quit - allow
+decisions[decision] if {
+	input.parsed.executable == "git"
+	input.parsed.subcommand == "rebase"
+	count(input.parsed.arguments) == 0
+	count(input.parsed.options) == 0
+	count(input.parsed.flags) == 1
+	input.parsed.flags[0] in git_rebase_progress_flags
+	decision := {"action": "allow"}
+}
+
 # git stash - allow all subcommands
 decisions[decision] if {
 	input.parsed.executable == "git"
@@ -362,6 +376,17 @@ decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.options["-C"]
 	not helpers.is_safe_path(input.parsed.options["-C"])
+	decision := {
+		"action": "deny",
+		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
+	}
+}
+
+# git applies every -C in turn, so earlier ones count too
+decisions[decision] if {
+	input.parsed.executable == "git"
+	some path in input.parsed.repeated_options["-C"]
+	not helpers.is_safe_path(path)
 	decision := {
 		"action": "deny",
 		"reason": "git -C: only workspace-relative paths are allowed (no absolute paths, no ../, no /tmp)",
