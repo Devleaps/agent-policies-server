@@ -160,6 +160,7 @@ decisions[decision] if {
 	input.parsed.executable == "git"
 	input.parsed.subcommand == "commit"
 	not has_message_or_amend
+	not help_request
 	decision := {
 		"action": "deny",
 		"reason": "`git commit` requires a message. Use `git commit -m \"message\"` or `git commit --amend`.",

@@ -124,6 +124,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "terraform"
 	input.parsed.subcommand != "fmt"
+	not help_request
 	input.parsed.subcommand != "plan"
 	decision := {
 		"action": "deny",
@@ -142,6 +143,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "terragrunt"
 	input.parsed.subcommand != "plan"
+	not help_request
 	decision := {
 		"action": "deny",
 		"reason": "Only `terragrunt plan` is allowed. Dangerous operations like apply, destroy, or run-all are not permitted.",
@@ -301,6 +303,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "az"
 	not az_has_list
+	not help_request
 	not az_has_show
 	not az_is_version
 	not az_deferred_to_user
@@ -355,6 +358,7 @@ decisions[decision] if {
 decisions[decision] if {
 	is_kube_exe
 	not kube_is_allowed
+	not help_request
 	decision := {
 		"action": "deny",
 		"reason": "Only read-only kubectl operations are allowed",
