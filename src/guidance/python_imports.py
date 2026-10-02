@@ -29,7 +29,7 @@ def mid_code_import_guidance_rule(input_data: PostFileEditEvent):
     import_pattern = re.compile(r"^\s+(import\s+\S+|from\s+\S+\s+import\s+)")
 
     for patch in input_data.structured_patch:
-        for patch_line in patch.lines:
+        for patch_line in patch.new_lines:
             line_content = patch_line.content
             stripped = line_content.strip()
 
