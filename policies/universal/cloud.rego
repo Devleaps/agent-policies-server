@@ -124,6 +124,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "terraform"
 	input.parsed.subcommand != "fmt"
+	not help_request
 	input.parsed.subcommand != "plan"
 	decision := {
 		"action": "deny",
@@ -142,6 +143,7 @@ decisions[decision] if {
 decisions[decision] if {
 	input.parsed.executable == "terragrunt"
 	input.parsed.subcommand != "plan"
+	not help_request
 	decision := {
 		"action": "deny",
 		"reason": "Only `terragrunt plan` is allowed. Dangerous operations like apply, destroy, or run-all are not permitted.",
@@ -183,11 +185,129 @@ decisions[decision] if {
 	decision := {"action": "allow"}
 }
 
+# az --version / az version - allow (read-only)
+az_is_version if {
+	input.parsed.subcommand == null
+	"--version" in input.parsed.flags
+}
+
+az_is_version if {
+	input.parsed.subcommand == "version"
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	az_is_version
+	decision := {"action": "allow"}
+}
+
+# az repos pr create / az pipelines run - no decision: the user's own
+# settings decide. Every other az write is denied below.
+az_deferred_to_user if {
+	input.parsed.subcommand == "repos"
+	array.slice(input.parsed.arguments, 0, 2) == ["pr", "create"]
+}
+
+az_deferred_to_user if {
+	input.parsed.subcommand == "pipelines"
+	count(input.parsed.arguments) > 0
+	input.parsed.arguments[0] == "run"
+}
+
+# az rest - allow GET only, same as gh api. With both --method and -m the
+# later one wins, so neither is trusted and the request is denied below.
+az_rest_method := lower(trim(input.parsed.options["--method"], "\"'")) if {
+	not input.parsed.options["-m"]
+}
+
+az_rest_method := lower(trim(input.parsed.options["-m"], "\"'")) if {
+	not input.parsed.options["--method"]
+}
+
+# az rest sends an Azure access token with the request (for --resource, or
+# the one az infers from the URL), so a GET is only allowed to Azure itself:
+# a relative ARM path or an Azure/Microsoft host. Anything else defers to the
+# user, since a GET to another host could carry the token there. With both
+# --url and --uri the later one wins, so neither is trusted.
+az_rest_url := trim(input.parsed.options["--url"], "\"'") if {
+	not input.parsed.options["--uri"]
+}
+
+az_rest_url := trim(input.parsed.options["--uri"], "\"'") if {
+	not input.parsed.options["--url"]
+}
+
+# The host must end at a port, path, query or fragment: nothing like
+# "https://attacker.example?.visualstudio.com" or "https://x.azure.com@attacker"
+az_rest_azure_url_patterns := [
+	`^https://(management\.azure\.com|dev\.azure\.com|vssps\.dev\.azure\.com|graph\.microsoft\.com)(:443)?([/?#].*)?$`,
+	`^https://[A-Za-z0-9-]+\.visualstudio\.com(:443)?([/?#].*)?$`,
+]
+
+# Quotes, escapes or expansions inside the URL change what az receives:
+# /""/attacker.example becomes //attacker.example in the shell
+az_rest_url_has_shell_syntax if regex.match("[\"'\\\\$`]", az_rest_url)
+
+# A relative ARM path; az prefixes the management endpoint
+az_rest_url_is_azure if {
+	not az_rest_url_has_shell_syntax
+	startswith(az_rest_url, "/")
+	not startswith(az_rest_url, "//")
+}
+
+az_rest_url_is_azure if {
+	not az_rest_url_has_shell_syntax
+	some pattern in az_rest_azure_url_patterns
+	regex.match(pattern, lower(az_rest_url))
+}
+
+az_rest_output_file_safe if not input.parsed.options["--output-file"]
+
+# The shell removes quotes and backslashes: --output-file \/etc/profile
+# writes /etc/profile, so such a path is never safe
+az_rest_output_file_safe if {
+	helpers.is_safe_path(input.parsed.options["--output-file"])
+	not regex.match("[\"'\\\\$`]", input.parsed.options["--output-file"])
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	az_rest_method == "get"
+	az_rest_url_is_azure
+	az_rest_output_file_safe
+	decision := {"action": "allow"}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	not az_rest_method
+	decision := {
+		"action": "deny",
+		"reason": "az rest requires an explicit --method GET. Only GET requests are allowed for safety.",
+	}
+}
+
+decisions[decision] if {
+	input.parsed.executable == "az"
+	input.parsed.subcommand == "rest"
+	az_rest_method != "get"
+	decision := {
+		"action": "deny",
+		"reason": "Only GET is allowed for az rest. POST, PUT, PATCH and DELETE are not permitted.",
+	}
+}
+
 # az other commands - deny
 decisions[decision] if {
 	input.parsed.executable == "az"
 	not az_has_list
+	not help_request
 	not az_has_show
+	not az_is_version
+	not az_deferred_to_user
+	input.parsed.subcommand != "rest"
 	decision := {
 		"action": "deny",
 		"reason": "Only Azure CLI read-only commands with 'list' or 'show' are allowed. Dangerous operations like create, delete, update, or set are not permitted.",
@@ -238,6 +358,7 @@ decisions[decision] if {
 decisions[decision] if {
 	is_kube_exe
 	not kube_is_allowed
+	not help_request
 	decision := {
 		"action": "deny",
 		"reason": "Only read-only kubectl operations are allowed",

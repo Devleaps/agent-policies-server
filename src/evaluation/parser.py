@@ -5,9 +5,13 @@ It uses bashlex (Python port of GNU bash parser) to generate AST and extract
 command components.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 import bashlex
+
+# $( or a backtick not escaped by an odd number of backslashes
+_UNESCAPED_SUBSTITUTION = re.compile(r"(?<!\\)(?:\\\\)*(?:\$\(|`)")
 
 
 class ParseError(Exception):
@@ -26,6 +30,7 @@ class ParsedCommand:
         arguments: Positional arguments (excludes flags and options)
         flags: Boolean flags (e.g., ["--force", "-v"])
         options: Options with values (e.g., {"-m": "message", "--tag": "v1.0"})
+        repeated_options: Earlier values of an option given more than once
         redirects: List of redirect operations (e.g., [(">>", "output.log")])
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
@@ -42,6 +47,7 @@ class ParsedCommand:
     arguments: List[str] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
     options: Dict[str, str] = field(default_factory=dict)
+    repeated_options: Dict[str, List[str]] = field(default_factory=dict)
     redirects: List[Tuple[str, str]] = field(default_factory=list)
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
@@ -130,8 +136,17 @@ class BashCommandParser:
         if not parts:
             raise ParseError("No parseable command found")
 
-        node = parts[0]
-        return cls._parse_node(node, command)
+        # bashlex returns one node per line: every line runs, so every line
+        # is chained, as if joined with ";"
+        commands = []
+        for node in parts:
+            parsed = cls._parse_node(node, command)
+            commands.append(parsed)
+            commands.extend(parsed.chained)
+            parsed.chained = []
+        result = commands[0]
+        result.chained = commands[1:]
+        return result
 
     @classmethod
     def _parse_node(cls, node, original: str) -> ParsedCommand:
@@ -150,6 +165,9 @@ class BashCommandParser:
                     parsed = cls._parse_command_node(part_node, original)
                     parsed.pos = part_node.pos
                     commands.append(parsed)
+                elif part_node.kind not in ("pipe", "reservedword"):
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in pipeline: {part_node.kind}")
 
             if commands:
                 result = commands[0]
@@ -170,6 +188,9 @@ class BashCommandParser:
                     commands.append(parsed)
                 elif part_node.kind == "operator" and commands:
                     commands[-1].operator = part_node.op
+                elif part_node.kind != "operator":
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in list: {part_node.kind}")
 
             if not commands:
                 raise ParseError("No commands found in list")
@@ -208,6 +229,10 @@ class BashCommandParser:
         for part in node.parts:
             if part.kind == "assignment":
                 assignments.append(part.word.split("=", 1)[0])
+                # Prefix assignments (X=1 cmd) run their substitutions too
+                for subpart in getattr(part, "parts", None) or []:
+                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
+                        raise ParseError("Command substitution not supported")
             elif part.kind == "word":
                 process_substitutions.extend(cls._word_substitutions(part, original))
                 if any(
@@ -221,9 +246,16 @@ class BashCommandParser:
                 parts.append(part.word)
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
+                # A heredoc body or here-string runs its substitutions
+                heredoc = getattr(part, "heredoc", None)
+                if heredoc is not None and _UNESCAPED_SUBSTITUTION.search(
+                    heredoc.value
+                ):
+                    raise ParseError("Command substitution in redirect not supported")
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
-                    # A redirect target such as < <(cmd) runs cmd too
+                    # A redirect target such as < <(cmd) runs cmd too; a
+                    # command substitution in it (>"$(cmd)") raises ParseError
                     process_substitutions.extend(
                         cls._word_substitutions(part.output, original)
                     )
@@ -248,6 +280,14 @@ class BashCommandParser:
         arguments: list[str] = []
         flags = []
         options = {}
+        # Earlier values of an option given again: a dict keeps only the last
+        # one, so "cat -n ~/.ssh/id_rsa -n README.md" would hide the key
+        repeated_options: dict[str, list[str]] = {}
+
+        def set_option(key: str, value: str) -> None:
+            if key in options:
+                repeated_options.setdefault(key, []).append(options[key])
+            options[key] = value
 
         i = 0
         while i < len(remaining):
@@ -258,13 +298,13 @@ class BashCommandParser:
                 # Check if it's an option with value (--key=value)
                 if "=" in part:
                     key, value = part.split("=", 1)
-                    options[key] = value
+                    set_option(key, value)
                     # --directory=$HOME: policies see only the value
                     if part in expanded_words:
                         expanded_words.append(value)
                 # Check if next part is the value for this option
                 elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
-                    options[part] = remaining[i + 1]
+                    set_option(part, remaining[i + 1])
                     i += 1  # Skip next part
                 else:
                     # It's a boolean flag
@@ -289,6 +329,7 @@ class BashCommandParser:
             arguments=arguments,
             flags=flags,
             options=options,
+            repeated_options=repeated_options,
             redirects=redirects,
             process_substitutions=process_substitutions,
             expanded_words=expanded_words,

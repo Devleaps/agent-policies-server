@@ -177,12 +177,14 @@ decisions[decision] if {
 	}
 }
 
-# Deny uv run with test file patterns (should use pytest)
+# Deny uv run executing a test file directly (should use pytest)
+# Only the executed file counts: tools such as pytest, black and ruff may take
+# test files as arguments.
 decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
-	some arg in input.parsed.arguments
+	arg := input.parsed.arguments[0]
 	contains(arg, "test_")
 	endswith(arg, ".py")
 	decision := {
@@ -195,7 +197,7 @@ decisions[decision] if {
 	input.parsed.executable == "uv"
 	input.parsed.subcommand == "run"
 	count(input.parsed.arguments) > 0
-	some arg in input.parsed.arguments
+	arg := input.parsed.arguments[0]
 	contains(arg, "_test")
 	endswith(arg, ".py")
 	decision := {

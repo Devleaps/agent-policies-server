@@ -11,6 +11,7 @@ This module provides the bridge between Python and Rego policies:
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,21 @@ from src.server.models import (
 from src.evaluation.parser import ParsedCommand
 
 logger = logging.getLogger(__name__)
+
+# Characters that end a package name in a requirement specifier:
+# extras ([), version operators (= < > ! ~), markers (;), URLs (@), spaces
+_REQUIREMENT_NAME_END = re.compile(r"[\[=<>!~;@\s]")
+
+
+def package_base_name(requirement: str) -> str:
+    """Reduce a requirement word to its bare package name.
+
+    A word may still carry shell quotes, whole or in part ('"fastapi"==1.0').
+    Strips every quote, then extras, version specifiers and markers:
+    '"uvicorn[standard]>=0.30"' → 'uvicorn'.
+    """
+    unquoted = requirement.strip().replace('"', "").replace("'", "")
+    return _REQUIREMENT_NAME_END.split(unquoted, maxsplit=1)[0]
 
 
 def _is_within(path: str, root: str) -> bool:
@@ -431,6 +447,7 @@ class RegoEvaluator:
             [a for a in parsed.arguments]
             + [path for _, path in parsed.redirects]
             + list(parsed.options.values())
+            + [v for values in parsed.repeated_options.values() for v in values]
             + parsed.test_paths
         )
         resolved_paths = {}
@@ -450,6 +467,7 @@ class RegoEvaluator:
             "arguments": parsed.arguments,
             "flags": parsed.flags,
             "options": parsed.options,
+            "repeated_options": parsed.repeated_options,
             "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
             "test_paths": parsed.test_paths,
             "original": parsed.original,
@@ -541,9 +559,7 @@ class RegoEvaluator:
                             break
 
             if package_name:
-                # Strip extras (e.g., "uvicorn[standard]" → "uvicorn")
-                base_name = package_name.split("[")[0]
-                metadata = self._fetch_pypi_metadata(base_name)
+                metadata = self._fetch_pypi_metadata(package_base_name(package_name))
                 if metadata:
                     input_doc["pypi_metadata"] = metadata
 
@@ -554,9 +570,9 @@ class RegoEvaluator:
                     (arg for arg in parsed.arguments if not arg.startswith("-")), None
                 )
                 if package_name:
-                    # Strip extras (e.g., "uvicorn[standard]" → "uvicorn")
-                    base_name = package_name.split("[")[0]
-                    metadata = self._fetch_pypi_metadata(base_name)
+                    metadata = self._fetch_pypi_metadata(
+                        package_base_name(package_name)
+                    )
                     if metadata:
                         input_doc["pypi_metadata"] = metadata
 
