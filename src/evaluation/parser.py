@@ -5,9 +5,13 @@ It uses bashlex (Python port of GNU bash parser) to generate AST and extract
 command components.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Tuple
 import bashlex
+
+# $( or a backtick not escaped by an odd number of backslashes
+_UNESCAPED_SUBSTITUTION = re.compile(r"(?<!\\)(?:\\\\)*(?:\$\(|`)")
 
 
 class ParseError(Exception):
@@ -31,6 +35,8 @@ class ParsedCommand:
         pipes: List of piped commands
         chained: List of chained commands (&&, ||, ;)
         process_substitutions: List of commands from <(...) or >(...) substitutions
+        expanded_words: Words containing a shell parameter expansion ($X, ${X})
+        test_paths: For test and [, the operands of file tests, in order
         original: Original command string
         pos: Position tuple (start, end) in original string for text extraction
     """
@@ -45,6 +51,8 @@ class ParsedCommand:
     pipes: List["ParsedCommand"] = field(default_factory=list)
     chained: List["ParsedCommand"] = field(default_factory=list)
     process_substitutions: List["ParsedCommand"] = field(default_factory=list)
+    expanded_words: List[str] = field(default_factory=list)
+    test_paths: List[str] = field(default_factory=list)
     original: str = ""
     pos: Optional[Tuple[int, int]] = None
 
@@ -53,6 +61,36 @@ class ParsedCommand:
         if self.pos and self.original:
             return self.original[self.pos[0] : self.pos[1]].strip()
         return self.original
+
+
+# File tests of test / [: the operand(s) name a path
+TEST_UNARY_FILE_OPS = {
+    "-a", "-e", "-f", "-d", "-r", "-w", "-x", "-s", "-L", "-h", "-p", "-S",
+    "-b", "-c", "-g", "-u", "-k", "-O", "-G", "-N",
+}
+TEST_BINARY_FILE_OPS = {"-nt", "-ot", "-ef"}
+# After these, a test expression starts again (so -a there is "file exists")
+TEST_EXPRESSION_STARTS = {"!", "(", "-a", "-o"}
+
+
+def file_test_operands(words: List[str]) -> List[str]:
+    """Return the operands of file tests in a test / [ expression, in order.
+
+    -a is "file exists" where an expression starts and "and" between two
+    expressions: [ -a x ] tests x, [ -f a -a -f b ] tests a and b.
+    """
+    if words and words[-1] == "]":
+        words = words[:-1]
+    paths = []
+    for i, word in enumerate(words):
+        has_next = i + 1 < len(words)
+        starts_expression = i == 0 or words[i - 1] in TEST_EXPRESSION_STARTS
+        if word in TEST_UNARY_FILE_OPS and has_next:
+            if word != "-a" or starts_expression:
+                paths.append(words[i + 1])
+        elif word in TEST_BINARY_FILE_OPS and has_next and i > 0:
+            paths.extend([words[i - 1], words[i + 1]])
+    return paths
 
 
 class BashCommandParser:
@@ -94,8 +132,17 @@ class BashCommandParser:
         if not parts:
             raise ParseError("No parseable command found")
 
-        node = parts[0]
-        return cls._parse_node(node, command)
+        # bashlex returns one node per line: every line runs, so every line
+        # is chained, as if joined with ";"
+        commands = []
+        for node in parts:
+            parsed = cls._parse_node(node, command)
+            commands.append(parsed)
+            commands.extend(parsed.chained)
+            parsed.chained = []
+        result = commands[0]
+        result.chained = commands[1:]
+        return result
 
     @classmethod
     def _parse_node(cls, node, original: str) -> ParsedCommand:
@@ -114,6 +161,9 @@ class BashCommandParser:
                     parsed = cls._parse_command_node(part_node, original)
                     parsed.pos = part_node.pos
                     commands.append(parsed)
+                elif part_node.kind not in ("pipe", "reservedword"):
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in pipeline: {part_node.kind}")
 
             if commands:
                 result = commands[0]
@@ -132,6 +182,9 @@ class BashCommandParser:
                     parsed.pos = part_node.pos
                     parsed.original = original
                     commands.append(parsed)
+                elif part_node.kind != "operator":
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in list: {part_node.kind}")
 
             if not commands:
                 raise ParseError("No commands found in list")
@@ -146,34 +199,65 @@ class BashCommandParser:
         raise ParseError(f"Unsupported node kind: {node.kind}")
 
     @classmethod
+    def _word_substitutions(cls, word, original: str) -> list[ParsedCommand]:
+        """Parse the process substitutions inside a word node."""
+        substitutions = []
+        for subpart in getattr(word, "parts", None) or []:
+            if subpart.kind == "commandsubstitution":
+                raise ParseError("Command substitution not supported")
+            elif subpart.kind == "processsubstitution":
+                if hasattr(subpart, "command"):
+                    substitutions.append(cls._parse_node(subpart.command, original))
+        return substitutions
+
+    @classmethod
     def _parse_command_node(cls, node, original: str) -> ParsedCommand:
         """Parse a command node into ParsedCommand."""
 
         parts = []
         redirects = []
         process_substitutions = []
+        expanded_words = []
 
         for part in node.parts:
             if part.kind == "word":
-                if hasattr(part, "parts") and part.parts:
-                    for subpart in part.parts:
-                        if subpart.kind == "commandsubstitution":
-                            raise ParseError("Command substitution not supported")
-                        elif subpart.kind == "processsubstitution":
-                            if hasattr(subpart, "command"):
-                                parsed_subst = cls._parse_node(
-                                    subpart.command, original
-                                )
-                                process_substitutions.append(parsed_subst)
+                process_substitutions.extend(cls._word_substitutions(part, original))
+                if any(
+                    sub.kind == "parameter"
+                    for sub in (getattr(part, "parts", None) or [])
+                ):
+                    expanded_words.append(part.word)
 
-                word_value = original[part.pos[0] : part.pos[1]]
-                parts.append(word_value)
+                # bashlex's .word has shell quoting removed, so policies see
+                # the path the shell will use: '/etc/passwd' -> /etc/passwd
+                parts.append(part.word)
+            elif part.kind == "assignment":
+                # Prefix assignments (X=1 cmd) run their substitutions too
+                for subpart in getattr(part, "parts", None) or []:
+                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
+                        raise ParseError("Command substitution not supported")
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
+                # A heredoc body or here-string runs its substitutions
+                heredoc = getattr(part, "heredoc", None)
+                if heredoc is not None and _UNESCAPED_SUBSTITUTION.search(
+                    heredoc.value
+                ):
+                    raise ParseError("Command substitution in redirect not supported")
                 # Handle both word nodes (with .pos) and file descriptors (int)
                 if hasattr(part.output, "pos"):
-                    redirect_target = original[part.output.pos[0] : part.output.pos[1]]
+                    # A redirect target such as < <(cmd) runs cmd too; a
+                    # command substitution in it (>"$(cmd)") raises ParseError
+                    process_substitutions.extend(
+                        cls._word_substitutions(part.output, original)
+                    )
+                    redirect_target = part.output.word
                     redirects.append((redirect_op, redirect_target))
+                    if any(
+                        sub.kind == "parameter"
+                        for sub in (getattr(part.output, "parts", None) or [])
+                    ):
+                        expanded_words.append(redirect_target)
                 # Else: heredoc or file descriptor - skip for now (TODO: extract heredoc content)
 
         if not parts:
@@ -207,6 +291,9 @@ class BashCommandParser:
                 if "=" in part:
                     key, value = part.split("=", 1)
                     set_option(key, value)
+                    # --directory=$HOME: policies see only the value
+                    if part in expanded_words:
+                        expanded_words.append(value)
                 # Check if next part is the value for this option
                 elif i + 1 < len(remaining) and not remaining[i + 1].startswith("-"):
                     set_option(part, remaining[i + 1])
@@ -237,6 +324,10 @@ class BashCommandParser:
             repeated_options=repeated_options,
             redirects=redirects,
             process_substitutions=process_substitutions,
+            expanded_words=expanded_words,
+            test_paths=(
+                file_test_operands(remaining) if executable in ("test", "[") else []
+            ),
             original=original,
         )
 
