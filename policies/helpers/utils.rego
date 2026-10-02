@@ -4,8 +4,15 @@ package helpers
 # Checks for unsafe paths: absolute paths, home directory, path traversal, /tmp.
 # When a resolved (workspace-relative) form exists in input.resolved_paths, that is
 # checked instead of the original so that absolute workspace paths pass safely.
+# Words the shell expands ($HOME, ${R}, "$X/y") are never safe: the policy
+# cannot see the value (e.g. $HOME/.aws/credentials). A literal $, as in
+# grep 'end$', is not an expansion. Command substitution never gets this far:
+# the parser rejects it.
+
+has_shell_expansion(path) if input.expanded_words[path]
 
 is_safe_path(path) if {
+	not has_shell_expansion(path)
 	resolved := input.resolved_paths[path]
 	not startswith(resolved, "/")
 	not startswith(resolved, "~")
@@ -16,6 +23,7 @@ is_safe_path(path) if {
 }
 
 is_safe_path(path) if {
+	not has_shell_expansion(path)
 	not input.resolved_paths[path]
 	not startswith(path, "/")
 	not startswith(path, "~")
@@ -29,8 +37,25 @@ is_safe_path(path) if {
 # Accepts ONLY: localhost, 127.x.x.x, ::1 as the actual hostname
 # Rejects: localhost.evil.com, 127.0.0.1.evil.com, evil.com/localhost, etc.
 
-# Helper to check if URL matches localhost exactly (not subdomain)
+# A scheme only counts at the start: localhost?next=http://x has none
+has_url_scheme(url) if regex.match(`^[A-Za-z][A-Za-z0-9+.-]*://`, url)
+
+# A URL may still carry its shell quotes, so trim them first
 is_localhost_url(url) if {
+	unquoted := trim(url, "\"'")
+	has_url_scheme(unquoted)
+	is_localhost_schemed_url(unquoted)
+}
+
+# curl accepts URLs without a scheme (e.g. localhost:8123/path) and uses http
+is_localhost_url(url) if {
+	unquoted := trim(url, "\"'")
+	not has_url_scheme(unquoted)
+	is_localhost_schemed_url(concat("", ["http://", unquoted]))
+}
+
+# Helper to check if URL matches localhost exactly (not subdomain)
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -39,7 +64,7 @@ is_localhost_url(url) if {
 	contains(base_url, "://localhost:")
 }
 
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -48,7 +73,7 @@ is_localhost_url(url) if {
 	contains(base_url, "://localhost/")
 }
 
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -58,7 +83,7 @@ is_localhost_url(url) if {
 }
 
 # Helper to check if URL matches 127.x.x.x exactly (not subdomain)
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -95,7 +120,7 @@ is_localhost_url(url) if {
 }
 
 # Helper to check if URL matches [::1] exactly
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -104,7 +129,7 @@ is_localhost_url(url) if {
 	contains(base_url, "://[::1]:")
 }
 
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
@@ -113,7 +138,7 @@ is_localhost_url(url) if {
 	contains(base_url, "://[::1]/")
 }
 
-is_localhost_url(url) if {
+is_localhost_schemed_url(url) if {
 	# Remove query params first
 	parts := split(url, "?")
 	base_url := parts[0]
