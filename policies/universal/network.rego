@@ -18,9 +18,29 @@ has_localhost_url_arg if {
 	helpers.is_localhost_url(arg)
 }
 
-# Helper to check if any option value contains localhost URL
+# curl options whose value is a payload, header, file or credential, never
+# the URL: a bare "localhost" there (curl -d localhost https://x) is data
+curl_value_options := {
+	"-d", "--data", "--data-raw", "--data-binary", "--data-urlencode",
+	"--json", "-F", "--form", "-H", "--header", "-X", "--request",
+	"-o", "--output", "-u", "--user", "-A", "--user-agent", "-e",
+	"--referer", "-b", "--cookie", "-c", "--cookie-jar", "-T",
+	"--upload-file", "-K", "--config", "-w", "--write-out", "-x", "--proxy",
+}
+
+# Helper to check if any option value contains localhost URL. With an
+# explicit scheme it counts anywhere, as before; a scheme-less one only where
+# curl reads a URL (--url, or a word the parser took as a flag's value, as in
+# curl -s localhost)
 has_localhost_url_option if {
 	some key, value in input.parsed.options
+	helpers.has_url_scheme(trim(value, "\"'"))
+	helpers.is_localhost_url(value)
+}
+
+has_localhost_url_option if {
+	some key, value in input.parsed.options
+	not key in curl_value_options
 	helpers.is_localhost_url(value)
 }
 

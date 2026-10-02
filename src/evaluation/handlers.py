@@ -107,7 +107,10 @@ def evaluate_bash_rules(
         return
 
     # Check for quoted heredoc delimiters (not supported by bashlex)
-    if event.command and re.search(r'<<\s*["\'][^"\']+["\']', event.command):
+    # (?<!<) and (?!<) leave here-strings (<<< "text") alone
+    if event.command and re.search(
+        r'(?<!<)<<(?!<)-?\s*["\'][^"\']+["\']', event.command
+    ):
         yield PolicyDecision.deny(
             "Quoted heredoc delimiters (<< 'EOF' or << \"EOF\") are not allowed.\n"
             "Use unquoted delimiters instead (e.g., << EOF)."
