@@ -67,7 +67,8 @@ def test_deny_in_any_segment_still_denies(client, base_event, command):
         "if true; then pwd; fi",
     ],
 )
-def test_compound_commands_defer_to_user(client, base_event, command):
-    """Loops and conditionals stay with the user's own settings until the
-    parser can evaluate their inner commands."""
-    check_policy(client, base_event, command, None)
+def test_compound_commands_with_allowed_inner_commands_are_allowed(
+    client, base_event, command
+):
+    """Loops and conditionals are evaluated through their inner commands."""
+    check_policy(client, base_event, command, "allow")

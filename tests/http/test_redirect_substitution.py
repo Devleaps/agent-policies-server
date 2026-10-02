@@ -14,12 +14,17 @@ from tests.http.conftest import check_policy
         "cat << EOF\n$(rm -rf build)\nEOF",
         "cat << EOF\n`rm -rf build`\nEOF",
         "cat << EOF > out.txt\n`rm -rf build`\nEOF",
-        'cat <<< "$(rm -rf build)"',
-        "cat <<< $(rm -rf build)",
     ],
 )
-def test_substitution_in_redirect_defers_to_user(client, base_event, command):
+def test_substitution_in_heredoc_defers_to_user(client, base_event, command):
     check_policy(client, base_event, command, None)
+
+
+@pytest.mark.parametrize(
+    "command", ['cat <<< "$(rm -rf build)"', "cat <<< $(rm -rf build)"]
+)
+def test_substitution_in_here_string_is_evaluated(client, base_event, command):
+    check_policy(client, base_event, command, "deny")
 
 
 def test_plain_heredoc_still_allowed(client, base_event):

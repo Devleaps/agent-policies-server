@@ -128,9 +128,11 @@ def test_process_substitution_with_chained_commands():
     assert cmd.chained[0].executable == "echo"
 
 
-def test_command_substitution_blocked():
-    with pytest.raises(ParseError, match="Command substitution"):
-        BashCommandParser.parse("echo $(ls)")
+def test_command_substitution_is_parsed():
+    cmd = BashCommandParser.parse("echo $(ls)")
+    assert cmd.executable == "echo"
+    assert cmd.expanded_words == ["$(ls)"]
+    assert cmd.process_substitutions[0].executable == "ls"
 
 
 def test_process_substitution_with_and_operator_fails():
@@ -163,9 +165,9 @@ def test_process_substitution_nested_pipes_works():
     assert len(cmd.process_substitutions[0].pipes) == 3
 
 
-def test_compound_command_blocked():
-    with pytest.raises(ParseError, match="Compound commands"):
-        BashCommandParser.parse("if [ -f file.txt ]; then cat file.txt; fi")
+def test_compound_command_is_flattened():
+    cmd = BashCommandParser.parse("if [ -f file.txt ]; then cat file.txt; fi")
+    assert [cmd.executable] + [c.executable for c in cmd.chained] == ["[", "cat"]
 
 
 def test_mixed_flags_and_options():

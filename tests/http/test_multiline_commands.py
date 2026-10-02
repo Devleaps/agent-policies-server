@@ -36,13 +36,13 @@ def test_every_line_is_parsed_in_order():
     [
         'ls | while read d; do rm "$d"; done',
         "ls; for x in a; do sudo rm x; done",
-        "pwd && (bash evil.sh)",
+        "pwd && (rm -rf build)",
     ],
 )
 def test_compound_parts_are_not_dropped(client, base_event, command):
     """A loop or subshell inside a list or pipeline used to be skipped, so
     only the simple commands around it were evaluated and allowed."""
-    check_policy(client, base_event, command, None)
+    check_policy(client, base_event, command, "deny")
 
 
 @pytest.mark.parametrize(

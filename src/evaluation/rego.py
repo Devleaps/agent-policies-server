@@ -78,9 +78,6 @@ class Location:
         unknown = Location(None, True)
         if cd.flags or cd.options:
             return unknown
-        # CDPATH=/ cd etc goes to /etc; HOME=/x cd goes to /x
-        if {"CDPATH", "HOME"} & set(cd.assignments):
-            return unknown
         target = cd.arguments[0] if cd.arguments else "~"
         if target == "-" or target in cd.expanded_words:
             return unknown
@@ -213,23 +210,37 @@ class RegoEvaluator:
     ) -> List[List[PolicyDecision]]:
         """Evaluate each command in the chain, pipes and process substitutions.
 
-        A `cd` in the chain moves the location the later chained commands are
-        evaluated from, so `cd ../.. && cat x` checks x where it really is. A
-        cd may fail, so past anything but `&&` a command may also run from
-        where the cd started: every such location is kept, newest first.
-        Pipes and process substitutions run in subshells and do not move it.
-
         Returns one list of decisions per command segment, in order; an empty
         list means no rule matched that segment.
         """
         if locations is None:
             locations = (Location.initial(event),)
+        return self._evaluate_sequence(
+            event, [parsed] + parsed.chained, bundles, locations
+        )
 
+    def _evaluate_sequence(
+        self,
+        event: ToolUseEvent,
+        commands: List[ParsedCommand],
+        bundles: List[str],
+        locations: Locations,
+    ) -> List[List[PolicyDecision]]:
+        """Evaluate statements that run one after the other in one shell.
+
+        A `cd` moves the location the later statements are evaluated from, so
+        `cd ../.. && cat x` checks x where it really is. A cd may fail, so
+        past anything but `&&` a statement may also run from where the cd
+        started: every such location is kept, newest first. Pipes, process
+        substitutions and subshells do not move it.
+        """
         segments = []
         # Every location seen since the last operator other than &&
         run = list(locations)
         previous_operator = None
-        for command in [parsed] + parsed.chained:
+        for command in commands:
+            if command.location_unknown_before:
+                locations = (UNKNOWN_LOCATION,)
             segments.extend(
                 self._evaluate_command_segments(event, command, bundles, locations)
             )
@@ -241,6 +252,8 @@ class RegoEvaluator:
                 if previous_operator == "||":
                     moved += locations
                 locations = _unique(moved)
+            if command.location_unknown_after:
+                locations = (UNKNOWN_LOCATION,)
             run.extend(locations)
             if command.operator != "&&":
                 locations = _unique(reversed(run))
@@ -256,35 +269,49 @@ class RegoEvaluator:
         locations: Locations,
     ) -> List[List[PolicyDecision]]:
         """Evaluate one command plus its pipes and process substitutions."""
-        input_doc = self._build_input_document(event, parsed, locations)
-        self._enrich_input(input_doc, parsed)
+        segments = []
+        if parsed.group is not None:
+            # A subshell or an assignment: only the commands inside it run
+            segments.extend(
+                self._evaluate_sequence(event, parsed.group, bundles, locations)
+            )
+        else:
+            input_doc = self._build_input_document(event, parsed, locations)
+            self._enrich_input(input_doc, parsed)
 
-        current_command_decisions = []
-        for bundle in bundles:
-            try:
-                bundle_decisions = self._evaluate_bundle(bundle, input_doc)
-                current_command_decisions.extend(bundle_decisions)
-            except Exception as e:
-                logger.error(f"Error evaluating bundle '{bundle}': {e}")
-                current_command_decisions.append(
-                    PolicyDecision(
-                        action=PolicyAction.ASK,
-                        reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
+            current_command_decisions = []
+            for bundle in bundles:
+                try:
+                    bundle_decisions = self._evaluate_bundle(bundle, input_doc)
+                    current_command_decisions.extend(bundle_decisions)
+                except Exception as e:
+                    logger.error(f"Error evaluating bundle '{bundle}': {e}")
+                    current_command_decisions.append(
+                        PolicyDecision(
+                            action=PolicyAction.ASK,
+                            reason=f"Policy evaluation error in bundle '{bundle}': {str(e)}",
+                        )
                     )
-                )
-
-        # Outside the workspace, or somewhere unknown (cd $X, cd -), even a
-        # command without paths reads that directory: cd /etc && ls lists it.
-        # Nothing is allowed there; deny still is. cd itself only moves, so
-        # cd /workspace from /etc stays allowed.
-        if parsed.executable != "cd" and any(
-            location.outside for location in locations
-        ):
-            current_command_decisions = [
-                d for d in current_command_decisions if d.action != PolicyAction.ALLOW
-            ]
-
-        segments = [current_command_decisions]
+            # Outside the workspace, or somewhere unknown (cd $(...), cd $X,
+            # cd -), even a command without paths reads that directory: cd /etc
+            # && ls lists it. Nothing is allowed there; deny still is. cd
+            # itself only moves, so cd /workspace from /etc stays allowed.
+            if parsed.executable != "cd" and any(
+                location.outside for location in locations
+            ):
+                current_command_decisions = [
+                    d
+                    for d in current_command_decisions
+                    if d.action != PolicyAction.ALLOW
+                ]
+            # PATH=. git status runs ./git: no decision, like export PATH=.
+            if parsed.sensitive_assignment:
+                current_command_decisions = [
+                    d
+                    for d in current_command_decisions
+                    if d.action != PolicyAction.ALLOW
+                ]
+            segments.append(current_command_decisions)
 
         for sub_command in parsed.pipes + parsed.process_substitutions:
             segments.extend(
@@ -468,8 +495,8 @@ class RegoEvaluator:
             "flags": parsed.flags,
             "options": parsed.options,
             "repeated_options": parsed.repeated_options,
-            "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
             "test_paths": parsed.test_paths,
+            "redirects": [{"op": op, "path": path} for op, path in parsed.redirects],
             "original": parsed.original,
         }
 
@@ -877,24 +904,29 @@ class RegoEvaluator:
         """
         all_guidances = []
 
-        input_doc = self._build_input_document(event, parsed)
-        self._enrich_input(input_doc, parsed)
+        if parsed.group is None:
+            input_doc = self._build_input_document(event, parsed)
+            self._enrich_input(input_doc, parsed)
 
-        for bundle in bundles:
-            try:
-                bundle_guidances = self._evaluate_guidances_bundle(bundle, input_doc)
-                all_guidances.extend(bundle_guidances)
-            except Exception as e:
-                logger.error(f"Error evaluating guidances for bundle '{bundle}': {e}")
+            for bundle in bundles:
+                try:
+                    bundle_guidances = self._evaluate_guidances_bundle(
+                        bundle, input_doc
+                    )
+                    all_guidances.extend(bundle_guidances)
+                except Exception as e:
+                    logger.error(
+                        f"Error evaluating guidances for bundle '{bundle}': {e}"
+                    )
 
-        # Recursively evaluate chained and piped commands
-        for chained_cmd in parsed.chained:
-            chained_guidances = self.evaluate_guidances(event, chained_cmd, bundles)
-            all_guidances.extend(chained_guidances)
-
-        for piped_cmd in parsed.pipes:
-            piped_guidances = self.evaluate_guidances(event, piped_cmd, bundles)
-            all_guidances.extend(piped_guidances)
+        # Recursively evaluate every other command the shell runs
+        for sub_command in (
+            (parsed.group or [])
+            + parsed.chained
+            + parsed.pipes
+            + parsed.process_substitutions
+        ):
+            all_guidances.extend(self.evaluate_guidances(event, sub_command, bundles))
 
         return all_guidances
 
