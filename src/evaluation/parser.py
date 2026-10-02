@@ -126,8 +126,17 @@ class BashCommandParser:
         if not parts:
             raise ParseError("No parseable command found")
 
-        node = parts[0]
-        return cls._parse_node(node, command)
+        # bashlex returns one node per line: every line runs, so every line
+        # is chained, as if joined with ";"
+        commands = []
+        for node in parts:
+            parsed = cls._parse_node(node, command)
+            commands.append(parsed)
+            commands.extend(parsed.chained)
+            parsed.chained = []
+        result = commands[0]
+        result.chained = commands[1:]
+        return result
 
     @classmethod
     def _parse_node(cls, node, original: str) -> ParsedCommand:
@@ -146,6 +155,9 @@ class BashCommandParser:
                     parsed = cls._parse_command_node(part_node, original)
                     parsed.pos = part_node.pos
                     commands.append(parsed)
+                elif part_node.kind not in ("pipe", "reservedword"):
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in pipeline: {part_node.kind}")
 
             if commands:
                 result = commands[0]
@@ -164,6 +176,9 @@ class BashCommandParser:
                     parsed.pos = part_node.pos
                     parsed.original = original
                     commands.append(parsed)
+                elif part_node.kind != "operator":
+                    # Skipping it would leave a command unevaluated
+                    raise ParseError(f"Unsupported node in list: {part_node.kind}")
 
             if not commands:
                 raise ParseError("No commands found in list")
@@ -210,6 +225,11 @@ class BashCommandParser:
                 # bashlex's .word has shell quoting removed, so policies see
                 # the path the shell will use: '/etc/passwd' -> /etc/passwd
                 parts.append(part.word)
+            elif part.kind == "assignment":
+                # Prefix assignments (X=1 cmd) run their substitutions too
+                for subpart in getattr(part, "parts", None) or []:
+                    if subpart.kind in ("commandsubstitution", "processsubstitution"):
+                        raise ParseError("Command substitution not supported")
             elif part.kind == "redirect":
                 redirect_op = cls._get_redirect_operator(part)
                 # Handle both word nodes (with .pos) and file descriptors (int)
