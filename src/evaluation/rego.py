@@ -12,13 +12,14 @@ import json
 import logging
 import os
 import re
+import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple
 
 import httpx
-from regopy import Interpreter, NodeKind
+from regopy import Bundle, Interpreter, NodeKind
 from src.server.models import (
     ToolUseEvent,
     PostFileEditEvent,
@@ -30,6 +31,11 @@ from src.server.models import (
 from src.evaluation.parser import ParsedCommand
 
 logger = logging.getLogger(__name__)
+
+# The rule sets a bundle package can define; each becomes a compiled entrypoint
+ENTRYPOINT_RULES = ("decisions", "guidances", "guidance_activations")
+
+_PACKAGE = re.compile(r"^\s*package\s+([\w.]+)", re.MULTILINE)
 
 # Characters that end a package name in a requirement specifier:
 # extras ([), version operators (= < > ! ~), markers (;), URLs (@), spaces
@@ -138,6 +144,12 @@ class RegoEvaluator:
         """
         self.policy_dir = Path(policy_dir)
         self.interpreter = Interpreter()
+        # The interpreter holds one input document at a time, so a request
+        # owns it from set_input through query. regopy releases the GIL while
+        # evaluating, which lets the server keep answering health checks.
+        self._lock = threading.Lock()
+        self.bundle: Optional[Bundle] = None
+        self.entrypoints: Set[str] = set()
 
         if not self.policy_dir.exists():
             logger.warning(
@@ -147,17 +159,22 @@ class RegoEvaluator:
             return
 
         # Load system policies
-        self._load_all_policies()
+        packages = self._load_all_policies()
+        self._build_bundle(packages)
 
         logger.info("Rego evaluator initialized successfully")
 
-    def _load_all_policies(self):
-        """Load all .rego files from policy directory."""
+    def _load_all_policies(self) -> Set[str]:
+        """Load all .rego files from policy directory.
+
+        Returns the package names the files declare.
+        """
         rego_files = list(self.policy_dir.rglob("*.rego"))
+        packages: Set[str] = set()
 
         if not rego_files:
             logger.warning(f"No .rego files found in {self.policy_dir}")
-            return
+            return packages
 
         logger.info(f"Loading {len(rego_files)} .rego policy files")
 
@@ -166,10 +183,63 @@ class RegoEvaluator:
                 policy_content = rego_file.read_text()
                 module_name = str(rego_file.relative_to(self.policy_dir))
                 self.interpreter.add_module(module_name, policy_content)
+                packages.update(_PACKAGE.findall(policy_content))
                 logger.debug(f"Loaded policy: {rego_file}")
             except Exception as e:
                 logger.error(f"Failed to load policy {rego_file}: {e}")
                 raise
+
+        return packages
+
+    def _build_bundle(self, packages: Set[str]) -> None:
+        """Compile every package's rule sets once, at startup.
+
+        A plain query recompiles all loaded modules each time it runs, which
+        costs tens of milliseconds per query and grows with the policy count.
+        A compiled bundle answers an entrypoint in about a millisecond, so a
+        compound command with many segments stays fast.
+        """
+        if not packages:
+            return
+
+        self.entrypoints = {
+            f"{package.replace('.', '/')}/{rule}"
+            for package in packages
+            for rule in ENTRYPOINT_RULES
+        }
+        self.bundle = self.interpreter.build(None, sorted(self.entrypoints))
+        logger.info(f"Compiled {len(packages)} policy packages into a bundle")
+
+    def _query_entrypoint(
+        self, bundle: str, rule: str, input_doc: Dict[str, Any]
+    ) -> Optional[Any]:
+        """Evaluate one compiled rule set against an input document.
+
+        Returns the rule's value as a Python object, or None when the bundle
+        is unknown, the rule is undefined for this input, or the result is empty.
+        """
+        entrypoint = f"{bundle}/{rule}"
+        if self.bundle is None or entrypoint not in self.entrypoints:
+            return None
+
+        with self._lock:
+            self.interpreter.set_input(input_doc)
+            output = self.interpreter.query_bundle_entrypoint(self.bundle, entrypoint)
+
+            if not output.ok():
+                return None
+
+            # regopy's C++ backend aborts if expressions() is called on
+            # an undefined result (e.g. bundle doesn't define decisions).
+            # Check the string representation before touching expressions().
+            if str(output) == "undefined":
+                return None
+
+            node = output.expressions(index=0)
+            if node is None:
+                return None
+
+            return self._node_to_python(node)
 
     def evaluate(
         self, event: ToolUseEvent, parsed: ParsedCommand, bundles: List[str]
@@ -670,27 +740,8 @@ class RegoEvaluator:
         Returns:
             List of PolicyDecision objects from this bundle
         """
-        query = f"data.{bundle}.decisions"
-
         try:
-            self.interpreter.set_input(input_doc)
-            output = self.interpreter.query(query)
-
-            if not output.ok():
-                return []
-
-            # regopy's C++ backend aborts if expressions() is called on
-            # an undefined result (e.g. bundle doesn't define decisions).
-            # Check the string representation before touching expressions().
-            if str(output) == "undefined":
-                return []
-
-            # Get the first expression result (not binding, since we're querying a data path)
-            decisions_node = output.expressions(index=0)
-            if decisions_node is None:
-                return []
-
-            decisions = self._node_to_python(decisions_node)
+            decisions = self._query_entrypoint(bundle, "decisions", input_doc)
             logger.debug(f"Decisions from bundle '{bundle}': {decisions}")
 
             if not decisions:
@@ -714,23 +765,10 @@ class RegoEvaluator:
         Returns:
             List of guidance check names (e.g., ["comment_ratio", "mid_code_import"])
         """
-        query = f"data.{bundle}.guidance_activations"
-
         try:
-            self.interpreter.set_input(input_doc)
-            output = self.interpreter.query(query)
-
-            if not output.ok():
-                return []
-
-            if str(output) == "undefined":
-                return []
-
-            activations_node = output.expressions(index=0)
-            if activations_node is None:
-                return []
-
-            activations = self._node_to_python(activations_node)
+            activations = self._query_entrypoint(
+                bundle, "guidance_activations", input_doc
+            )
             logger.debug(f"Guidance activations from bundle '{bundle}': {activations}")
 
             if not activations:
@@ -968,23 +1006,8 @@ class RegoEvaluator:
         Returns:
             List of PolicyGuidance objects from this bundle
         """
-        query = f"data.{bundle}.guidances"
-
         try:
-            self.interpreter.set_input(input_doc)
-            output = self.interpreter.query(query)
-
-            if not output.ok():
-                return []
-
-            if str(output) == "undefined":
-                return []
-
-            guidances_node = output.expressions(index=0)
-            if guidances_node is None:
-                return []
-
-            guidances = self._node_to_python(guidances_node)
+            guidances = self._query_entrypoint(bundle, "guidances", input_doc)
             logger.debug(f"Guidances from bundle '{bundle}': {guidances}")
 
             if not guidances:

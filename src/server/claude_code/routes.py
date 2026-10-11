@@ -60,7 +60,7 @@ def _log_generic_hook_outcome(hook_name: str, input_data, result):
 @router.post(
     "/PreToolUse", response_model=PreToolUseOutput, response_model_exclude_none=True
 )
-async def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
+def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
     """Handle PreToolUse hook events."""
     input_data = PreToolUseInput(**wrapper.event)
 
@@ -88,7 +88,7 @@ async def pre_tool_use_hook(wrapper: RequestWrapper) -> PreToolUseOutput:
 @router.post(
     "/PostToolUse", response_model=PostToolUseOutput, response_model_exclude_none=True
 )
-async def post_tool_use_hook(wrapper: RequestWrapper) -> PostToolUseOutput:
+def post_tool_use_hook(wrapper: RequestWrapper) -> PostToolUseOutput:
     """Handle PostToolUse hook events."""
     input_data = PostToolUseInput(**wrapper.event)
 
@@ -111,7 +111,7 @@ async def post_tool_use_hook(wrapper: RequestWrapper) -> PostToolUseOutput:
     response_model=UserPromptSubmitOutput,
     response_model_exclude_none=True,
 )
-async def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOutput:
+def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOutput:
     """Handle UserPromptSubmit hook events."""
     input_data = UserPromptSubmitInput(**wrapper.event)
     logger.info(f"UserPromptSubmit hook: session {input_data.session_id}")
@@ -127,7 +127,7 @@ async def user_prompt_submit_hook(wrapper: RequestWrapper) -> UserPromptSubmitOu
 
 
 @router.post("/Stop", response_model=StopOutput, response_model_exclude_none=True)
-async def stop_hook(wrapper: RequestWrapper) -> StopOutput:
+def stop_hook(wrapper: RequestWrapper) -> StopOutput:
     """Handle Stop hook events."""
     input_data = StopInput(**wrapper.event)
     logger.info(f"Stop hook: session {input_data.session_id}")
@@ -145,7 +145,7 @@ async def stop_hook(wrapper: RequestWrapper) -> StopOutput:
 @router.post(
     "/SubagentStop", response_model=SubagentStopOutput, response_model_exclude_none=True
 )
-async def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
+def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
     """Handle SubagentStop hook events."""
     input_data = SubagentStopInput(**wrapper.event)
     logger.info(f"SubagentStop hook: session {input_data.session_id}")
@@ -163,7 +163,7 @@ async def subagent_stop_hook(wrapper: RequestWrapper) -> SubagentStopOutput:
 @router.post(
     "/Notification", response_model=NotificationOutput, response_model_exclude_none=True
 )
-async def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
+def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
     """Handle Notification hook events."""
     input_data = NotificationInput(**wrapper.event)
     logger.info(f"Notification hook: session {input_data.session_id}")
@@ -181,7 +181,7 @@ async def notification_hook(wrapper: RequestWrapper) -> NotificationOutput:
 @router.post(
     "/PreCompact", response_model=PreCompactOutput, response_model_exclude_none=True
 )
-async def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
+def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
     """Handle PreCompact hook events."""
     input_data = PreCompactInput(**wrapper.event)
     logger.info(f"PreCompact hook: session {input_data.session_id}")
@@ -199,7 +199,7 @@ async def pre_compact_hook(wrapper: RequestWrapper) -> PreCompactOutput:
 @router.post(
     "/SessionStart", response_model=SessionStartOutput, response_model_exclude_none=True
 )
-async def session_start_hook(wrapper: RequestWrapper) -> SessionStartOutput:
+def session_start_hook(wrapper: RequestWrapper) -> SessionStartOutput:
     """Handle SessionStart hook events."""
     input_data = SessionStartInput(**wrapper.event)
     logger.info(f"SessionStart hook: session {input_data.session_id}")
@@ -219,7 +219,7 @@ async def session_start_hook(wrapper: RequestWrapper) -> SessionStartOutput:
 @router.post(
     "/SessionEnd", response_model=SessionEndOutput, response_model_exclude_none=True
 )
-async def session_end_hook(wrapper: RequestWrapper) -> SessionEndOutput:
+def session_end_hook(wrapper: RequestWrapper) -> SessionEndOutput:
     """Handle SessionEnd hook events."""
     input_data = SessionEndInput(**wrapper.event)
     logger.info(f"SessionEnd hook: session {input_data.session_id}")
