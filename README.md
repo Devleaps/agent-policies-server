@@ -23,7 +23,7 @@ All policies are written in **Rego** and evaluated using regopy, an embedded Reg
 
 - **Policies**: Located in `policies/` directory, organized by bundle
 - **Parser**: Python-based bash command parser (bashlex)
-- **Evaluator**: Rego policy evaluator (regopy)
+- **Evaluator**: Rego policy evaluator (regopy); all packages compile into one bundle at startup and each request queries its entrypoints
 - **Bundles**: Universal (always enforced), python-pip, python-uv (opt-in)
 
 ### Project structure

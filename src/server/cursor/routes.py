@@ -29,7 +29,7 @@ router = APIRouter(prefix="/policy/cursor")
     response_model=BeforeShellExecutionOutput,
     response_model_exclude_none=True,
 )
-async def before_shell_execution_hook(
+def before_shell_execution_hook(
     input_data: BeforeShellExecutionInput,
 ) -> BeforeShellExecutionOutput:
     """Handle beforeShellExecution hook events."""
@@ -53,7 +53,7 @@ async def before_shell_execution_hook(
     response_model=BeforeMCPExecutionOutput,
     response_model_exclude_none=True,
 )
-async def before_mcp_execution_hook(
+def before_mcp_execution_hook(
     input_data: BeforeMCPExecutionInput,
 ) -> BeforeMCPExecutionOutput:
     """Handle beforeMCPExecution hook events."""
@@ -77,7 +77,7 @@ async def before_mcp_execution_hook(
     response_model=AfterFileEditOutput,
     response_model_exclude_none=True,
 )
-async def after_file_edit_hook(input_data: AfterFileEditInput) -> AfterFileEditOutput:
+def after_file_edit_hook(input_data: AfterFileEditInput) -> AfterFileEditOutput:
     """Handle afterFileEdit hook events (observation only, cannot prevent)."""
     logger.info(
         f"afterFileEdit hook: {input_data.file_path} in conversation {input_data.conversation_id}"
@@ -98,7 +98,7 @@ async def after_file_edit_hook(input_data: AfterFileEditInput) -> AfterFileEditO
     response_model=BeforeReadFileOutput,
     response_model_exclude_none=True,
 )
-async def before_read_file_hook(
+def before_read_file_hook(
     input_data: BeforeReadFileInput,
 ) -> BeforeReadFileOutput:
     """Handle beforeReadFile hook events."""
@@ -122,7 +122,7 @@ async def before_read_file_hook(
     response_model=BeforeSubmitPromptOutput,
     response_model_exclude_none=True,
 )
-async def before_submit_prompt_hook(
+def before_submit_prompt_hook(
     input_data: BeforeSubmitPromptInput,
 ) -> BeforeSubmitPromptOutput:
     """Handle beforeSubmitPrompt hook events."""
@@ -140,7 +140,7 @@ async def before_submit_prompt_hook(
 
 
 @router.post("/stop", response_model=StopOutput, response_model_exclude_none=True)
-async def stop_hook(input_data: StopInput) -> StopOutput:
+def stop_hook(input_data: StopInput) -> StopOutput:
     """Handle stop hook events."""
     logger.info(f"stop hook in conversation {input_data.conversation_id}")
 

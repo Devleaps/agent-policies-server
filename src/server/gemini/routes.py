@@ -18,7 +18,7 @@ router = APIRouter(prefix="/policy/gemini")
 
 
 @router.post("/BeforeTool", response_model=BeforeToolOutput, response_model_exclude_none=True)
-async def before_tool_hook(wrapper: GeminiRequestWrapper) -> BeforeToolOutput:
+def before_tool_hook(wrapper: GeminiRequestWrapper) -> BeforeToolOutput:
     """Handle Gemini BeforeTool hook events."""
     input_data = BeforeToolInput(**wrapper.event)
     logger.info(f"Gemini BeforeTool: {input_data.tool_name} in session {input_data.session_id}")
@@ -33,7 +33,7 @@ async def before_tool_hook(wrapper: GeminiRequestWrapper) -> BeforeToolOutput:
 
 
 @router.post("/AfterTool", response_model=AfterToolOutput, response_model_exclude_none=True)
-async def after_tool_hook(wrapper: GeminiRequestWrapper) -> AfterToolOutput:
+def after_tool_hook(wrapper: GeminiRequestWrapper) -> AfterToolOutput:
     """Handle Gemini AfterTool hook events."""
     input_data = AfterToolInput(**wrapper.event)
     logger.info(f"Gemini AfterTool: {input_data.tool_name} in session {input_data.session_id}")
